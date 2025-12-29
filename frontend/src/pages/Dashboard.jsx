@@ -1,15 +1,8 @@
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
-import { AppSidebar } from "@/components/AppSidebar"
+import { Layout } from "@/components/Layout"
 
 export default function Dashboard() {
   return (
-    <SidebarProvider>
-      <AppSidebar />
-      <main className="w-full">
-        <div className="p-4 border-b">
-            <SidebarTrigger />
-        </div>
-        <div className="p-4">
+    <Layout>
             <h1 className="text-2xl font-bold mb-4">Dashboard</h1>
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 {/* Placeholder cards */}
@@ -30,8 +23,6 @@ export default function Dashboard() {
                     <p className="text-2xl font-bold text-green-500">120</p>
                 </div>
             </div>
-        </div>
-      </main>
-    </SidebarProvider>
+    </Layout>
   )
 }
