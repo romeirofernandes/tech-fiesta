@@ -3,6 +3,7 @@ import Landing from './pages/Landing';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
+import VaccinationSchedules from './pages/VaccinationSchedules';
 import { useUser } from './context/UserContext';
 
 const ProtectedRoute = ({ children }) => {
@@ -29,6 +30,14 @@ function App() {
           element={
             <ProtectedRoute>
               <Dashboard />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/vaccination-schedules" 
+          element={
+            <ProtectedRoute>
+              <VaccinationSchedules />
             </ProtectedRoute>
           } 
         />

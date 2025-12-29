@@ -1,21 +1,13 @@
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { AppSidebar } from "@/components/AppSidebar"
-import { ThemeToggle } from "@/components/ThemeToggle"
-import { useUser } from "../context/UserContext"
 
 export default function Dashboard() {
-  const { user, mongoUser } = useUser();
-
   return (
     <SidebarProvider>
       <AppSidebar />
       <main className="w-full">
-        <div className="p-4 flex justify-between items-center border-b">
+        <div className="p-4 border-b">
             <SidebarTrigger />
-            <div className="flex items-center gap-4">
-                <span>Welcome, {mongoUser?.fullName || user?.phoneNumber || user?.email}</span>
-                <ThemeToggle />
-            </div>
         </div>
         <div className="p-4">
             <h1 className="text-2xl font-bold mb-4">Dashboard</h1>

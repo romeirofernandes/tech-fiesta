@@ -15,6 +15,7 @@ app.use(express.json());
 connectDB();
 
 app.use('/api/farmers', require('./routes/farmerRoutes'));
+app.use('/api/vacxx', require('./routes/vacxxRoutes'));
 
 const port = process.env.PORT;
 
