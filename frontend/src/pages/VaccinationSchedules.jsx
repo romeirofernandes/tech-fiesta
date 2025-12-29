@@ -13,7 +13,7 @@ export default function VaccinationSchedules() {
   useEffect(() => {
     const fetchSchedules = async () => {
       try {
-        const response = await fetch('http://localhost:8000/api/vacxx');
+        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/vacxx`);
         if (response.ok) {
           const data = await response.json();
           setSchedules(data);

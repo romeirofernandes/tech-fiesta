@@ -111,7 +111,7 @@ const Register = () => {
 
   const syncWithBackend = async (firebaseUid, fullName, email, phoneNumber) => {
     try {
-      const response = await fetch('http://localhost:8000/api/farmers/auth', {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/farmers/auth`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

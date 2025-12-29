@@ -49,3 +49,42 @@ exports.authFarmer = async (req, res) => {
     res.status(500).json({ message: 'Server Error' });
   }
 };
+
+// Update Farmer Profile
+exports.updateFarmer = async (req, res) => {
+  const { id } = req.params;
+  const { fullName, email, phoneNumber } = req.body;
+
+  try {
+    let farmer = await Farmer.findById(id);
+
+    if (!farmer) {
+      return res.status(404).json({ message: 'Farmer not found' });
+    }
+
+    if (fullName) farmer.fullName = fullName;
+    if (email) {
+        // Check if email is taken by another user
+        const existingEmail = await Farmer.findOne({ email });
+        if (existingEmail && existingEmail._id.toString() !== id) {
+            return res.status(400).json({ message: 'Email already in use' });
+        }
+        farmer.email = email;
+    }
+    if (phoneNumber) {
+        // Check if phone is taken by another user
+        const existingPhone = await Farmer.findOne({ phoneNumber });
+        if (existingPhone && existingPhone._id.toString() !== id) {
+            return res.status(400).json({ message: 'Phone number already in use' });
+        }
+        farmer.phoneNumber = phoneNumber;
+    }
+
+    await farmer.save();
+    res.json(farmer);
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server Error' });
+  }
+};

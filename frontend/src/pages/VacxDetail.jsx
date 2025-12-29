@@ -1,11 +1,13 @@
 import { Layout } from "@/components/Layout"
 import { useParams, useNavigate } from "react-router-dom";
 import React, { useEffect, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import { motion } from "framer-motion";
-import { Calendar, Info, AlertCircle } from "lucide-react";
+import { ArrowLeft, Syringe } from "lucide-react";
 import Loading from '@/components/ui/Loading';
+
 export default function VacxDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -15,15 +17,12 @@ export default function VacxDetail() {
   useEffect(() => {
     const fetchSchedule = async () => {
       try {
-        // Assuming the API supports getting a single schedule by ID
-        // If not, we might need to fetch all and filter, but let's assume standard REST
-        const response = await fetch(`http://localhost:8000/api/vacxx/${id}`);
+        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/vacxx/${id}`);
         if (response.ok) {
           const data = await response.json();
           setSchedule(data);
         } else {
-            // Fallback if single fetch isn't implemented, fetch all and find
-            const allResponse = await fetch('http://localhost:8000/api/vacxx');
+            const allResponse = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/vacxx`);
             if (allResponse.ok) {
                 const allData = await allResponse.json();
                 const found = allData.find(s => s._id === id);
@@ -53,109 +52,88 @@ export default function VacxDetail() {
 
   return (
     <Layout>
-        <div className="max-w-5xl mx-auto">
+        <div className="max-w-5xl mx-auto px-4 py-8">
             <motion.div 
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
-                className="mb-8"
+                transition={{ duration: 0.3 }}
             >
-                <div className="relative h-64 md:h-80 w-full rounded-xl overflow-hidden mb-6 shadow-xl">
-                    <img 
-                        src={schedule.image || '/placeholder/cow.png'} 
-                        alt={schedule.animalType} 
-                        className="w-full h-full object-cover"
-                        onError={(e) => { e.target.onerror = null; e.target.src = '/placeholder/cow.png'; }}
-                    />
-                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-6 pt-20 text-white">
-                        <h1 className="text-4xl font-bold mb-2">{schedule.animalType} Vaccination Schedule</h1>
-                        <div className="flex gap-2">
-                            {schedule.gender && <Badge variant="secondary" className="text-lg px-3 py-1">{schedule.gender}</Badge>}
-                            <Badge variant="outline" className="text-lg px-3 py-1 border-white/50 text-white">Standard Protocol</Badge>
-                        </div>
+
+                <div className="mb-8">
+                    <h1 className="text-3xl font-semibold mb-2">{schedule.animalType}</h1>
+                    <div className="flex gap-2 items-center">
+                        {schedule.gender && (
+                            <Badge variant="secondary" className="font-normal">
+                                {schedule.gender}
+                            </Badge>
+                        )}
                     </div>
                 </div>
             </motion.div>
 
-            <div className="grid gap-6">
+            <div className="space-y-2">
                 {schedule.schedule.map((item, index) => (
                     <motion.div
                         key={index}
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 0.3, delay: index * 0.1 }}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.2, delay: index * 0.05 }}
                     >
-                        <Card className="overflow-hidden border-l-4 border-l-primary">
-                            <CardHeader className="bg-muted/30 pb-3">
-                                <div className="flex justify-between items-start">
-                                    <div>
-                                        <CardTitle className="text-xl flex items-center gap-2">
-                                            {item.disease}
+                        <Card className="border border-border/40 hover:border-border transition-colors">
+                            <CardContent className="px-4 py-2">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2.5 flex-1">
+                                        <div className="p-1.5 rounded bg-primary/10">
+                                            <Syringe className="h-3.5 w-3.5 text-primary" />
+                                        </div>
+                                        <div className="flex items-center gap-2 flex-1">
+                                            <h3 className="font-medium text-sm">
+                                                {item.disease}
+                                            </h3>
                                             {item.mandatory && (
-                                                <Badge variant="destructive" className="text-xs">Mandatory</Badge>
+                                                <Badge variant="outline" className="text-[10px] h-4 px-1.5 font-normal border-red-200 text-red-700 dark:border-red-800 dark:text-red-400">
+                                                    Mandatory
+                                                </Badge>
                                             )}
-                                        </CardTitle>
-                                        <CardDescription className="mt-1">
-                                            Recommended vaccination protocol
-                                        </CardDescription>
-                                    </div>
-                                    <div className="bg-background p-2 rounded-full border">
-                                        <Info className="h-5 w-5 text-muted-foreground" />
-                                    </div>
-                                </div>
-                            </CardHeader>
-                            <CardContent className="pt-6">
-                                <div className="grid md:grid-cols-3 gap-6">
-                                    <div className="flex items-start gap-3">
-                                        <div className="mt-1 bg-blue-100 dark:bg-blue-900/30 p-2 rounded-full text-blue-600 dark:text-blue-400">
-                                            <Calendar className="h-5 w-5" />
-                                        </div>
-                                        <div>
-                                            <p className="font-semibold text-sm text-muted-foreground uppercase tracking-wider">First Dose</p>
-                                            <p className="text-lg font-medium">
-                                                {item.firstDoseAtDays ? `${item.firstDoseAtDays} days` : `${item.firstDoseAtMonths} months`}
-                                            </p>
                                         </div>
                                     </div>
 
-                                    <div className="flex items-start gap-3">
-                                        <div className="mt-1 bg-purple-100 dark:bg-purple-900/30 p-2 rounded-full text-purple-600 dark:text-purple-400">
-                                            <AlertCircle className="h-5 w-5" />
+                                    <div className="flex items-center gap-6 text-sm">
+                                        <div className="text-right">
+                                            <p className="text-muted-foreground text-[10px]">First Dose</p>
+                                            <p className="font-medium text-xs">
+                                                {item.firstDoseAtDays ? `${item.firstDoseAtDays}d` : `${item.firstDoseAtMonths}m`}
+                                            </p>
                                         </div>
-                                        <div>
-                                            <p className="font-semibold text-sm text-muted-foreground uppercase tracking-wider">Booster</p>
-                                            <p className="text-lg font-medium">
+
+                                        <div className="text-right">
+                                            <p className="text-muted-foreground text-[10px]">Booster</p>
+                                            <p className="font-medium text-xs">
                                                 {item.boosterAfterDays 
-                                                    ? `After ${item.boosterAfterDays} days` 
+                                                    ? `${item.boosterAfterDays}d` 
                                                     : item.boosterAfterMonths 
-                                                        ? `After ${item.boosterAfterMonths} months` 
-                                                        : 'Not required'}
+                                                        ? `${item.boosterAfterMonths}m` 
+                                                        : '—'}
                                             </p>
                                         </div>
-                                    </div>
 
-                                    <div className="flex items-start gap-3">
-                                        <div className="mt-1 bg-green-100 dark:bg-green-900/30 p-2 rounded-full text-green-600 dark:text-green-400">
-                                            <Calendar className="h-5 w-5" />
-                                        </div>
-                                        <div>
-                                            <p className="font-semibold text-sm text-muted-foreground uppercase tracking-wider">Repeat</p>
-                                            <p className="text-lg font-medium">
+                                        <div className="text-right">
+                                            <p className="text-muted-foreground text-[10px]">Repeat</p>
+                                            <p className="font-medium text-xs">
                                                 {item.repeatEveryDays 
-                                                    ? `Every ${item.repeatEveryDays} days` 
+                                                    ? `${item.repeatEveryDays}d` 
                                                     : item.repeatEveryMonths 
-                                                        ? `Every ${item.repeatEveryMonths} months` 
-                                                        : 'Not required'}
+                                                        ? `${item.repeatEveryMonths}m` 
+                                                        : '—'}
                                             </p>
                                         </div>
                                     </div>
                                 </div>
 
                                 {item.notes && (
-                                    <div className="mt-6 bg-yellow-50 dark:bg-yellow-900/10 border border-yellow-200 dark:border-yellow-900/50 p-3 rounded-md flex gap-3 items-start">
-                                        <Info className="h-5 w-5 text-yellow-600 dark:text-yellow-500 shrink-0 mt-0.5" />
-                                        <p className="text-sm text-yellow-800 dark:text-yellow-200 italic">
-                                            Note: {item.notes}
+                                    <div className="mt-2 pt-2 border-t border-border/40">
+                                        <p className="text-[10px] text-muted-foreground">
+                                            {item.notes}
                                         </p>
                                     </div>
                                 )}

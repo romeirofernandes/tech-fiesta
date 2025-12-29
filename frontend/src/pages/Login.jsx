@@ -104,7 +104,7 @@ const Login = () => {
       // if user signed in with phone field, ensure we pass normalized phone to backend
       const currentPhone = normalizePhone(phone);
 
-      const response = await fetch('http://localhost:8000/api/farmers/auth', {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/farmers/auth`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
