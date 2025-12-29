@@ -14,6 +14,8 @@ app.use(express.json());
 
 connectDB();
 
+app.use('/api/farmers', require('./routes/farmerRoutes'));
+
 const port = process.env.PORT;
 
 app.get('/', (req, res) => {
