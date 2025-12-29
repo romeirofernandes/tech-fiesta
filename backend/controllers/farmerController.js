@@ -9,7 +9,7 @@ exports.authFarmer = async (req, res) => {
   }
 
   try {
-    let farmer = await Farmer.findOne({ firebaseUid });
+    let farmer = await Farmer.findOne({ firebaseUid }).populate('farmId', 'name location');
 
     if (farmer) {
       // User exists, return user
@@ -18,7 +18,7 @@ exports.authFarmer = async (req, res) => {
 
     // User doesn't exist, create new
     if (!fullName) {
-        return res.status(404).json({ message: 'User not found. Please register.' });
+      return res.status(404).json({ message: 'User not found. Please register.' });
     }
 
     if (email) {
@@ -53,7 +53,7 @@ exports.authFarmer = async (req, res) => {
 // Update Farmer Profile
 exports.updateFarmer = async (req, res) => {
   const { id } = req.params;
-  const { fullName, email, phoneNumber } = req.body;
+  const { fullName, email, phoneNumber, farmId } = req.body;
 
   try {
     let farmer = await Farmer.findById(id);
@@ -64,23 +64,25 @@ exports.updateFarmer = async (req, res) => {
 
     if (fullName) farmer.fullName = fullName;
     if (email) {
-        // Check if email is taken by another user
-        const existingEmail = await Farmer.findOne({ email });
-        if (existingEmail && existingEmail._id.toString() !== id) {
-            return res.status(400).json({ message: 'Email already in use' });
-        }
-        farmer.email = email;
+      // Check if email is taken by another user
+      const existingEmail = await Farmer.findOne({ email });
+      if (existingEmail && existingEmail._id.toString() !== id) {
+        return res.status(400).json({ message: 'Email already in use' });
+      }
+      farmer.email = email;
     }
     if (phoneNumber) {
-        // Check if phone is taken by another user
-        const existingPhone = await Farmer.findOne({ phoneNumber });
-        if (existingPhone && existingPhone._id.toString() !== id) {
-            return res.status(400).json({ message: 'Phone number already in use' });
-        }
-        farmer.phoneNumber = phoneNumber;
+      // Check if phone is taken by another user
+      const existingPhone = await Farmer.findOne({ phoneNumber });
+      if (existingPhone && existingPhone._id.toString() !== id) {
+        return res.status(400).json({ message: 'Phone number already in use' });
+      }
+      farmer.phoneNumber = phoneNumber;
     }
+    if (farmId !== undefined) farmer.farmId = farmId;
 
     await farmer.save();
+    await farmer.populate('farmId', 'name location');
     res.json(farmer);
 
   } catch (error) {

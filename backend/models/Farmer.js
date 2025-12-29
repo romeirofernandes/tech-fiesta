@@ -20,11 +20,10 @@ const farmerSchema = new mongoose.Schema({
     unique: true,
     sparse: true
   },
-  farmId: {
+  farms: [{
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Farm',
-    default: null
-  },
+    ref: 'Farm'
+  }],
   createdAt: {
     type: Date,
     default: Date.now
