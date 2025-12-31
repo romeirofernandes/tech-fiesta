@@ -7,6 +7,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { useTheme } from "../context/ThemeContext"
+import { cn } from "@/lib/utils"
 
 export function ThemeToggle({ className, ...props }) {
   const { setTheme } = useTheme()
@@ -14,7 +15,15 @@ export function ThemeToggle({ className, ...props }) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" size={className ? "default" : "icon"} className={className} {...props}>
+        <Button
+          variant="outline"
+          size={className ? "default" : "icon"}
+          className={cn(
+            className,
+            "focus:outline-none focus-visible:outline-none focus-visible:ring-0"
+          )}
+          {...props}
+        >
           <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
           <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
           {className && <span className="ml-2">Toggle Theme</span>}

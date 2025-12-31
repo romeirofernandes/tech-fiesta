@@ -34,7 +34,7 @@ export const Navbar = () => {
               <Link to="/" aria-label="home" className="flex items-center space-x-2">
                 {/* <img src="/logo.png" alt="TAG TRACK" className="h-8 w-auto" /> */}
                 <span className="ml-1 text-lg font-semibold tracking-tight text-foreground">
-                  TAG TRACK
+                  पशु पहचान 
                 </span>
               </Link>
 
@@ -79,16 +79,6 @@ export const Navbar = () => {
                  </Button>
                 ) : (
                   <>
-                    <Button
-                      asChild
-                      variant="outline"
-                      size="sm"
-                      className={cn(isScrolled && 'lg:hidden')}
-                    >
-                      <Link to="/login">
-                        <span>Login</span>
-                      </Link>
-                    </Button>
                     <Button
                       asChild
                       size="sm"
