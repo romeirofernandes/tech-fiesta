@@ -4,17 +4,22 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, Edit2, MapPin, Calendar, Syringe, AlertCircle, CheckCircle, Clock, RefreshCw } from "lucide-react";
+import { ArrowLeft, Edit2, MapPin, Calendar, Syringe, AlertCircle, CheckCircle, Clock, RefreshCw, Pencil, Plus, Trash2 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import axios from "axios";
 import { format } from "date-fns";
+import { EditVaccinationEventDialog } from "@/components/EditVaccinationEventDialog";
+import { AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from "@/components/ui/alert-dialog";
 
 export default function AnimalDetail() {
   const [animal, setAnimal] = useState(null);
   const [vaccinationEvents, setVaccinationEvents] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [editingEvent, setEditingEvent] = useState(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editDialogMode, setEditDialogMode] = useState("edit"); // "edit" or "add"
+  const [deleteEvent, setDeleteEvent] = useState(null);
   const navigate = useNavigate();
   const { id } = useParams();
 
@@ -37,6 +42,35 @@ export default function AnimalDetail() {
     } catch (error) {
       toast.error("Failed to fetch animal details");
       setLoading(false);
+    }
+  };
+
+  const handleAddEvent = () => {
+    setEditingEvent(null);
+    setEditDialogMode("add");
+    setEditDialogOpen(true);
+  };
+
+  const handleEditEvent = (event) => {
+    setEditingEvent(event);
+    setEditDialogMode("edit");
+    setEditDialogOpen(true);
+  };
+
+  const handleDeleteEvent = async () => {
+    if (!deleteEvent) return;
+    try {
+      const token = localStorage.getItem("token");
+      await axios.delete(
+        `${import.meta.env.VITE_API_BASE_URL}/api/vaccination-events/${deleteEvent._id}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      toast.success("Vaccination event deleted");
+      setDeleteEvent(null);
+      fetchAnimalDetails();
+    } catch (error) {
+      toast.error("Failed to delete event");
+      setDeleteEvent(null);
     }
   };
 
@@ -184,11 +218,19 @@ export default function AnimalDetail() {
 
         {/* Vaccination Timeline */}
         <Card>
-          <CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="flex items-center gap-2">
               <Syringe className="h-5 w-5" />
               Vaccination Timeline
             </CardTitle>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleAddEvent}
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Add Vaccination Event
+            </Button>
           </CardHeader>
           <CardContent>
             {vaccinationEvents.length === 0 ? (
@@ -209,7 +251,7 @@ export default function AnimalDetail() {
                     </h3>
                     <div className="space-y-3">
                       {missed.map((event) => (
-                        <VaccinationEventCard key={event._id} event={event} />
+                        <VaccinationEventCard key={event._id} event={event} onEdit={handleEditEvent} onDelete={setDeleteEvent} />
                       ))}
                     </div>
                   </div>
@@ -224,7 +266,7 @@ export default function AnimalDetail() {
                     </h3>
                     <div className="space-y-3">
                       {upcoming.map((event) => (
-                        <VaccinationEventCard key={event._id} event={event} />
+                        <VaccinationEventCard key={event._id} event={event} onEdit={handleEditEvent} onDelete={setDeleteEvent} />
                       ))}
                     </div>
                   </div>
@@ -239,7 +281,7 @@ export default function AnimalDetail() {
                     </h3>
                     <div className="space-y-3">
                       {past.map((event) => (
-                        <VaccinationEventCard key={event._id} event={event} />
+                        <VaccinationEventCard key={event._id} event={event} onEdit={handleEditEvent} onDelete={setDeleteEvent} />
                       ))}
                     </div>
                   </div>
@@ -248,12 +290,40 @@ export default function AnimalDetail() {
             )}
           </CardContent>
         </Card>
+
+        {/* Delete Vaccination Event Dialog */}
+        <AlertDialog open={!!deleteEvent} onOpenChange={open => !open && setDeleteEvent(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>
+                Are you sure you want to delete this vaccination event?
+              </AlertDialogTitle>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => setDeleteEvent(null)}>
+                Cancel
+              </AlertDialogCancel>
+              <AlertDialogAction onClick={handleDeleteEvent}>
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        <EditVaccinationEventDialog
+          event={editingEvent}
+          open={editDialogOpen}
+          onOpenChange={setEditDialogOpen}
+          onSuccess={fetchAnimalDetails}
+          animalId={animal._id}
+          mode={editDialogMode}
+        />
       </div>
     </Layout>
   );
 }
 
-function VaccinationEventCard({ event }) {
+function VaccinationEventCard({ event, onEdit, onDelete }) {
   const getEventIcon = (eventType) => {
     switch (eventType) {
       case "administered":
@@ -285,14 +355,34 @@ function VaccinationEventCard({ event }) {
   };
 
   return (
-    <div className="flex items-start gap-4 p-4 border rounded-lg hover:bg-muted/50 transition-colors">
+    <div className="flex items-start gap-4 p-4 border rounded-lg hover:bg-muted/50 transition-colors group">
       <div className="mt-1">{getEventIcon(event.eventType)}</div>
       <div className="flex-1 min-w-0">
         <div className="flex items-start justify-between gap-2 mb-1">
           <h4 className="font-medium">{event.vaccineName}</h4>
-          <Badge variant={getEventBadgeVariant(event.eventType)} className="capitalize shrink-0">
-            {event.eventType}
-          </Badge>
+          <div className="flex items-center gap-2">
+            <Badge variant={getEventBadgeVariant(event.eventType)} className="capitalize shrink-0">
+              {event.eventType}
+            </Badge>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+              onClick={() => onEdit(event)}
+              aria-label="Edit"
+            >
+              <Pencil className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+              onClick={() => onDelete(event)}
+              aria-label="Delete"
+            >
+              <Trash2 className="h-4 w-4 text-destructive" />
+            </Button>
+          </div>
         </div>
         <p className="text-sm text-muted-foreground">
           {format(new Date(event.date), "PPP")}
