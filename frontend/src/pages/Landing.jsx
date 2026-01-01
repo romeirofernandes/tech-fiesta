@@ -2,6 +2,7 @@ import React from 'react';
 import { Navbar } from '../components/Navbar';
 import { AuroraBars } from '@/components/ui/aurora-bars';
 import { HeroContent } from '@/components/HeroContent';
+import About from "@/components/About";
 import Features from '@/components/Features';
 import Footer from '@/components/Footer';
 import CallToAction from '@/components/CallToAction';
@@ -15,6 +16,7 @@ const Landing = () => {
         <AuroraBars />
         <HeroContent />
       </div>
+      <About />
       <Features />
       <CallToAction />
       <Footer />

@@ -2,6 +2,13 @@ import { Button } from '@/components/ui/button'
 import { Link } from 'react-router-dom'
 
 export default function CallToAction() {
+    const scrollToSection = (id) => {
+        const element = document.getElementById(id);
+        if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    };
+
     return (
         <section className="py-16">
             <div className="mx-auto max-w-6xl rounded-3xl border border-border px-6 bg-card py-12 md:py-20 lg:py-32 shadow-sm">
@@ -18,10 +25,12 @@ export default function CallToAction() {
                                 <span>Get Started</span>
                             </Link>
                         </Button>
-                        <Button asChild size="lg" variant="outline">
-                            <Link to="/features">
-                                <span>See Features</span>
-                            </Link>
+                        <Button 
+                            size="lg" 
+                            variant="outline"
+                            onClick={() => scrollToSection('features')}
+                        >
+                            <span>See Features</span>
                         </Button>
                     </div>
                 </div>

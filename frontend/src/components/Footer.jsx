@@ -2,6 +2,13 @@ import { Link } from "react-router-dom";
 import { Icons } from "@/components/ui/icons";
 
 export default function Footer() {
+  const scrollToSection = (id) => {
+    const element = document.getElementById(id);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
   return (
     <footer className="py-12 px-4 md:px-6 bg-background">
       <div className="max-w-6xl mx-auto">
@@ -26,20 +33,20 @@ export default function Footer() {
                     </h3>
                     <ul className="space-y-2 text-center">
                         <li>
-                        <Link
-                            to="/features"
-                            className="text-muted-foreground hover:text-foreground dark:hover:text-white transition-colors"
+                        <button
+                            onClick={() => scrollToSection('features')}
+                            className="text-muted-foreground hover:text-foreground dark:hover:text-white transition-colors cursor-pointer"
                         >
                             Features
-                        </Link>
+                        </button>
                         </li>
                         <li>
-                        <Link
-                            to="/about"
-                            className="text-muted-foreground hover:text-foreground dark:hover:text-white transition-colors"
+                        <button
+                            onClick={() => scrollToSection('about')}
+                            className="text-muted-foreground hover:text-foreground dark:hover:text-white transition-colors cursor-pointer"
                         >
                             About
-                        </Link>
+                        </button>
                         </li>
                     </ul>
                     </div>
@@ -70,7 +77,7 @@ export default function Footer() {
             </div>
           {/* Large gradient brand text */}
           <div className="w-full flex mt-8 items-center justify-center">
-            <h1 className="text-center text-3xl md:text-5xl lg:text-[10rem] pb-6 font-bold bg-clip-text text-transparent bg-linear-to-b from-primary to-tertiary select-none">
+            <h1 className="text-center text-3xl md:text-5xl lg:text-[10rem] pb-6 font-bold bg-clip-text text-transparent bg-linear-to-b from-primary to-foreground select-none">
               पशु पहचान
             </h1>
           </div>

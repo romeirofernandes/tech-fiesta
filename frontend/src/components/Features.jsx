@@ -16,7 +16,7 @@ L.Icon.Default.mergeOptions({
 
 export default function Features() {
     return (
-        <section className="relative bg-background py-16 md:py-32">
+        <section id="features" className="relative bg-background py-16 md:py-32 scroll-mt-20">
             <div className="mx-auto max-w-2xl lg:max-w-6xl">
                 <div className="mx-auto grid gap-4 lg:grid-cols-2">
                     <FeatureCard>
