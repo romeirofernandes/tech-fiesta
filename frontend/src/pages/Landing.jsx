@@ -3,6 +3,7 @@ import { Navbar } from '../components/Navbar';
 import { AuroraBars } from '@/components/ui/aurora-bars';
 import { HeroContent } from '@/components/HeroContent';
 import Features from '@/components/Features';
+import Footer from '@/components/Footer';
 
 const Landing = () => {
   return (
@@ -14,6 +15,7 @@ const Landing = () => {
         <HeroContent />
       </div>
       <Features />
+      <Footer />
     </div>
   );
 };

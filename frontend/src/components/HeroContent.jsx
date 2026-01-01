@@ -7,7 +7,7 @@ import { TrustedFeatures } from '@/components/TrustedFeatures';
 
 export const HeroContent = () => {
   return (
-    <div className="relative z-10 flex flex-col items-center justify-center min-h-screen text-center px-4 pt-20">
+    <div className="max-w-6xl mx-auto relative z-10 flex flex-col items-center justify-center min-h-screen text-center px-4 pt-20">
       <motion.h1 
         className="text-5xl md:text-7xl font-bold tracking-tight mb-8 max-w-5xl leading-tight"
         initial={{ opacity: 0, y: 20 }}
