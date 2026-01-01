@@ -229,7 +229,7 @@ export default function Profile() {
             </div>
             <div>
               <CardTitle className="text-3xl">{profileForm.fullName || "Farmer"}</CardTitle>
-              <p className="text-muted-foreground">Farmer Account</p>
+              <p className="text-muted-foreground">Farmer</p>
             </div>
             <div className="ml-auto">
               {!isEditingProfile ? (

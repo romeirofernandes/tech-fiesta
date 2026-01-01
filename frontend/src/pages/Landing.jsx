@@ -1,11 +1,11 @@
 import React from 'react';
-import { Navbar } from '../components/Navbar';
+import { Navbar } from '@/components/landing/Navbar';
 import { AuroraBars } from '@/components/ui/aurora-bars';
-import { HeroContent } from '@/components/HeroContent';
-import About from "@/components/About";
-import Features from '@/components/Features';
-import Footer from '@/components/Footer';
-import CallToAction from '@/components/CallToAction';
+import { HeroContent } from '@/components/landing/HeroContent';
+import About from "@/components/landing/About";
+import Features from '@/components/landing/Features';
+import Footer from '@/components/landing/Footer';
+import CallToAction from '@/components/landing/CallToAction';
 
 const Landing = () => {
   return (

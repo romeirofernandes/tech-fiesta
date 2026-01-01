@@ -1,9 +1,11 @@
 const Animal = require('../models/Animal');
+const VaccinationEvent = require('../models/VaccinationEvent');
 const cloudinary = require('../config/cloudinary');
+const { generateVaccinationEvents } = require('../services/vaccinationService');
 
 exports.createAnimal = async (req, res) => {
     try {
-        const { name, rfid, species, breed, gender, yearOfBirth, farmId } = req.body;
+        const { name, rfid, species, breed, gender, age, ageUnit, farmId, questionsAnswers } = req.body;
         let imageUrl = null;
 
         if (req.file) {
@@ -31,13 +33,52 @@ exports.createAnimal = async (req, res) => {
             species,
             breed, 
             gender,
-            yearOfBirth,
+            age,
+            ageUnit,
             farmId,
             imageUrl
         });
 
         await newAnimal.save();
-        res.status(201).json(newAnimal);
+
+        // Generate vaccination events using LLM
+        if (questionsAnswers && questionsAnswers.length > 0) {
+            try {
+                const vaccinationData = await generateVaccinationEvents(
+                    { species, breed, gender, age, ageUnit },
+                    JSON.parse(questionsAnswers)
+                );
+
+                // Create vaccination events
+                const vaccinationEvents = await Promise.all(
+                    vaccinationData.map(event => 
+                        VaccinationEvent.create({
+                            animalId: newAnimal._id,
+                            vaccineName: event.vaccineName,
+                            eventType: event.eventType,
+                            date: new Date(event.date),
+                            notes: event.notes || null,
+                            repeatsEvery: event.repeatsEvery || null
+                        })
+                    )
+                );
+
+                return res.status(201).json({ 
+                    animal: newAnimal,
+                    vaccinationEvents 
+                });
+            } catch (llmError) {
+                console.error('LLM Error:', llmError);
+                // Return animal even if vaccination generation fails
+                return res.status(201).json({ 
+                    animal: newAnimal,
+                    vaccinationEvents: [],
+                    warning: 'Animal created but vaccination schedule generation failed'
+                });
+            }
+        }
+
+        res.status(201).json({ animal: newAnimal, vaccinationEvents: [] });
     } catch (error) {
         res.status(500).json({ message: 'Server Error', error: error.message });
     }
@@ -45,7 +86,10 @@ exports.createAnimal = async (req, res) => {
 
 exports.getAnimals = async (req, res) => {
     try {
-        const animals = await Animal.find();
+        const { farmId } = req.query;
+        const filter = farmId ? { farmId } : {};
+        
+        const animals = await Animal.find(filter).populate('farmId', 'name location imageUrl');
         res.status(200).json(animals);
     } catch (error) {
         res.status(500).json({ message: 'Server Error', error: error.message });
@@ -54,11 +98,16 @@ exports.getAnimals = async (req, res) => {
 
 exports.getAnimalById = async (req, res) => {
     try {
-        const animal = await Animal.findById(req.params.id);
+        const animal = await Animal.findById(req.params.id).populate('farmId', 'name location imageUrl');
         if (!animal) {
             return res.status(404).json({ message: 'Animal not found' });
         }
-        res.status(200).json(animal);
+        
+        // Get vaccination events for this animal
+        const vaccinationEvents = await VaccinationEvent.find({ animalId: req.params.id })
+            .sort({ date: 1 });
+        
+        res.status(200).json({ animal, vaccinationEvents });
     } catch (error) {
         res.status(500).json({ message: 'Server Error', error: error.message });
     }
@@ -67,7 +116,7 @@ exports.getAnimalById = async (req, res) => {
 exports.updateAnimal = async (req, res) => {
     try {
         const { id } = req.params;
-        const { name, rfid, species, breed, gender, yearOfBirth, farmId } = req.body;
+        const { name, rfid, species, breed, gender, age, ageUnit, farmId } = req.body;
         let animal = await Animal.findById(id);
         if (!animal) {
             return res.status(404).json({ message: 'Animal not found' });
@@ -78,7 +127,8 @@ exports.updateAnimal = async (req, res) => {
         if (species) animal.species = species;
         if (breed) animal.breed = breed;    
         if (gender) animal.gender = gender;
-        if (yearOfBirth) animal.yearOfBirth = yearOfBirth;
+        if (age !== undefined) animal.age = age;
+        if (ageUnit) animal.ageUnit = ageUnit;
         if (farmId) animal.farmId = farmId;
 
         if (req.file) {
@@ -114,7 +164,11 @@ exports.deleteAnimal = async (req, res) => {
         if (!animal) {
             return res.status(404).json({ message: 'Animal not found' });
         }
-        res.status(200).json({ message: 'Animal deleted successfully' });
+        
+        // Also delete associated vaccination events
+        await VaccinationEvent.deleteMany({ animalId: id });
+        
+        res.status(200).json({ message: 'Animal and associated records deleted successfully' });
     } catch (error) {
         res.status(500).json({ message: 'Server Error', error: error.message });
     }

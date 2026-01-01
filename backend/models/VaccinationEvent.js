@@ -19,14 +19,20 @@ const vaccinationEventSchema = new mongoose.Schema({
     type: Date,
     required: true
   },
-  confidence: {
-    type: String,
-    required: true,
-    enum: ['high', 'medium', 'low']
-  },
   notes: {
     type: String,
     default: null
+  },
+  repeatsEvery: {
+    value: {
+      type: Number,
+      default: null
+    },
+    unit: {
+      type: String,
+      enum: ['days', 'months', 'years', null],
+      default: null
+    }
   },
   createdAt: {
     type: Date,

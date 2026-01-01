@@ -9,6 +9,10 @@ import VacxDetail from './pages/VacxDetail';
 import NotFound from './pages/NotFound';
 import { useUser } from './context/UserContext';
 import Loading from './components/ui/Loading';
+import Animals from './pages/Animals';
+import AnimalDetail from './pages/AnimalDetail';
+import CreateAnimal from './pages/CreateAnimal';
+import EditAnimal from './pages/EditAnimal';
 
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useUser();
@@ -78,6 +82,26 @@ function App() {
             </ProtectedRoute>
           } 
         />
+        <Route path="/animals" element={
+          <ProtectedRoute>
+            <Animals />
+          </ProtectedRoute>
+        } />
+        <Route path="/animals/create" element={
+          <ProtectedRoute>
+            <CreateAnimal />
+          </ProtectedRoute>
+        } />
+        <Route path="/animals/:id" element={
+          <ProtectedRoute>
+            <AnimalDetail />
+          </ProtectedRoute>
+        } />
+        <Route path="/animals/:id/edit" element={
+          <ProtectedRoute>
+            <EditAnimal />
+          </ProtectedRoute>
+        } />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </Router>

@@ -2,15 +2,15 @@ const VaccinationEvent = require('../models/VaccinationEvent');
 
 exports.createVaccinationEvent = async (req, res) => {
   try {
-    const { animalId, vaccineName, eventType, date, confidence, notes } = req.body;
+    const { animalId, vaccineName, eventType, date, notes, repeatsEvery } = req.body;
     
     const vaccinationEvent = await VaccinationEvent.create({
       animalId,
       vaccineName,
       eventType,
       date,
-      confidence,
-      notes
+      notes,
+      repeatsEvery
     });
 
     res.status(201).json(vaccinationEvent);
@@ -39,7 +39,7 @@ exports.getVaccinationEvents = async (req, res) => {
 
 exports.updateVaccinationEvent = async (req, res) => {
   try {
-    const { eventType, date, confidence, notes } = req.body;
+    const { eventType, date, notes, repeatsEvery } = req.body;
     const event = await VaccinationEvent.findById(req.params.id);
 
     if (!event) {
@@ -48,8 +48,8 @@ exports.updateVaccinationEvent = async (req, res) => {
 
     if (eventType) event.eventType = eventType;
     if (date) event.date = date;
-    if (confidence) event.confidence = confidence;
     if (notes !== undefined) event.notes = notes;
+    if (repeatsEvery !== undefined) event.repeatsEvery = repeatsEvery;
 
     await event.save();
     res.status(200).json(event);

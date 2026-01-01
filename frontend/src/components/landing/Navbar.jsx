@@ -3,8 +3,8 @@ import { Menu, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import React from 'react'
 import { cn } from '@/lib/utils'
-import { ThemeToggle } from './ThemeToggle'
-import { useUser } from '../context/UserContext'
+import { ThemeToggle } from '../ThemeToggle'
+import { useUser } from '../../context/UserContext'
 
 export const Navbar = () => {
   const [menuState, setMenuState] = React.useState(false)

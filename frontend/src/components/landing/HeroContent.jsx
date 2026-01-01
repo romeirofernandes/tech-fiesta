@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Search } from "lucide-react";
 import { Link } from "react-router-dom";
-import { TrustedFeatures } from '@/components/TrustedFeatures';
+import { TrustedFeatures } from '@/components/landing/TrustedFeatures';
 
 export const HeroContent = () => {
   return (
