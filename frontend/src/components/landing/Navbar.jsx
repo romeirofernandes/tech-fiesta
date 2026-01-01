@@ -32,7 +32,6 @@ export const Navbar = () => {
             {/* Logo + mobile controls */}
             <div className="flex w-full justify-between lg:w-auto">
               <Link to="/" aria-label="home" className="flex items-center space-x-2">
-                {/* <img src="/logo.png" alt="TAG TRACK" className="h-8 w-auto" /> */}
                 <span className="ml-1 text-lg font-semibold tracking-tight text-foreground">
                   पशु पहचान 
                 </span>
