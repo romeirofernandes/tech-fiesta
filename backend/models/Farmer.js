@@ -20,6 +20,10 @@ const farmerSchema = new mongoose.Schema({
     unique: true,
     sparse: true
   },
+  imageUrl: {
+    type: String,
+    default: null
+  },
   farms: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Farm',

@@ -3,7 +3,7 @@ const Farm = require('../models/Farm');
 
 // Auth User (Login/Register)
 exports.authFarmer = async (req, res) => {
-  const { firebaseUid, fullName, email, phoneNumber } = req.body;
+  const { firebaseUid, fullName, email, phoneNumber, imageUrl } = req.body;
 
   if (!firebaseUid) {
     return res.status(400).json({ message: 'Firebase UID is required' });
@@ -39,7 +39,8 @@ exports.authFarmer = async (req, res) => {
       firebaseUid,
       fullName,
       email,
-      phoneNumber
+      phoneNumber, 
+      imageUrl
     });
 
     await farmer.save();
@@ -54,7 +55,7 @@ exports.authFarmer = async (req, res) => {
 // Update Farmer Profile
 exports.updateFarmer = async (req, res) => {
   const { id } = req.params;
-  const { fullName, email, phoneNumber, farmId } = req.body;
+  const { fullName, email, phoneNumber, farmId, imageUrl } = req.body;
 
   try {
     let farmer = await Farmer.findById(id);
@@ -80,6 +81,8 @@ exports.updateFarmer = async (req, res) => {
       }
       farmer.phoneNumber = phoneNumber;
     }
+
+    if (imageUrl !== undefined) farmer.imageUrl = imageUrl;
     if (farmId !== undefined) farmer.farmId = farmId;
 
     await farmer.save();
