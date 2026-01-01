@@ -22,7 +22,7 @@ const farmerSchema = new mongoose.Schema({
   },
   farms: [{
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Farm'
+    ref: 'Farm',
   }],
   createdAt: {
     type: Date,

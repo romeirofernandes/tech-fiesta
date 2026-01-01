@@ -1,4 +1,5 @@
 const Farmer = require('../models/Farmer');
+const Farm = require('../models/Farm');  
 
 // Auth User (Login/Register)
 exports.authFarmer = async (req, res) => {
@@ -9,7 +10,7 @@ exports.authFarmer = async (req, res) => {
   }
 
   try {
-    let farmer = await Farmer.findOne({ firebaseUid }).populate('farmId', 'name location');
+    let farmer = await Farmer.findOne({ firebaseUid }).populate('farms', 'name location');
 
     if (farmer) {
       // User exists, return user

@@ -40,7 +40,7 @@ export function AppSidebar() {
     <Sidebar collapsible="icon">
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel className="text-lg font-bold text-primary py-4 mb-4">TAG TRACK</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-lg font-bold text-primary py-4 mb-4">पशु पहचान</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {items.map((item) => (
