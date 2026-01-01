@@ -47,9 +47,8 @@ const animalSchema = new mongoose.Schema({
   }
 });
 
-animalSchema.pre('save', function(next) {
+animalSchema.pre('save', function() {
   this.updatedAt = Date.now();
-  next();
 });
 
 module.exports = mongoose.model('Animal', animalSchema);

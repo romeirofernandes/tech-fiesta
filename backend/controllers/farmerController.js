@@ -82,11 +82,11 @@ exports.updateFarmer = async (req, res) => {
       farmer.phoneNumber = phoneNumber;
     }
 
-    if (imageUrl !== undefined) farmer.imageUrl = imageUrl;
-    if (farmId !== undefined) farmer.farmId = farmId;
+   if (imageUrl !== undefined) farmer.imageUrl = imageUrl;
+   if (req.body.farms !== undefined) farmer.farms = req.body.farms;
 
     await farmer.save();
-    await farmer.populate('farmId', 'name location');
+    await farmer.populate('farms', 'name location');
     res.json(farmer);
 
   } catch (error) {

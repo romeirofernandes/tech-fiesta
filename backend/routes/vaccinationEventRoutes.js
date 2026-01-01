@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const vaccinationController = require('../controllers/vaccinationController');
+const vaccinationController = require('../controllers/vaccinationEventController');
 
 router.post('/', vaccinationController.createVaccinationEvent);
 router.get('/', vaccinationController.getVaccinationEvents);
