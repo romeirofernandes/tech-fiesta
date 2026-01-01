@@ -4,7 +4,7 @@ import { Icons } from "@/components/ui/icons";
 export default function Footer() {
   return (
     <footer className="py-12 px-4 md:px-6 bg-background">
-      <div className="max-w-5xl mx-auto">
+      <div className="max-w-6xl mx-auto">
         <div className="flex flex-col items-center justify-center">
             <div className="w-full flex flex-row items-center justify-center">
                 <div className="mb-8 w-full flex flex-col items-start">
