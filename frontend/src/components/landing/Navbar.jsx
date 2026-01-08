@@ -3,8 +3,8 @@ import { Menu, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import React from 'react'
 import { cn } from '@/lib/utils'
-import { ThemeToggle } from './ThemeToggle'
-import { useUser } from '../context/UserContext'
+import { ThemeToggle } from '../ThemeToggle'
+import { useUser } from '../../context/UserContext'
 
 export const Navbar = () => {
   const [menuState, setMenuState] = React.useState(false)
@@ -25,16 +25,15 @@ export const Navbar = () => {
         <div
           className={cn(
             'mx-auto mt-2 max-w-6xl px-6 transition-all duration-300 lg:px-12',
-            isScrolled && 'bg-background/50 max-w-4xl rounded-2xl border backdrop-blur-lg lg:px-5'
+            isScrolled && 'bg-background/50 max-w-5xl rounded-2xl border backdrop-blur-lg lg:px-5'
           )}
         >
           <div className="relative flex flex-wrap items-center justify-between gap-6 py-3 lg:gap-0 lg:py-4">
             {/* Logo + mobile controls */}
             <div className="flex w-full justify-between lg:w-auto">
               <Link to="/" aria-label="home" className="flex items-center space-x-2">
-                {/* <img src="/logo.png" alt="TAG TRACK" className="h-8 w-auto" /> */}
                 <span className="ml-1 text-lg font-semibold tracking-tight text-foreground">
-                  TAG TRACK
+                  पशु पहचान 
                 </span>
               </Link>
 
@@ -79,16 +78,6 @@ export const Navbar = () => {
                  </Button>
                 ) : (
                   <>
-                    <Button
-                      asChild
-                      variant="outline"
-                      size="sm"
-                      className={cn(isScrolled && 'lg:hidden')}
-                    >
-                      <Link to="/login">
-                        <span>Login</span>
-                      </Link>
-                    </Button>
                     <Button
                       asChild
                       size="sm"

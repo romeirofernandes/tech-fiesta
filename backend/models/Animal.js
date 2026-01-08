@@ -24,9 +24,16 @@ const animalSchema = new mongoose.Schema({
     required: true,
     enum: ['male', 'female']
   },
-  yearOfBirth: {
+  age: {
     type: Number,
-    required: true
+    required: true,
+    min: 0
+  },
+  ageUnit: {
+    type: String,
+    required: true,
+    enum: ['days', 'months', 'years'],
+    default: 'months'
   },
   farmId: {
     type: mongoose.Schema.Types.ObjectId,
@@ -47,9 +54,8 @@ const animalSchema = new mongoose.Schema({
   }
 });
 
-animalSchema.pre('save', function(next) {
+animalSchema.pre('save', function() {
   this.updatedAt = Date.now();
-  next();
 });
 
 module.exports = mongoose.model('Animal', animalSchema);

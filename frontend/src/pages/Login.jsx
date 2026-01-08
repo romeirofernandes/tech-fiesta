@@ -140,7 +140,7 @@ const Login = () => {
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle>Login</CardTitle>
-          <CardDescription>Welcome back to TAG TRACK.</CardDescription>
+          <CardDescription>Welcome back to पशु पहचान</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid w-full items-center gap-4">
@@ -158,7 +158,7 @@ const Login = () => {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="password">Password</Label>
-                    <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+                    <Input id="password" type="password" value={password} placeholder="••••••••" onChange={(e) => setPassword(e.target.value)} required />
                   </div>
                   <Button type="submit" className="w-full" disabled={loading}>
                     {loading ? "Logging in..." : "Login"}
@@ -171,7 +171,7 @@ const Login = () => {
                   <form onSubmit={handleSendOtp} className="space-y-4 mt-4">
                     <div className="space-y-2">
                       <Label htmlFor="phone">Phone Number</Label>
-                      <Input id="phone" type="tel" placeholder="e.g., 8097996263" value={phone} onChange={(e) => setPhone(e.target.value)} required />
+                      <Input id="phone" type="tel" placeholder="e.g. 8097996263" value={phone} onChange={(e) => setPhone(e.target.value)} required />
                     </div>
                     <div id="recaptcha-container-login"></div>
                     <Button type="submit" className="w-full" disabled={loading}>

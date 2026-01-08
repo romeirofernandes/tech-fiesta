@@ -9,6 +9,14 @@ import VacxDetail from './pages/VacxDetail';
 import NotFound from './pages/NotFound';
 import { useUser } from './context/UserContext';
 import Loading from './components/ui/Loading';
+import Animals from './pages/animals/Animals';
+import AnimalDetail from './pages/animals/AnimalDetail';
+import CreateAnimal from './pages/animals/CreateAnimal';
+import EditAnimal from './pages/animals/EditAnimal';
+import Farms from './pages/farms/Farms';
+import FarmDetail from './pages/farms/FarmDetail';
+import CreateFarm from './pages/farms/CreateFarm';
+import EditFarm from './pages/farms/EditFarm';
 
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useUser();
@@ -78,6 +86,46 @@ function App() {
             </ProtectedRoute>
           } 
         />
+        <Route path="/animals" element={
+          <ProtectedRoute>
+            <Animals />
+          </ProtectedRoute>
+        } />
+        <Route path="/animals/create" element={
+          <ProtectedRoute>
+            <CreateAnimal />
+          </ProtectedRoute>
+        } />
+        <Route path="/animals/:id" element={
+          <ProtectedRoute>
+            <AnimalDetail />
+          </ProtectedRoute>
+        } />
+        <Route path="/animals/:id/edit" element={
+          <ProtectedRoute>
+            <EditAnimal />
+          </ProtectedRoute>
+        } />
+        <Route path="/farms" element={
+          <ProtectedRoute>
+            <Farms />
+          </ProtectedRoute>
+        } />
+        <Route path="/farms/create" element={
+          <ProtectedRoute>
+            <CreateFarm />
+          </ProtectedRoute>
+        } />
+        <Route path="/farms/:id" element={
+          <ProtectedRoute>
+            <FarmDetail />
+          </ProtectedRoute>
+        } />
+        <Route path="/farms/:id/edit" element={
+          <ProtectedRoute>
+            <EditFarm />
+          </ProtectedRoute>
+        } />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </Router>
