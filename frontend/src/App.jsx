@@ -8,7 +8,6 @@ import VaccinationSchedules from './pages/VaccinationSchedules';
 import VacxDetail from './pages/VacxDetail';
 import NotFound from './pages/NotFound';
 import { useUser } from './context/UserContext';
-import Loading from './components/ui/Loading';
 import Animals from './pages/animals/Animals';
 import AnimalDetail from './pages/animals/AnimalDetail';
 import CreateAnimal from './pages/animals/CreateAnimal';
@@ -19,11 +18,12 @@ import CreateFarm from './pages/farms/CreateFarm';
 import EditFarm from './pages/farms/EditFarm';
 import LiveVitals from './pages/LiveVitals';
 import AdminDashboard from './pages/admin/AdminDashboard';
+import { Layout } from './components/Layout';
 
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useUser();
   
-  if (loading) return <Loading />;
+  if (loading) return <Layout loading={true} />;
   
   if (!user) {
     return <Navigate to="/login" />;
@@ -35,7 +35,7 @@ const ProtectedRoute = ({ children }) => {
 const PublicRoute = ({ children }) => {
   const { user, loading } = useUser();
   
-  if (loading) return <Loading />;
+  if (loading) return null;
   
   if (user) {
     return <Navigate to="/dashboard" />;

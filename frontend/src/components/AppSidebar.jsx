@@ -118,7 +118,7 @@ export function AppSidebar() {
             <SidebarMenuButton asChild className="w-full">
               <button 
                 onClick={logout}
-                className="flex items-center w-full mb-4 cursor-pointer text-red-600 hover:text-red-700 dark:text-red-500 dark:hover:text-red-600"
+                className="flex items-center w-full mb-4 cursor-pointer text-destructive hover:text-destructive/90"
               >
                 <LogOut className={cn(state === "expanded" && "ml-2")} />
                 {state === "expanded" && <span>Logout</span>}

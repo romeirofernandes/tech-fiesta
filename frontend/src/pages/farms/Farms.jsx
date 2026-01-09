@@ -78,18 +78,8 @@ export default function Farms() {
     }
   };
 
-  if (loading) {
-    return (
-      <Layout>
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <div className="text-muted-foreground">Loading farms...</div>
-        </div>
-      </Layout>
-    );
-  }
-
   return (
-    <Layout>
+    <Layout loading={loading}>
       <div className="max-w-6xl mx-auto space-y-6">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>

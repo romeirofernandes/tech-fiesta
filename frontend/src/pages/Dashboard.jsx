@@ -12,15 +12,15 @@ export default function Dashboard() {
                 </div>
                 <div className="p-4 border rounded-lg shadow-sm bg-card text-card-foreground">
                     <h3 className="font-semibold">Health Alerts</h3>
-                    <p className="text-2xl font-bold text-red-500">3</p>
+                    <p className="text-2xl font-bold text-destructive">3</p>
                 </div>
                 <div className="p-4 border rounded-lg shadow-sm bg-card text-card-foreground">
                     <h3 className="font-semibold">Vaccinations Due</h3>
-                    <p className="text-2xl font-bold text-yellow-500">12</p>
+                    <p className="text-2xl font-bold text-chart-2">12</p>
                 </div>
                 <div className="p-4 border rounded-lg shadow-sm bg-card text-card-foreground">
                     <h3 className="font-semibold">Active Sensors</h3>
-                    <p className="text-2xl font-bold text-green-500">120</p>
+                    <p className="text-2xl font-bold text-chart-1">120</p>
                 </div>
             </div>
     </Layout>

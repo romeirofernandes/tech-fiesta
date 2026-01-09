@@ -3,7 +3,6 @@ import { Layout } from "@/components/Layout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { useNavigate } from 'react-router-dom';
-import Loading from '@/components/ui/Loading';
 
 export default function VaccinationSchedules() {
   const [schedules, setSchedules] = useState([]);
@@ -28,10 +27,8 @@ export default function VaccinationSchedules() {
     fetchSchedules();
   }, []);
 
-  if (loading) return <Loading />;
-
   return (
-    <Layout>
+    <Layout loading={loading}>
             <h1 className="text-2xl font-bold mb-6">Vaccination Schedules</h1>
             
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
