@@ -6,6 +6,10 @@ import 'leaflet/dist/leaflet.css'
 import { ThemeProvider } from './context/ThemeContext.jsx'
 import { UserProvider } from './context/UserContext.jsx'
 import { Toaster } from "@/components/ui/sonner"
+import { initElevenLabsWidget } from './utils/elevenLabsWidget.js'
+
+// Initialize ElevenLabs widget
+initElevenLabsWidget()
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
