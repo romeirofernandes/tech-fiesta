@@ -33,7 +33,7 @@ export default function VaccinationTracking() {
     }
   };
 
-  if (loading) return <div className="text-center py-20 text-zinc-500">Syncing vaccination records...</div>;
+  if (loading) return <div className="text-center py-20 text-muted-foreground">Syncing vaccination records...</div>;
 
   // --- START OF YOUR ORIGINAL LOGIC ---
   const today = new Date();
@@ -76,23 +76,23 @@ export default function VaccinationTracking() {
   // --- END OF YOUR ORIGINAL LOGIC ---
 
   return (
-    <div className="min-h-screen bg-black text-zinc-100 p-6 font-sans">
+    <div className="space-y-6">
       
       {/* Metrics Row */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         {[
-          { label: "DUE THIS WEEK", val: upcomingVaccinations.length, icon: Calendar, color: "text-blue-500", bg: "bg-blue-500/10" },
-          { label: "OVERDUE", val: overdueVaccinations.length, icon: AlertCircle, color: "text-red-500", bg: "bg-red-500/10" },
-          { label: "COMPLETED (30D)", val: completedRecently.length, icon: CheckCircle, color: "text-green-500", bg: "bg-green-500/10" },
-          { label: "COMPLIANCE", val: `${complianceRate}%`, icon: ShieldCheck, color: "text-purple-500", bg: "bg-purple-500/10" },
+          { label: "DUE THIS WEEK", val: upcomingVaccinations.length, icon: Calendar, color: "text-chart-2", bg: "bg-chart-2/10" },
+          { label: "OVERDUE", val: overdueVaccinations.length, icon: AlertCircle, color: "text-destructive", bg: "bg-destructive/10" },
+          { label: "COMPLETED (30D)", val: completedRecently.length, icon: CheckCircle, color: "text-primary", bg: "bg-primary/10" },
+          { label: "COMPLIANCE", val: `${complianceRate}%`, icon: ShieldCheck, color: "text-chart-3", bg: "bg-chart-3/10" },
         ].map((item, i) => (
-          <div key={i} className="bg-black border border-zinc-800 rounded-lg p-4 flex items-center gap-4">
+          <div key={i} className="bg-card border border-border rounded-lg p-4 flex items-center gap-4">
             <div className={`${item.bg} p-3 rounded-lg`}>
               <item.icon className={`h-5 w-5 ${item.color}`} />
             </div>
             <div>
-              <p className="text-[10px] uppercase tracking-widest text-zinc-500 font-bold">{item.label}</p>
-              <p className="text-2xl font-semibold tracking-tight">{item.val}</p>
+              <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">{item.label}</p>
+              <p className="text-2xl font-semibold tracking-tight text-foreground">{item.val}</p>
             </div>
           </div>
         ))}
@@ -102,19 +102,19 @@ export default function VaccinationTracking() {
         
         {/* Table Section */}
         <div className="lg:col-span-2 space-y-6">
-          <div className="bg-black border border-zinc-800 rounded-xl overflow-hidden">
-            <div className="px-6 py-4 border-b border-zinc-800 flex justify-between items-center bg-black">
-              <h3 className="text-sm font-semibold uppercase tracking-wider text-zinc-400 flex items-center gap-2">
-                <Clock className="h-4 w-4 text-blue-400" />
+          <div className="bg-card border border-border rounded-xl overflow-hidden">
+            <div className="px-6 py-4 border-b border-border flex justify-between items-center">
+              <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                <Clock className="h-4 w-4 text-chart-2" />
                 Upcoming Schedule
               </h3>
               <div className="flex gap-2">
                 <div className="relative">
-                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-500" />
-                  <input placeholder="Filter events..." className="bg-black border border-zinc-800 text-xs rounded-md pl-8 pr-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-zinc-700 w-40" />
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                  <input placeholder="Filter events..." className="bg-background border border-border text-xs text-foreground rounded-md pl-8 pr-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-ring w-40" />
                 </div>
-                <button className="bg-black border border-zinc-800 p-1.5 rounded-md hover:bg-zinc-800 transition-colors">
-                  <Filter className="h-3.5 w-3.5 text-zinc-400" />
+                <button className="bg-background border border-border p-1.5 rounded-md hover:bg-accent transition-colors">
+                  <Filter className="h-3.5 w-3.5 text-muted-foreground" />
                 </button>
               </div>
             </div>
@@ -122,33 +122,33 @@ export default function VaccinationTracking() {
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm">
                 <thead>
-                  <tr className="text-zinc-500 border-b border-zinc-800 bg-zinc-900/50 font-bold text-[10px] uppercase">
+                  <tr className="text-muted-foreground border-b border-border bg-muted font-bold text-[10px] uppercase">
                     <th className="px-6 py-3">Date</th>
                     <th className="px-6 py-3">Vaccine</th>
                     <th className="px-6 py-3">Animal / ID</th>
                     <th className="px-6 py-3 text-right">Frequency</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-zinc-800/50">
+                <tbody className="divide-y divide-border">
                   {upcomingVaccinations.length === 0 ? (
                     <tr>
-                      <td colSpan="4" className="px-6 py-12 text-center text-zinc-500 italic">No scheduled events for the coming week</td>
+                      <td colSpan="4" className="px-6 py-12 text-center text-muted-foreground italic">No scheduled events for the coming week</td>
                     </tr>
                   ) : (
                     upcomingVaccinations.map((v) => (
-                      <tr key={v._id} className="hover:bg-zinc-800/30 transition-colors">
-                        <td className="px-6 py-4 font-mono text-zinc-400 text-xs">
+                      <tr key={v._id} className="hover:bg-accent transition-colors">
+                        <td className="px-6 py-4 font-mono text-muted-foreground text-xs">
                           {new Date(v.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
                         </td>
-                        <td className="px-6 py-4 font-medium text-zinc-200">{v.vaccineName}</td>
+                        <td className="px-6 py-4 font-medium text-foreground">{v.vaccineName}</td>
                         <td className="px-6 py-4">
                           <div className="flex flex-col">
-                            <span className="text-zinc-300">{v.animalId?.name || 'Unknown'}</span>
-                            <span className="text-[10px] text-zinc-600 font-mono">{v.animalId?.rfid}</span>
+                            <span className="text-foreground">{v.animalId?.name || 'Unknown'}</span>
+                            <span className="text-[10px] text-muted-foreground font-mono">{v.animalId?.rfid}</span>
                           </div>
                         </td>
                         <td className="px-6 py-4 text-right">
-                          <Badge variant="outline" className="border-zinc-700 text-zinc-500 font-normal text-[10px] uppercase tracking-tighter">
+                          <Badge variant="outline" className="font-normal text-[10px] uppercase tracking-tighter">
                             {v.repeatsEvery || 'One-time'}
                           </Badge>
                         </td>
@@ -164,12 +164,12 @@ export default function VaccinationTracking() {
         {/* Sidebar */}
         <div className="space-y-6">
           {overdueVaccinations.length > 0 && (
-            <div className="bg-red-500/5 border border-red-500/20 rounded-xl p-4">
+            <div className="bg-destructive/5 border border-destructive/20 rounded-xl p-4">
               <div className="flex items-start gap-3">
-                <AlertCircle className="h-5 w-5 text-red-500 mt-0.5" />
+                <AlertCircle className="h-5 w-5 text-destructive mt-0.5" />
                 <div>
-                  <p className="text-sm font-semibold text-red-200">{overdueVaccinations.length} Overdue Records</p>
-                  <p className="text-xs text-red-200/60 leading-relaxed mt-1">
+                  <p className="text-sm font-semibold text-destructive">{overdueVaccinations.length} Overdue Records</p>
+                  <p className="text-xs text-muted-foreground leading-relaxed mt-1">
                     Herd health compliance is currently at risk. Immediate action required.
                   </p>
                 </div>
@@ -177,9 +177,9 @@ export default function VaccinationTracking() {
             </div>
           )}
 
-          <Card className="bg-black border-zinc-800">
+          <Card>
             <CardHeader className="pb-4">
-              <CardTitle className="text-xs uppercase tracking-widest text-zinc-500 font-bold flex items-center gap-2">
+              <CardTitle className="text-xs uppercase tracking-widest text-muted-foreground font-bold flex items-center gap-2">
                 <Syringe className="h-3.5 w-3.5" />
                 Coverage by Type
               </CardTitle>
@@ -192,19 +192,19 @@ export default function VaccinationTracking() {
                 return (
                   <div key={vaccine}>
                     <div className="flex justify-between text-[11px] mb-1.5 font-medium">
-                      <span className="text-zinc-300">{vaccine}</span>
-                      <span className={rate > 80 ? "text-green-500" : "text-yellow-500"}>{rate}%</span>
+                      <span className="text-foreground">{vaccine}</span>
+                      <span className={rate > 80 ? "text-primary" : "text-chart-5"}>{rate}%</span>
                     </div>
-                    <div className="h-1.5 w-full bg-zinc-800 rounded-full overflow-hidden">
+                    <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
                       <div 
-                        className={`h-full rounded-full transition-all duration-500 ${rate > 80 ? 'bg-green-500' : 'bg-yellow-500'}`} 
+                        className={`h-full rounded-full transition-all duration-500 ${rate > 80 ? 'bg-primary' : 'bg-chart-5'}`} 
                         style={{ width: `${rate}%` }} 
                       />
                     </div>
-                    <div className="flex gap-3 mt-2 text-[9px] text-zinc-600 uppercase tracking-tighter font-bold">
+                    <div className="flex gap-3 mt-2 text-[9px] text-muted-foreground uppercase tracking-tighter font-bold">
                       <span>Done: {stats.completed}</span>
                       <span>Due: {stats.scheduled}</span>
-                      <span className={stats.overdue > 0 ? "text-red-500" : ""}>Overdue: {stats.overdue}</span>
+                      <span className={stats.overdue > 0 ? "text-destructive" : ""}>Overdue: {stats.overdue}</span>
                     </div>
                   </div>
                 );
@@ -212,12 +212,12 @@ export default function VaccinationTracking() {
             </CardContent>
           </Card>
 
-          <div className="bg-black border border-zinc-800 rounded-xl p-4 flex items-center justify-between group cursor-pointer hover:border-zinc-600 transition-all">
+          <div className="bg-card border border-border rounded-xl p-4 flex items-center justify-between group cursor-pointer hover:border-border/80 transition-all">
             <div className="flex items-center gap-3">
-              <History className="h-4 w-4 text-zinc-500" />
-              <span className="text-xs text-zinc-400 group-hover:text-zinc-200">History Log</span>
+              <History className="h-4 w-4 text-muted-foreground" />
+              <span className="text-xs text-muted-foreground group-hover:text-foreground">History Log</span>
             </div>
-            <div className="h-1.5 w-1.5 rounded-full bg-black" />
+            <div className="h-1.5 w-1.5 rounded-full bg-background" />
           </div>
         </div>
       </div>
