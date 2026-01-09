@@ -34,7 +34,7 @@ import { format } from "date-fns";
 import { toast } from "sonner";
 
 // API Configuration
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000";
+const API_BASE = import.meta.env.VITE_API_BASE_PYTHON_URL || "http://127.0.0.1:8080";
 const WS_URL = `ws://${API_BASE.replace(/^https?:\/\//, "").replace(/\/$/, "")}/ws/sensors/`;
 
 // Time range options (in minutes)
