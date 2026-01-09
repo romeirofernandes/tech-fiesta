@@ -39,7 +39,7 @@ export default function FarmDistributionMap() {
     }
   };
 
-  if (loading) return <div className="text-center py-4">Loading map data...</div>;
+  if (loading) return <div className="text-center py-4 text-muted-foreground">Loading map data...</div>;
 
   // Process farm locations
   const farmMarkers = farms.map(farm => {
@@ -93,9 +93,9 @@ export default function FarmDistributionMap() {
                   center={[farm.lat, farm.lng]}
                   radius={20 + (farm.animalCount / maxAnimals) * 30}
                   fillColor={
-                    farm.healthRate >= 80 ? "#10b981" : 
-                    farm.healthRate >= 60 ? "#f59e0b" : 
-                    "#ef4444"
+                    farm.healthRate >= 80 ? "hsl(var(--primary))" : 
+                    farm.healthRate >= 60 ? "hsl(var(--chart-5))" : 
+                    "hsl(var(--destructive))"
                   }
                   fillOpacity={0.3}
                   stroke={false}

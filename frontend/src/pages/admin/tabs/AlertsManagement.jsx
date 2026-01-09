@@ -45,7 +45,7 @@ export default function AlertsManagement() {
     }
   };
 
-  if (loading) return <div className="text-center py-20 text-zinc-500 font-medium tracking-tight">Accessing alert logs...</div>;
+  if (loading) return <div className="text-center py-20 text-muted-foreground font-medium tracking-tight">Accessing alert logs...</div>;
 
   // --- START OF YOUR ORIGINAL LOGIC ---
   const filteredAlerts = alerts.filter(alert => {
@@ -80,25 +80,25 @@ export default function AlertsManagement() {
   // --- END OF YOUR ORIGINAL LOGIC ---
 
   return (
-    <div className="min-h-screen bg-black text-zinc-100 p-6 font-sans">
+    <div className="space-y-6">
       
-      {/* Top Metric Bar - Matches presentation style */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+      {/* Top Metric Bar */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         {[
-          { label: "ACTIVE ALERTS", val: activeAlerts.length, icon: Bell, color: "text-blue-500", bg: "bg-blue-500/10", sub: `${todayAlerts.length} new today` },
-          { label: "CRITICAL", val: criticalAlerts.length, icon: AlertTriangle, color: "text-red-500", bg: "bg-red-500/10", sub: "Immediate action" },
-          { label: "RESOLUTION RATE", val: `${alerts.length > 0 ? Math.round((resolvedAlerts.length / alerts.length) * 100) : 0}%`, icon: CheckCircle2, color: "text-green-500", bg: "bg-green-500/10", sub: `${resolvedAlerts.length} total resolved` },
-          { label: "AVG RESPONSE", val: `${avgResolutionTime.toFixed(1)}h`, icon: Clock, color: "text-zinc-500", bg: "bg-zinc-500/10", sub: "Resolution time" },
+          { label: "ACTIVE ALERTS", val: activeAlerts.length, icon: Bell, color: "text-chart-2", bg: "bg-chart-2/10", sub: `${todayAlerts.length} new today` },
+          { label: "CRITICAL", val: criticalAlerts.length, icon: AlertTriangle, color: "text-destructive", bg: "bg-destructive/10", sub: "Immediate action" },
+          { label: "RESOLUTION RATE", val: `${alerts.length > 0 ? Math.round((resolvedAlerts.length / alerts.length) * 100) : 0}%`, icon: CheckCircle2, color: "text-primary", bg: "bg-primary/10", sub: `${resolvedAlerts.length} total resolved` },
+          { label: "AVG RESPONSE", val: `${avgResolutionTime.toFixed(1)}h`, icon: Clock, color: "text-muted-foreground", bg: "bg-muted", sub: "Resolution time" },
         ].map((item, i) => (
-          <div key={i} className="bg-black border border-zinc-800 rounded-lg p-4 flex items-center gap-4">
+          <div key={i} className="bg-card border border-border rounded-lg p-4 flex items-center gap-4">
             <div className={`${item.bg} p-3 rounded-lg`}>
               <item.icon className={`h-5 w-5 ${item.color}`} />
             </div>
             <div>
-              <p className="text-[10px] uppercase tracking-widest text-zinc-500 font-bold">{item.label}</p>
+              <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">{item.label}</p>
               <div className="flex items-baseline gap-2">
-                <p className="text-2xl font-semibold tracking-tight">{item.val}</p>
-                <p className="text-[10px] text-zinc-600 font-medium">{item.sub}</p>
+                <p className="text-2xl font-semibold tracking-tight text-foreground">{item.val}</p>
+                <p className="text-[10px] text-muted-foreground font-medium">{item.sub}</p>
               </div>
             </div>
           </div>
@@ -109,16 +109,16 @@ export default function AlertsManagement() {
         
         {/* Main Alert Feed Table */}
         <div className="lg:col-span-2 space-y-6">
-          <div className="bg-black border border-zinc-800 rounded-xl overflow-hidden">
-            <div className="px-6 py-4 border-b border-zinc-800 flex justify-between items-center bg-black">
+          <div className="bg-card border border-border rounded-xl overflow-hidden">
+            <div className="px-6 py-4 border-b border-border flex justify-between items-center">
               <div className="flex items-center gap-4">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-400">System Alerts</h3>
-                <div className="flex bg-black border border-zinc-800 rounded-md p-1">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">System Alerts</h3>
+                <div className="flex bg-background border border-border rounded-md p-1">
                   {['all', 'active', 'resolved'].map((t) => (
                     <button 
                       key={t}
                       onClick={() => setFilter(t)}
-                      className={`px-3 py-1 text-[10px] font-bold uppercase rounded transition-all ${filter === t ? 'bg-zinc-800 text-white' : 'text-zinc-500 hover:text-zinc-300'}`}
+                      className={`px-3 py-1 text-[10px] font-bold uppercase rounded transition-all ${filter === t ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:text-foreground'}`}
                     >
                       {t}
                     </button>
@@ -126,61 +126,61 @@ export default function AlertsManagement() {
                 </div>
               </div>
               <div className="relative">
-                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-500" />
-                <input placeholder="Search logs..." className="bg-black border border-zinc-800 text-xs rounded-md pl-8 pr-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-zinc-700 w-48" />
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                <input placeholder="Search logs..." className="bg-background border border-border text-xs text-foreground rounded-md pl-8 pr-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-ring w-48" />
               </div>
             </div>
             
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm">
                 <thead>
-                  <tr className="text-zinc-500 border-b border-zinc-800 bg-zinc-900/30 font-bold text-[10px] uppercase">
+                  <tr className="text-muted-foreground border-b border-border bg-muted font-bold text-[10px] uppercase">
                     <th className="px-6 py-3">Timestamp / Animal</th>
                     <th className="px-6 py-3">Type & Message</th>
                     <th className="px-6 py-3">Severity</th>
                     <th className="px-6 py-3 text-right">Action</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-zinc-800/50">
+                <tbody className="divide-y divide-border">
                   {filteredAlerts.length === 0 ? (
                     <tr>
-                      <td colSpan="4" className="px-6 py-12 text-center text-zinc-600 text-xs italic font-medium">No alerts matching current filter</td>
+                      <td colSpan="4" className="px-6 py-12 text-center text-muted-foreground text-xs italic font-medium">No alerts matching current filter</td>
                     </tr>
                   ) : (
                     filteredAlerts.map((alert) => (
-                      <tr key={alert._id} className={`group hover:bg-zinc-800/20 transition-colors ${!alert.isResolved ? 'bg-red-500/[0.02]' : ''}`}>
+                      <tr key={alert._id} className={`group hover:bg-accent transition-colors ${!alert.isResolved ? 'bg-destructive/[0.02]' : ''}`}>
                         <td className="px-6 py-4">
                           <div className="flex flex-col">
-                            <span className="text-zinc-400 font-mono text-[11px] mb-1">
+                            <span className="text-muted-foreground font-mono text-[11px] mb-1">
                               {new Date(alert.createdAt).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                             </span>
-                            <span className="text-zinc-200 font-medium text-xs">{alert.animalId?.name || 'Unknown'}</span>
+                            <span className="text-foreground font-medium text-xs">{alert.animalId?.name || 'Unknown'}</span>
                           </div>
                         </td>
                         <td className="px-6 py-4 max-w-xs">
                           <div className="flex flex-col">
-                            <span className="text-[10px] font-bold uppercase text-zinc-500 tracking-tighter">{alert.type}</span>
-                            <span className="text-zinc-400 text-xs line-clamp-1">{alert.message}</span>
+                            <span className="text-[10px] font-bold uppercase text-muted-foreground tracking-tighter">{alert.type}</span>
+                            <span className="text-muted-foreground text-xs line-clamp-1">{alert.message}</span>
                           </div>
                         </td>
                         <td className="px-6 py-4">
                           <Badge className={`text-[9px] uppercase font-bold border-none px-2 py-0.5 rounded-sm ${
-                            alert.severity === 'high' ? 'bg-red-500/10 text-red-500' : 
-                            alert.severity === 'medium' ? 'bg-orange-500/10 text-orange-500' : 
-                            'bg-zinc-800 text-zinc-400'
+                            alert.severity === 'high' ? 'bg-destructive/10 text-destructive' : 
+                            alert.severity === 'medium' ? 'bg-chart-5/10 text-chart-5' : 
+                            'bg-muted text-muted-foreground'
                           }`}>
                             {alert.severity}
                           </Badge>
                         </td>
                         <td className="px-6 py-4 text-right">
                           {alert.isResolved ? (
-                            <Badge variant="outline" className="border-green-500/20 text-green-500 text-[10px] bg-green-500/5">Resolved</Badge>
+                            <Badge variant="outline" className="border-primary/20 text-primary text-[10px] bg-primary/5">Resolved</Badge>
                           ) : (
                             <Button 
                               size="sm" 
                               variant="ghost" 
                               onClick={() => resolveAlert(alert._id)}
-                              className="h-8 text-[10px] uppercase font-bold text-zinc-400 hover:text-white hover:bg-zinc-800 border border-zinc-800"
+                              className="h-8 text-[10px] uppercase font-bold"
                             >
                               Resolve
                             </Button>
@@ -198,8 +198,8 @@ export default function AlertsManagement() {
         {/* Sidebar Widgets */}
         <div className="space-y-6">
           {/* Distribution Card */}
-          <div className="bg-black border border-zinc-800 rounded-xl p-5">
-            <h3 className="text-xs uppercase tracking-widest text-zinc-500 font-bold mb-6 flex items-center gap-2">
+          <div className="bg-card border border-border rounded-xl p-5">
+            <h3 className="text-xs uppercase tracking-widest text-muted-foreground font-bold mb-6 flex items-center gap-2">
               <Activity className="h-3.5 w-3.5" />
               Active Distribution
             </h3>
@@ -209,12 +209,12 @@ export default function AlertsManagement() {
                 return (
                   <div key={type}>
                     <div className="flex justify-between text-[11px] mb-1.5 font-bold uppercase tracking-tight">
-                      <span className="text-zinc-400">{type}</span>
-                      <span className="text-zinc-200">{percentage}%</span>
+                      <span className="text-muted-foreground">{type}</span>
+                      <span className="text-foreground">{percentage}%</span>
                     </div>
-                    <div className="h-1.5 w-full bg-black rounded-full overflow-hidden border border-zinc-800">
+                    <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden border border-border">
                       <div 
-                        className="h-full bg-blue-500 rounded-full transition-all duration-700" 
+                        className="h-full bg-chart-2 rounded-full transition-all duration-700" 
                         style={{ width: `${percentage}%` }} 
                       />
                     </div>
@@ -228,12 +228,12 @@ export default function AlertsManagement() {
           </div>
 
           {/* Performance Analytics */}
-          <div className="bg-black border border-zinc-800 rounded-xl p-5">
-            <h3 className="text-xs uppercase tracking-widest text-zinc-500 font-bold mb-4">Response Performance</h3>
+          <div className="bg-card border border-border rounded-xl p-5">
+            <h3 className="text-xs uppercase tracking-widest text-muted-foreground font-bold mb-4">Response Performance</h3>
             <div className="grid grid-cols-2 gap-4">
-              <div className="bg-black p-3 rounded-lg border border-zinc-800">
-                <p className="text-[9px] text-zinc-600 font-bold uppercase">Fastest</p>
-                <p className="text-lg font-semibold text-green-500">
+              <div className="bg-card p-3 rounded-lg border border-border">
+                <p className="text-[9px] text-muted-foreground font-bold uppercase">Fastest</p>
+                <p className="text-lg font-semibold text-primary">
                   {resolvedAlerts.length > 0 
                     ? Math.min(...resolvedAlerts.map(a => {
                         const created = new Date(a.createdAt);
@@ -243,9 +243,9 @@ export default function AlertsManagement() {
                     : '—'}
                 </p>
               </div>
-              <div className="bg-black p-3 rounded-lg border border-zinc-800">
-                <p className="text-[9px] text-zinc-600 font-bold uppercase">Today</p>
-                <p className="text-lg font-semibold text-zinc-200">
+              <div className="bg-card p-3 rounded-lg border border-border">
+                <p className="text-[9px] text-muted-foreground font-bold uppercase">Today</p>
+                <p className="text-lg font-semibold text-foreground">
                    {resolvedAlerts.filter(a => {
                     const resolved = new Date(a.resolvedAt);
                     const today = new Date();
@@ -257,12 +257,12 @@ export default function AlertsManagement() {
           </div>
 
           {/* History shortcut */}
-          <div className="bg-black border border-zinc-800 rounded-xl p-4 flex items-center justify-between group cursor-pointer hover:border-zinc-600 transition-all">
+          <div className="bg-card border border-border rounded-xl p-4 flex items-center justify-between group cursor-pointer hover:border-border/80 transition-all">
             <div className="flex items-center gap-3">
-              <History className="h-4 w-4 text-zinc-500" />
-              <span className="text-xs text-zinc-500 font-bold uppercase tracking-tighter group-hover:text-zinc-200">Archive & Logs</span>
+              <History className="h-4 w-4 text-muted-foreground" />
+              <span className="text-xs text-muted-foreground font-bold uppercase tracking-tighter group-hover:text-foreground">Archive & Logs</span>
             </div>
-            <MoreVertical className="h-3 w-3 text-zinc-700" />
+            <MoreVertical className="h-3 w-3 text-muted-foreground" />
           </div>
         </div>
 

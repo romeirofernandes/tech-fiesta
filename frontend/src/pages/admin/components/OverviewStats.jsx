@@ -89,9 +89,9 @@ export default function OverviewStats() {
             <div>
               <p className="text-sm text-muted-foreground">Active Alerts</p>
               <p className="text-2xl font-bold">{stats.activeAlerts}</p>
-              <p className="text-xs text-red-600 mt-1">Requires attention</p>
+              <p className="text-xs text-destructive mt-1">Requires attention</p>
             </div>
-            <AlertCircle className="h-8 w-8 text-red-500" />
+            <AlertCircle className="h-8 w-8 text-destructive" />
           </CardContent>
         </Card>
 
@@ -100,9 +100,9 @@ export default function OverviewStats() {
             <div>
               <p className="text-sm text-muted-foreground">Avg Health Score</p>
               <p className="text-2xl font-bold">{stats.avgHealthScore}%</p>
-              <p className="text-xs text-blue-600 mt-1">Overall health</p>
+              <p className="text-xs text-primary mt-1">Overall health</p>
             </div>
-            <Heart className="h-8 w-8 text-blue-500" />
+            <Heart className="h-8 w-8 text-primary" />
           </CardContent>
         </Card>
       </div>

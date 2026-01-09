@@ -49,8 +49,8 @@ export default function OperationalInsights() {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="flex items-center gap-3">
-          <div className="w-5 h-5 border-2 border-black border-t-transparent rounded-full animate-spin"></div>
-          <span className="text-sm text-gray-600">Loading data...</span>
+          <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+          <span className="text-sm text-muted-foreground">Loading data...</span>
         </div>
       </div>
     );
@@ -58,11 +58,11 @@ export default function OperationalInsights() {
 
   if (data.error) {
     return (
-      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-        <p className="text-sm text-red-800">Error: {data.error}</p>
+      <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
+        <p className="text-sm text-destructive">Error: {data.error}</p>
         <button 
           onClick={fetchData}
-          className="mt-2 text-sm text-red-600 hover:text-red-800 font-medium"
+          className="mt-2 text-sm text-destructive hover:text-destructive/80 font-medium"
         >
           Retry
         </button>
@@ -162,75 +162,75 @@ export default function OperationalInsights() {
     <div className="space-y-6">
       {/* Compact Summary Stats */}
       <div className="grid grid-cols-4 gap-4">
-        <div className="bg-white dark:bg-black rounded-lg p-4 shadow-sm border border-gray-200 dark:border-zinc-800">
+        <div className="bg-card rounded-lg p-4 shadow-sm border border-border">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-              <MapPin className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+            <div className="p-2 bg-chart-2/20 rounded-lg">
+              <MapPin className="h-5 w-5 text-chart-2" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">{data.farms.length}</p>
-              <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">Farms</p>
+              <p className="text-2xl font-bold text-foreground">{data.farms.length}</p>
+              <p className="text-xs text-muted-foreground uppercase tracking-wide">Farms</p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white dark:bg-black rounded-lg p-4 shadow-sm border border-gray-200 dark:border-zinc-800">
+        <div className="bg-card rounded-lg p-4 shadow-sm border border-border">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
-              <Users className="h-5 w-5 text-green-600 dark:text-green-400" />
+            <div className="p-2 bg-primary/20 rounded-lg">
+              <Users className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">{data.animals.length}</p>
-              <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">Animals</p>
+              <p className="text-2xl font-bold text-foreground">{data.animals.length}</p>
+              <p className="text-xs text-muted-foreground uppercase tracking-wide">Animals</p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white dark:bg-black rounded-lg p-4 shadow-sm border border-gray-200 dark:border-zinc-800">
+        <div className="bg-card rounded-lg p-4 shadow-sm border border-border">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
-              <TrendingUp className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+            <div className="p-2 bg-chart-5/20 rounded-lg">
+              <TrendingUp className="h-5 w-5 text-chart-5" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
+              <p className="text-2xl font-bold text-foreground">
                 {data.farms.length > 0 ? Math.round(data.animals.length / data.farms.length) : 0}
               </p>
-              <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">Avg/Farm</p>
+              <p className="text-xs text-muted-foreground uppercase tracking-wide">Avg/Farm</p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white dark:bg-black rounded-lg p-4 shadow-sm border border-gray-200 dark:border-zinc-800">
+        <div className="bg-card rounded-lg p-4 shadow-sm border border-border">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
-              <Activity className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+            <div className="p-2 bg-chart-3/20 rounded-lg">
+              <Activity className="h-5 w-5 text-chart-3" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">{speciesData.length}</p>
-              <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">Species</p>
+              <p className="text-2xl font-bold text-foreground">{speciesData.length}</p>
+              <p className="text-xs text-muted-foreground uppercase tracking-wide">Species</p>
             </div>
           </div>
         </div>
       </div>
 
       {/* Controls */}
-      <div className="bg-white dark:bg-black rounded-lg p-4 shadow-sm border border-gray-200 dark:border-zinc-800">
+      <div className="bg-card rounded-lg p-4 shadow-sm border border-border">
         <div className="flex items-center gap-3">
           <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-gray-500" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <input
               type="text"
               placeholder="Search farms..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-black text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full pl-9 pr-3 py-2 text-sm border border-border rounded-lg bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
             />
           </div>
           
           <select
             value={filterHealth}
             onChange={(e) => setFilterHealth(e.target.value)}
-            className="px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-black text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="px-3 py-2 text-sm border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
           >
             <option value="all">All Health</option>
             <option value="good">≥80% Healthy</option>
@@ -241,8 +241,8 @@ export default function OperationalInsights() {
             onClick={() => toggleSort('animals')}
             className={`px-3 py-2 text-sm rounded-lg font-medium transition-colors ${
               sortBy === 'animals' 
-                ? 'bg-black text-white' 
-                : 'bg-white dark:bg-black border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-black'
+                ? 'bg-primary text-primary-foreground' 
+                : 'bg-background border border-border text-foreground hover:bg-accent'
             }`}
           >
             Animals {sortBy === 'animals' && (sortOrder === 'asc' ? '↑' : '↓')}
@@ -252,8 +252,8 @@ export default function OperationalInsights() {
             onClick={() => toggleSort('health')}
             className={`px-3 py-2 text-sm rounded-lg font-medium transition-colors ${
               sortBy === 'health' 
-                ? 'bg-black text-white' 
-                : 'bg-white dark:bg-black border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-black'
+                ? 'bg-primary text-primary-foreground' 
+                : 'bg-background border border-border text-foreground hover:bg-accent'
             }`}
           >
             Health {sortBy === 'health' && (sortOrder === 'asc' ? '↑' : '↓')}
@@ -263,8 +263,8 @@ export default function OperationalInsights() {
             onClick={() => toggleSort('species')}
             className={`px-3 py-2 text-sm rounded-lg font-medium transition-colors ${
               sortBy === 'species' 
-                ? 'bg-black text-white' 
-                : 'bg-white dark:bg-black border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-black'
+                ? 'bg-primary text-primary-foreground' 
+                : 'bg-background border border-border text-foreground hover:bg-accent'
             }`}
           >
             Diversity {sortBy === 'species' && (sortOrder === 'asc' ? '↑' : '↓')}
@@ -273,50 +273,50 @@ export default function OperationalInsights() {
       </div>
 
       {/* Compact Table */}
-      <div className="bg-white dark:bg-black rounded-lg shadow-sm border border-gray-200 dark:border-zinc-800 overflow-hidden">
-        <div className="px-4 py-3 bg-gray-50 dark:bg-black border-b border-gray-200 dark:border-zinc-800">
-          <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Farm Operations ({filteredFarms.length})</h3>
+      <div className="bg-card rounded-lg shadow-sm border border-border overflow-hidden">
+        <div className="px-4 py-3 bg-muted border-b border-border">
+          <h3 className="text-sm font-semibold text-foreground">Farm Operations ({filteredFarms.length})</h3>
         </div>
         
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gray-50 dark:bg-black border-b border-gray-200 dark:border-zinc-800">
+            <thead className="bg-muted border-b border-border">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Farm</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Location</th>
-                <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Animals</th>
-                <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Species</th>
-                <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Health</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Distribution</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Farm</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Location</th>
+                <th className="px-4 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">Animals</th>
+                <th className="px-4 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">Species</th>
+                <th className="px-4 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">Health</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Distribution</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+            <tbody className="divide-y divide-border">
               {filteredFarms.length === 0 ? (
                 <tr>
-                  <td colSpan="6" className="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
+                  <td colSpan="6" className="px-4 py-8 text-center text-sm text-muted-foreground">
                     No farms found
                   </td>
                 </tr>
               ) : (
                 filteredFarms.map((farm, idx) => (
-                  <tr key={farm._id} className={`hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors ${idx % 2 === 0 ? 'bg-white dark:bg-black' : 'bg-gray-50/50 dark:bg-black/50'}`}>
+                  <tr key={farm._id} className={`hover:bg-accent transition-colors ${idx % 2 === 0 ? 'bg-card' : 'bg-muted/50'}`}>
                     <td className="px-4 py-3">
-                      <p className="text-sm font-medium text-gray-900 dark:text-white">{farm.name}</p>
+                      <p className="text-sm font-medium text-foreground">{farm.name}</p>
                     </td>
                     <td className="px-4 py-3">
-                      <p className="text-sm text-gray-600 dark:text-gray-400">{farm.location}</p>
+                      <p className="text-sm text-muted-foreground">{farm.location}</p>
                     </td>
                     <td className="px-4 py-3 text-center">
-                      <span className="text-sm font-semibold text-gray-900 dark:text-white">{farm.animalCount}</span>
+                      <span className="text-sm font-semibold text-foreground">{farm.animalCount}</span>
                     </td>
                     <td className="px-4 py-3 text-center">
-                      <span className="text-sm font-semibold text-gray-900 dark:text-white">{Object.keys(farm.speciesBreakdown).length}</span>
+                      <span className="text-sm font-semibold text-foreground">{Object.keys(farm.speciesBreakdown).length}</span>
                     </td>
                     <td className="px-4 py-3 text-center">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                         farm.healthRate >= 80 
-                          ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400' 
-                          : 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400'
+                          ? 'bg-primary/10 text-primary' 
+                          : 'bg-destructive/10 text-destructive'
                       }`}>
                         {farm.healthRate}%
                       </span>
@@ -327,7 +327,7 @@ export default function OperationalInsights() {
                           .sort((a, b) => b[1] - a[1])
                           .slice(0, 3)
                           .map(([species, count]) => (
-                            <span key={species} className="inline-flex items-center px-2 py-0.5 rounded text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
+                            <span key={species} className="inline-flex items-center px-2 py-0.5 rounded text-xs bg-muted text-foreground">
                               <span className="capitalize">{species}</span>: {count}
                             </span>
                           ))}
@@ -343,20 +343,20 @@ export default function OperationalInsights() {
 
       {/* Analytics - Side by Side */}
       <div className="grid grid-cols-2 gap-6">
-        <div className="bg-white dark:bg-black rounded-lg shadow-sm border border-gray-200 dark:border-zinc-800 p-4">
-          <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">Age Distribution</h4>
+        <div className="bg-card rounded-lg shadow-sm border border-border p-4">
+          <h4 className="text-sm font-semibold text-foreground mb-4">Age Distribution</h4>
           <div className="space-y-3">
             {Object.entries(ageDistribution).map(([range, count]) => {
               const percentage = data.animals.length > 0 ? Math.round((count / data.animals.length) * 100) : 0;
               return (
                 <div key={range}>
                   <div className="flex justify-between items-center mb-1">
-                    <span className="text-xs text-gray-600 dark:text-gray-400">{range}</span>
-                    <span className="text-xs font-medium text-gray-900 dark:text-white">{count} ({percentage}%)</span>
+                    <span className="text-xs text-muted-foreground">{range}</span>
+                    <span className="text-xs font-medium text-foreground">{count} ({percentage}%)</span>
                   </div>
-                  <div className="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-2">
+                  <div className="w-full bg-muted rounded-full h-2">
                     <div 
-                      className="h-2 rounded-full bg-black dark:bg-blue-500"
+                      className="h-2 rounded-full bg-primary"
                       style={{ width: `${percentage}%` }}
                     />
                   </div>
@@ -366,17 +366,17 @@ export default function OperationalInsights() {
           </div>
         </div>
 
-        <div className="bg-white dark:bg-black rounded-lg shadow-sm border border-gray-200 dark:border-zinc-800 p-4">
-          <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">Species Overview</h4>
+        <div className="bg-card rounded-lg shadow-sm border border-border p-4">
+          <h4 className="text-sm font-semibold text-foreground mb-4">Species Overview</h4>
           <div className="space-y-2">
             {speciesData.map(([species, count]) => {
               const percentage = Math.round((count / data.animals.length) * 100);
               return (
                 <div key={species} className="flex items-center justify-between py-2">
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300 capitalize">{species}</span>
+                  <span className="text-sm font-medium text-foreground capitalize">{species}</span>
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-bold text-gray-900 dark:text-white">{count}</span>
-                    <span className="text-xs text-gray-500 dark:text-gray-400">({percentage}%)</span>
+                    <span className="text-sm font-bold text-foreground">{count}</span>
+                    <span className="text-xs text-muted-foreground">({percentage}%)</span>
                   </div>
                 </div>
               );

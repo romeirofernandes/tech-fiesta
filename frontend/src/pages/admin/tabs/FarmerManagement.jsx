@@ -71,7 +71,7 @@ export default function FarmerManagement() {
                 <p className="text-2xl font-bold">{activeFarmers.length}</p>
                 <p className="text-xs text-muted-foreground mt-1">With farms</p>
               </div>
-              <MapPin className="h-8 w-8 text-green-500" />
+              <MapPin className="h-8 w-8 text-primary" />
             </div>
           </CardContent>
         </Card>
@@ -87,7 +87,7 @@ export default function FarmerManagement() {
                     : 0}
                 </p>
               </div>
-              <MapPin className="h-8 w-8 text-blue-500" />
+              <MapPin className="h-8 w-8 text-accent-foreground" />
             </div>
           </CardContent>
         </Card>
@@ -107,7 +107,7 @@ export default function FarmerManagement() {
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">New farmers</p>
               </div>
-              <Calendar className="h-8 w-8 text-purple-500" />
+              <Calendar className="h-8 w-8 text-secondary-foreground" />
             </div>
           </CardContent>
         </Card>

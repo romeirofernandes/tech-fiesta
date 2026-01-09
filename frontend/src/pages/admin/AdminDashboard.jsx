@@ -8,9 +8,27 @@ import {
   Bell, 
   UserCircle, 
   LogOut,
-  Settings,
-  Palette
+  Moon,
+  Sun
 } from "lucide-react";
+import { useTheme } from "@/context/ThemeContext";
+
+// Import admin sidebar components
+import {
+  AdminSidebarProvider,
+  AdminSidebar,
+  AdminSidebarHeader,
+  AdminSidebarContent,
+  AdminSidebarGroup,
+  AdminSidebarGroupLabel,
+  AdminSidebarGroupContent,
+  AdminSidebarMenu,
+  AdminSidebarMenuItem,
+  AdminSidebarMenuButton,
+  AdminSidebarFooter,
+  AdminSidebarInset,
+  AdminSidebarSeparator,
+} from "@/components/admin/AdminSidebar";
 
 // Import your tab components
 import OverviewStats from "./components/OverviewStats";
@@ -22,6 +40,7 @@ import FarmerManagement from "./tabs/FarmerManagement";
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState("insights");
+  const { theme, setTheme } = useTheme();
 
   // Consistent navigation items matching your Sidebar structure
   const navItems = [
@@ -33,99 +52,116 @@ export default function AdminDashboard() {
   ];
 
   return (
-    <div className="flex h-screen w-full bg-black text-zinc-100 overflow-hidden font-sans">
-      
-      {/* --- SIDEBAR: Matching your AppSidebar colors exactly --- */}
-      <aside className="w-64 border-r border-zinc-800/50 flex flex-col flex-shrink-0 bg-[#0a0a0a]">
-        <div className="p-6">
-          <h2 className="text-[#22c55e] font-bold text-xl tracking-tight">पशु पहचान</h2>
-        </div>
+    <AdminSidebarProvider defaultOpen={true}>
+      <div className="flex h-screen w-full overflow-hidden">
+        
+        {/* Admin Sidebar */}
+        <AdminSidebar>
+          <AdminSidebarHeader>
+            <div className="px-4 py-2">
+              <h2 className="text-primary font-bold text-xl tracking-tight font-serif">पशु पहचान</h2>
+            </div>
+          </AdminSidebarHeader>
 
-        {/* Sidebar Menu Group */}
-        <nav className="flex-1 px-3 space-y-1">
-          <p className="px-3 text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2">Main Menu</p>
-          {navItems.map((item) => (
-            <button
-              key={item.id}
-              onClick={() => setActiveTab(item.id)}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-md transition-all text-sm font-medium group ${
-                activeTab === item.id 
-                  ? "bg-[#18181b] text-white" 
-                  : "text-zinc-400 hover:text-white hover:bg-[#18181b]/50"
-              }`}
-            >
-              <item.icon className={`h-4 w-4 ${activeTab === item.id ? "text-[#22c55e]" : "text-zinc-500 group-hover:text-zinc-300"}`} />
-              {item.label}
-            </button>
-          ))}
-        </nav>
+          <AdminSidebarContent>
+            <AdminSidebarGroup>
+              <AdminSidebarGroupLabel>Main Menu</AdminSidebarGroupLabel>
+              <AdminSidebarGroupContent>
+                <AdminSidebarMenu>
+                  {navItems.map((item) => (
+                    <AdminSidebarMenuItem key={item.id}>
+                      <AdminSidebarMenuButton
+                        isActive={activeTab === item.id}
+                        onClick={() => setActiveTab(item.id)}
+                      >
+                        <item.icon />
+                        <span>{item.label}</span>
+                      </AdminSidebarMenuButton>
+                    </AdminSidebarMenuItem>
+                  ))}
+                </AdminSidebarMenu>
+              </AdminSidebarGroupContent>
+            </AdminSidebarGroup>
+          </AdminSidebarContent>
 
-        {/* Sidebar Footer - Matching the Logout/Profile styling */}
-        <div className="p-3 border-t border-zinc-900 space-y-1 bg-[#0a0a0a]">
-          <button className="flex items-center gap-3 w-full px-3 py-2 text-zinc-400 hover:text-white hover:bg-[#18181b] rounded-md transition-all text-sm">
-            <UserCircle className="h-4 w-4 text-zinc-500" />
-            Profile
-          </button>
-          <button className="flex items-center gap-3 w-full px-3 py-2 text-zinc-400 hover:text-white hover:bg-[#18181b] rounded-md transition-all text-sm">
-            <Palette className="h-4 w-4 text-zinc-500" />
-            Theme
-          </button>
-          <button className="flex items-center gap-3 w-full px-3 py-2 text-red-500 hover:bg-red-500/10 rounded-md transition-all text-sm mt-2">
-            <LogOut className="h-4 w-4" />
-            Logout
-          </button>
-        </div>
-      </aside>
+          <AdminSidebarFooter>
+            <AdminSidebarMenu>
+              <AdminSidebarMenuItem>
+                <AdminSidebarMenuButton>
+                  <UserCircle />
+                  <span>Profile</span>
+                </AdminSidebarMenuButton>
+              </AdminSidebarMenuItem>
+              <AdminSidebarMenuItem>
+                <AdminSidebarMenuButton onClick={() => setTheme(theme === "dark" ? "light" : "dark")}>
+                  {theme === "dark" ? <Sun /> : <Moon />}
+                  <span>Theme</span>
+                </AdminSidebarMenuButton>
+              </AdminSidebarMenuItem>
+            </AdminSidebarMenu>
+            <AdminSidebarSeparator />
+            <AdminSidebarMenu>
+              <AdminSidebarMenuItem>
+                <AdminSidebarMenuButton className="text-destructive hover:text-destructive">
+                  <LogOut />
+                  <span>Logout</span>
+                </AdminSidebarMenuButton>
+              </AdminSidebarMenuItem>
+            </AdminSidebarMenu>
+          </AdminSidebarFooter>
+        </AdminSidebar>
 
-      {/* --- MAIN CONTENT AREA --- */}
-      <main className="flex-1 h-full overflow-y-auto bg-black">
-        {/* We keep the Tabs logic purely for content switching to avoid layout errors */}
-        <Tabs value={activeTab} className="w-full">
-          <div className="p-8 max-w-[1600px] mx-auto w-full">
-            
-            <TabsContent value="insights" className="mt-0 outline-none space-y-8 border-none">
-              <header className="flex justify-between items-end">
-                <div>
-                  <h1 className="text-3xl font-bold tracking-tight text-white font-serif">Dashboard</h1>
-                  <p className="text-zinc-500 text-sm mt-1">Operational Overview</p>
-                </div>
-              </header>
-              <OverviewStats />
-              <OperationalInsights />
-            </TabsContent>
+        {/* Main Content Area */}
+        <AdminSidebarInset>
+          <div className="flex-1 h-full overflow-y-auto">
+            <Tabs value={activeTab} className="w-full">
+              <div className="p-8 max-w-[1600px] mx-auto w-full">
+                
+                <TabsContent value="insights" className="mt-0 outline-none space-y-8 border-none">
+                  <header className="flex justify-between items-end">
+                    <div>
+                      <h1 className="text-3xl font-bold tracking-tight text-foreground font-serif">Dashboard</h1>
+                      <p className="text-muted-foreground text-sm mt-1">Operational Overview</p>
+                    </div>
+                  </header>
+                  <OverviewStats />
+                  <OperationalInsights />
+                </TabsContent>
 
-            <TabsContent value="farmers" className="mt-0 outline-none space-y-8 border-none">
-              <header>
-                 <h1 className="text-3xl font-bold tracking-tight text-white font-serif">Farmer Management</h1>
-                 <p className="text-zinc-500 text-sm mt-1">Manage registered farmers and their holdings</p>
-              </header>
-              <FarmerManagement />
-            </TabsContent>
+                <TabsContent value="farmers" className="mt-0 outline-none space-y-8 border-none">
+                  <header>
+                    <h1 className="text-3xl font-bold tracking-tight text-foreground font-serif">Farmer Management</h1>
+                    <p className="text-muted-foreground text-sm mt-1">Manage registered farmers and their holdings</p>
+                  </header>
+                  <FarmerManagement />
+                </TabsContent>
 
-            <TabsContent value="health" className="mt-0 outline-none space-y-8 border-none">
-              <header>
-                 <h1 className="text-3xl font-bold tracking-tight text-white font-serif">Animal Health Analytics</h1>
-              </header>
-              <HealthAnalytics />
-            </TabsContent>
+                <TabsContent value="health" className="mt-0 outline-none space-y-8 border-none">
+                  <header>
+                    <h1 className="text-3xl font-bold tracking-tight text-foreground font-serif">Animal Health Analytics</h1>
+                  </header>
+                  <HealthAnalytics />
+                </TabsContent>
 
-            <TabsContent value="vaccinations" className="mt-0 outline-none space-y-8 border-none">
-              <header>
-                 <h1 className="text-3xl font-bold tracking-tight text-white font-serif">Vaccination Tracking</h1>
-              </header>
-              <VaccinationTracking />
-            </TabsContent>
+                <TabsContent value="vaccinations" className="mt-0 outline-none space-y-8 border-none">
+                  <header>
+                    <h1 className="text-3xl font-bold tracking-tight text-foreground font-serif">Vaccination Tracking</h1>
+                  </header>
+                  <VaccinationTracking />
+                </TabsContent>
 
-            <TabsContent value="alerts" className="mt-0 outline-none space-y-8 border-none">
-              <header>
-                 <h1 className="text-3xl font-bold tracking-tight text-white font-serif">System Alerts</h1>
-              </header>
-              <AlertsManagement />
-            </TabsContent>
+                <TabsContent value="alerts" className="mt-0 outline-none space-y-8 border-none">
+                  <header>
+                    <h1 className="text-3xl font-bold tracking-tight text-foreground font-serif">System Alerts</h1>
+                  </header>
+                  <AlertsManagement />
+                </TabsContent>
 
+              </div>
+            </Tabs>
           </div>
-        </Tabs>
-      </main>
-    </div>
+        </AdminSidebarInset>
+      </div>
+    </AdminSidebarProvider>
   );
 }
