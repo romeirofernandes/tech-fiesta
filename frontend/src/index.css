@@ -131,3 +131,10 @@ h1, h2, h3, h4, h5, h6 {
   font-family: 'Instrument Serif', serif;
   letter-spacing: 0.02em;
 }
+
+/* Leaflet container fix */
+.leaflet-container {
+  height: 100%;
+  width: 100%;
+  z-index: 1;
+}

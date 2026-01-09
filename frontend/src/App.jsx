@@ -18,6 +18,7 @@ import FarmDetail from './pages/farms/FarmDetail';
 import CreateFarm from './pages/farms/CreateFarm';
 import EditFarm from './pages/farms/EditFarm';
 import LiveVitals from './pages/LiveVitals';
+import AdminDashboard from './pages/admin/AdminDashboard';
 
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useUser();
@@ -130,6 +131,11 @@ function App() {
         <Route path="/live-vitals" element={
           <ProtectedRoute>
             <LiveVitals />
+          </ProtectedRoute>
+        } />
+        <Route path="/admin" element={
+          <ProtectedRoute>
+            <AdminDashboard></AdminDashboard>
           </ProtectedRoute>
         } />
         <Route path="*" element={<NotFound />} />
