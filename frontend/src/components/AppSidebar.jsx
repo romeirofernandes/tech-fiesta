@@ -1,4 +1,4 @@
-import { Calendar, Home, Tractor, Beef, Syringe, LogOut, User } from "lucide-react"
+import { Calendar, Home, Tractor, Beef, Syringe, LogOut, User, Activity } from "lucide-react"
 import { useUser } from "../context/UserContext"
 import { ThemeToggle } from "./ThemeToggle"
 import { Button } from "./ui/button"
@@ -38,6 +38,11 @@ const items = [
     title: "Vaccination Schedules",
     url: "/vaccination-schedules",
     icon: Syringe,
+  },
+  {
+    title: "Live Vitals",
+    url: "/live-vitals",
+    icon: Activity,
   },
 ]
 

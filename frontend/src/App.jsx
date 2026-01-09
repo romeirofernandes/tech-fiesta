@@ -17,6 +17,7 @@ import Farms from './pages/farms/Farms';
 import FarmDetail from './pages/farms/FarmDetail';
 import CreateFarm from './pages/farms/CreateFarm';
 import EditFarm from './pages/farms/EditFarm';
+import LiveVitals from './pages/LiveVitals';
 
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useUser();
@@ -124,6 +125,11 @@ function App() {
         <Route path="/farms/:id/edit" element={
           <ProtectedRoute>
             <EditFarm />
+          </ProtectedRoute>
+        } />
+        <Route path="/live-vitals" element={
+          <ProtectedRoute>
+            <LiveVitals />
           </ProtectedRoute>
         } />
         <Route path="*" element={<NotFound />} />
