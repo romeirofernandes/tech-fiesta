@@ -260,7 +260,7 @@ def main():
     bridge = ESP32Bridge(
         port=port,
         baudrate=115200,
-        api_base_url="http://127.0.0.1:8000/api/iot"
+        api_base_url="http://127.0.0.1:8080/api/iot"
     )
     
     # Run the bridge

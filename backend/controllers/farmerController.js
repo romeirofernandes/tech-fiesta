@@ -94,3 +94,17 @@ exports.updateFarmer = async (req, res) => {
     res.status(500).json({ message: 'Server Error' });
   }
 };
+
+
+exports.getAllFarmers = async (req, res) => {
+  try {
+    const farmers = await Farmer.find()
+      .populate('farms', 'name location')
+      .sort({ createdAt: -1 });
+
+    res.status(200).json(farmers);
+  } catch (error) {
+    console.error('Error fetching farmers:', error);
+    res.status(500).json({ message: 'Server Error' });
+  }
+};

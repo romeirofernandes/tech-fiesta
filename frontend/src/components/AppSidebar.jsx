@@ -1,8 +1,9 @@
-import { Calendar, Home, Tractor, Beef, Syringe, LogOut, User, Activity } from "lucide-react"
+import { Calendar, Home, Tractor, Beef, Syringe, LogOut, User, Activity, Moon, Sun } from "lucide-react"
 import { useUser } from "../context/UserContext"
-import { ThemeToggle } from "./ThemeToggle"
+import { useTheme } from "../context/ThemeContext"
 import { Button } from "./ui/button"
 import { cn } from "@/lib/utils"
+import { useLocation, useNavigate } from "react-router-dom"
 
 import {
   Sidebar,
@@ -48,7 +49,18 @@ const items = [
 
 export function AppSidebar() {
   const { user, logout } = useUser();
+  const { theme, setTheme } = useTheme();
   const { state } = useSidebar();
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const isActive = (url) => {
+    return location.pathname === url;
+  };
+
+  const toggleTheme = () => {
+    setTheme(theme === "dark" ? "light" : "dark");
+  };
 
   return (
     <Sidebar collapsible="icon">
@@ -59,7 +71,13 @@ export function AppSidebar() {
             <SidebarMenu>
               {items.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
+                  <SidebarMenuButton 
+                    asChild 
+                    isActive={isActive(item.url)}
+                    className={cn(
+                      state === "expanded" && isActive(item.url) && "bg-accent/50 border-l-4 border-primary pl-2"
+                    )}
+                  >
                     <a href={item.url}>
                       <item.icon />
                       <span>{item.title}</span>
@@ -74,28 +92,38 @@ export function AppSidebar() {
       <SidebarFooter>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton asChild>
-              <a href="/profile">
-                <User />
-                <span>Profile</span>
+            <SidebarMenuButton asChild isActive={isActive("/profile")} className="w-full">
+              <a href="/profile" className="flex items-center w-full">
+                <User className={cn(state === "expanded" && "ml-2")} />
+                {state === "expanded" && <span>Profile</span>}
               </a>
             </SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
-            <div className={cn("flex items-center gap-2", state === "collapsed" ? "justify-center" : "px-2")}>
-              <ThemeToggle />
-              {state === "expanded" && <span className="text-sm text-muted-foreground">Theme</span>}
-            </div>
+            <SidebarMenuButton asChild className="w-full">
+              <button 
+                onClick={toggleTheme}
+                className="flex items-center w-full cursor-pointer"
+              >
+                {theme === "dark" ? (
+                  <Moon className={cn("h-[1.2rem] w-[1.2rem]", state === "expanded" && "ml-2")} />
+                ) : (
+                  <Sun className={cn("h-[1.2rem] w-[1.2rem]", state === "expanded" && "ml-2")} />
+                )}
+                {state === "expanded" && <span>Theme</span>}
+              </button>
+            </SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
-            <Button 
-              variant="ghost" 
-              className="w-full justify-start" 
-              onClick={logout}
-            >
-              <LogOut className={cn(state === "collapsed" ? "" : "mr-2")} />
-              {state === "expanded" && <span>Logout</span>}
-            </Button>
+            <SidebarMenuButton asChild className="w-full">
+              <button 
+                onClick={logout}
+                className="flex items-center w-full mb-4 cursor-pointer text-red-600 hover:text-red-700 dark:text-red-500 dark:hover:text-red-600"
+              >
+                <LogOut className={cn(state === "expanded" && "ml-2")} />
+                {state === "expanded" && <span>Logout</span>}
+              </button>
+            </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>

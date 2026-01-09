@@ -3,16 +3,17 @@ import { Button } from "@/components/ui/button"
 import { useTheme } from "../context/ThemeContext"
 import { cn } from "@/lib/utils"
 
-export function ThemeToggle({ className, ...props }) {
+export function ThemeToggle({ className, showLabel = false, variant = "outline", ...props }) {
   const { theme, setTheme } = useTheme()
 
   return (
     <Button
-      variant="outline"
-      size={className ? "default" : "icon"}
+      variant={variant}
+      size={showLabel ? "default" : "icon"}
       className={cn(
         className,
-        "focus:outline-none focus-visible:outline-none focus-visible:ring-0 relative"
+        "focus:outline-none focus-visible:outline-none focus-visible:ring-0 relative",
+        variant === "ghost" && "border-0"
       )}
       aria-label="Toggle theme"
       onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
@@ -30,7 +31,7 @@ export function ThemeToggle({ className, ...props }) {
           theme === "dark" ? "opacity-100 scale-100" : "opacity-0 scale-0"
         )}
       />
-      {className && <span className="ml-2">Toggle Theme</span>}
+      {showLabel && <span className="ml-2">Toggle Theme</span>}
       <span className="sr-only">Toggle theme</span>
     </Button>
   )
