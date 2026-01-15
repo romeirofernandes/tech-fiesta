@@ -21,11 +21,6 @@ import {
 // Menu items.
 const items = [
   {
-    title: "Dashboard",
-    url: "/dashboard",
-    icon: Home,
-  },
-  {
     title: "Farms",
     url: "/farms",
     icon: Tractor,
@@ -34,11 +29,6 @@ const items = [
     title: "Animals",
     url: "/animals",
     icon: Beef,
-  },
-  {
-    title: "Vaccination Schedules",
-    url: "/vaccination-schedules",
-    icon: Syringe,
   },
   {
     title: "Live Vitals",
