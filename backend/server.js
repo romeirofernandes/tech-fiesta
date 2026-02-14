@@ -14,7 +14,7 @@ const productionRoutes = require('./routes/productionRoutes');
 const expenseRoutes = require('./routes/expenseRoutes');
 const saleRoutes = require('./routes/saleRoutes');
 const marketPriceRoutes = require('./routes/marketPriceRoutes');
-const biRoutes = require('./routes/biRoutes');    
+const biRoutes = require('./routes/biRoutes');
 const heartRateThresholdRoutes = require('./routes/heartRateThresholdRoutes');
 
 const app = express();
@@ -33,7 +33,7 @@ app.use('/api/animals', animalRoutes);
 app.use('/api/farms', farmRoutes);
 app.use('/api/alerts', alertRoutes);
 app.use('/api/sensor-events', sensorEventRoutes);
-app.use('/api/vaccination-events', vaccinationEventRoutes); 
+app.use('/api/vaccination-events', vaccinationEventRoutes);
 app.use('/api/health-snapshots', HealthSnapshotRoutes);
 app.use('/api/farm-images', farmImageRoutes);
 app.use('/api/production-records', productionRoutes);
@@ -42,11 +42,14 @@ app.use('/api/sales', saleRoutes);
 app.use('/api/market-prices', marketPriceRoutes);
 app.use('/api/bi', biRoutes);
 app.use('/api/heart-rate-thresholds', heartRateThresholdRoutes);
+app.use('/api/schemes', require('./routes/schemeRoutes'));
+app.use('/api/marketplace', require('./routes/marketplaceRoutes'));
+app.use('/api/payments', require('./routes/paymentRoutes'));
 
 const port = process.env.PORT;
 
 app.get('/', (req, res) => {
-  res.send('Backend is up and running!');
+    res.send('Backend is up and running!');
 });
 
 app.listen(port, () => {
