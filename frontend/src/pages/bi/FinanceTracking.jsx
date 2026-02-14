@@ -175,7 +175,7 @@ export default function FinanceTracking() {
 
   return (
     <Layout loading={loading}>
-      <div className="space-y-6 max-w-7xl mx-auto">
+      <div className="space-y-6 max-w-full px-6 mx-auto p-4 md:p-6 lg:p-8">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
             <h1 className="text-3xl font-bold tracking-tight font-serif">Finance Tracking</h1>

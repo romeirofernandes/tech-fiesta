@@ -146,11 +146,8 @@ export default function MarketPricesAdmin() {
         `${API_BASE}/api/market-prices/import?commodity=${importCommodity}`
       );
       const data = res.data;
-      if ((data.imported || 0) > 0 || (data.updated || 0) > 0) {
-        const imported = data.imported || 0;
-        const updated = data.updated || 0;
-        const action = imported > 0 ? `Imported ${imported}` : `Updated ${updated}`;
-        toast.success(`${action} price for ${data.commodityLabel || importCommodity} (${data.skipped || 0} skipped)`);
+      if (data.imported > 0) {
+        toast.success(`Imported ${data.imported} prices for ${data.commodityLabel || importCommodity} (${data.skipped} skipped)`);
       } else if (data.message) {
         toast.info(data.message);
       } else {
@@ -169,9 +166,7 @@ export default function MarketPricesAdmin() {
     try {
       const res = await axios.post(`${API_BASE}/api/market-prices/import-all`);
       const data = res.data;
-      toast.success(
-        `Imported ${data.totalImported || 0}, updated ${data.totalUpdated || 0} (${data.totalSkipped || 0} skipped) across ${data.results?.length || 0} commodities`
-      );
+      toast.success(`Imported ${data.totalImported} total prices (${data.totalSkipped} skipped) across ${data.results?.length || 0} commodities`);
       fetchPrices();
     } catch (err) {
       toast.error(err.response?.data?.message || "Import all failed");
@@ -213,7 +208,7 @@ export default function MarketPricesAdmin() {
         <CardContent>
           <div className="flex items-center gap-3 flex-wrap">
             <Select value={importCommodity} onValueChange={setImportCommodity}>
-              <SelectTrigger className="w-[200px]">
+              <SelectTrigger className="w-50">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -247,7 +242,7 @@ export default function MarketPricesAdmin() {
       <div className="flex justify-between items-center">
         <div className="flex items-center gap-3">
           <Select value={filterCommodity} onValueChange={handleFilterCommodityChange}>
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger className="w-45">
               <SelectValue placeholder="All Commodities" />
             </SelectTrigger>
             <SelectContent>

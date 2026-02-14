@@ -42,15 +42,15 @@ const items = [
     icon: Calendar,
   },
   {
-    title: "Live Vitals",
-    url: "/live-vitals",
-    icon: Activity,
-  },
-  {
     title: "BI & Analytics",
     url: "/bi",
     icon: BarChart3,
   },
+  {
+    title: "Live Vitals",
+    url: "/live-vitals",
+    icon: Activity,
+  }
 ]
 
 export function AppSidebar() {
