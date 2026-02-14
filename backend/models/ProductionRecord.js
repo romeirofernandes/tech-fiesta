@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const { PRODUCT_TYPE_VALUES, PRODUCT_UNITS } = require('../constants/biEnums');
+const { PRODUCTION_PRODUCT_TYPE_VALUES, PRODUCT_UNITS } = require('../constants/biEnums');
 
 const productionRecordSchema = new mongoose.Schema({
   farmId: {
@@ -17,7 +17,7 @@ const productionRecordSchema = new mongoose.Schema({
   productType: {
     type: String,
     required: true,
-    enum: PRODUCT_TYPE_VALUES
+    enum: PRODUCTION_PRODUCT_TYPE_VALUES
   },
   quantity: {
     type: Number,
