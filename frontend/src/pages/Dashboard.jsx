@@ -13,6 +13,7 @@ import {
   Bell,
   MapPin,
   ArrowRight,
+  Sprout,
 } from "lucide-react";
 import { MapContainer, TileLayer, Marker, Tooltip } from "react-leaflet";
 import { useTheme } from "@/context/ThemeContext";
@@ -143,9 +144,9 @@ export default function Dashboard() {
   const avgHealthScore =
     healthSnapshots.length > 0
       ? Math.round(
-          healthSnapshots.reduce((sum, h) => sum + (h.score || 0), 0) /
-            healthSnapshots.length
-        )
+        healthSnapshots.reduce((sum, h) => sum + (h.score || 0), 0) /
+        healthSnapshots.length
+      )
       : 0;
 
   // Species breakdown
@@ -304,231 +305,238 @@ export default function Dashboard() {
                 <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">
                   VACCINATIONS DUE
                 </p>
-                <div className="flex items-baseline gap-2">
-                  <p className="text-2xl font-semibold tracking-tight text-foreground">
-                    {vaccinationsDue.length}
-                  </p>
-                  <p className="text-[10px] text-muted-foreground font-medium">
-                    {vaccinationsOverdue.length > 0 ? (
-                      <span className="text-chart-5 font-bold">
-                        {vaccinationsOverdue.length} overdue
-                      </span>
-                    ) : (
-                      "This week"
-                    )}
-                  </p>
-                </div>
               </div>
-            </CardContent>
-          </Card>
-        </div>
+          </CardContent>
+        </Card>
 
-        {/* Secondary Stats */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <Card>
-            <CardContent className="p-4 flex items-center gap-4">
-              <div className="bg-primary/10 p-3 rounded-lg">
-                <Heart className="h-5 w-5 text-primary" />
-              </div>
-              <div>
-                <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">
-                  AVG HEALTH SCORE
-                </p>
-                <div className="flex items-baseline gap-2">
-                  <p className="text-2xl font-semibold tracking-tight text-foreground">
-                    {avgHealthScore > 0 ? `${avgHealthScore}/100` : "—"}
-                  </p>
-                  <p className="text-[10px] text-muted-foreground font-medium">
-                    {healthSnapshots.length} records
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-4 flex items-center gap-4">
-              <div className="bg-chart-4/10 p-3 rounded-lg">
-                <Activity className="h-5 w-5 text-chart-4" />
-              </div>
-              <div>
-                <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">
-                  SENSOR READINGS
-                </p>
-                <div className="flex items-baseline gap-2">
-                  <p className="text-2xl font-semibold tracking-tight text-foreground">
-                    {sensorEvents.length}
-                  </p>
-                  <p className="text-[10px] text-muted-foreground font-medium">
-                    Heart rate events
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-4">
-              <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold mb-3">
-                SPECIES BREAKDOWN
+        <Card
+          className="cursor-pointer hover:shadow-md transition-shadow bg-primary/5 border-primary/20"
+          onClick={() => navigate("/schemes")}
+        >
+          <CardContent className="p-4 flex items-center gap-4">
+            <div className="bg-primary/20 p-3 rounded-lg">
+              <Sprout className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">
+                GOVT SCHEMES
               </p>
-              <div className="flex flex-wrap gap-2">
-                {Object.entries(speciesCount).map(([species, count]) => (
-                  <Badge
-                    key={species}
-                    variant="outline"
-                    className="text-xs capitalize gap-1"
-                  >
-                    {speciesEmojis[species] || "🐾"} {species}: {count}
-                  </Badge>
-                ))}
-                {Object.keys(speciesCount).length === 0 && (
-                  <span className="text-xs text-muted-foreground">
-                    No animals yet
-                  </span>
-                )}
+              <div className="flex items-baseline gap-2">
+                <p className="text-xl font-semibold tracking-tight text-foreground">
+                  View
+                </p>
+                <ArrowRight className="h-4 w-4 text-muted-foreground" />
               </div>
-            </CardContent>
-          </Card>
-        </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
-        {/* Map and Recent Alerts */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Farm Map */}
-          <Card className="lg:col-span-2">
-            <CardHeader className="pb-2">
-              <CardTitle className="flex items-center gap-2 text-sm">
-                <MapPin className="h-4 w-4" />
-                Farm Locations
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-0">
-              <div className="h-[400px] relative rounded-b-xl overflow-hidden">
-                {mounted && (
-                  <MapContainer
-                    center={[centerLat, centerLng]}
-                    zoom={farmMarkers.length > 0 ? 7 : 5}
-                    style={{ height: "100%", width: "100%" }}
-                    zoomControl={true}
-                    attributionControl={false}
-                  >
-                    <TileLayer url={tileUrl} maxZoom={20} />
-
-                    {farmMarkers.map((farm) => (
-                      <Marker
-                        key={farm._id}
-                        position={[farm.lat, farm.lng]}
-                        icon={createBarnIcon(isDark)}
-                        eventHandlers={{
-                          click: () => navigate(`/farms/${farm._id}`),
-                        }}
-                      >
-                        <Tooltip direction="top" offset={[0, -5]}>
-                          <div className="text-sm">
-                            <p className="font-semibold">{farm.name}</p>
-                            <p className="text-xs text-muted-foreground">
-                              {farm.animalCount} animal
-                              {farm.animalCount !== 1 ? "s" : ""}
-                            </p>
-                          </div>
-                        </Tooltip>
-                      </Marker>
-                    ))}
-                  </MapContainer>
-                )}
-                {farmMarkers.length === 0 && !loading && (
-                  <div className="absolute inset-0 flex items-center justify-center z-[1000] pointer-events-none">
-                    <div className="bg-card/90 backdrop-blur-sm border border-border rounded-lg p-4 text-center pointer-events-auto">
-                      <MapPin className="h-8 w-8 text-muted-foreground/50 mx-auto mb-2" />
-                      <p className="text-sm text-muted-foreground">
-                        No farms with locations yet
-                      </p>
-                      <Button
-                        variant="link"
-                        size="sm"
-                        onClick={() => navigate("/farms/create")}
-                        className="mt-1"
-                      >
-                        Add a farm
-                      </Button>
-                    </div>
-                  </div>
-                )}
+      {/* Secondary Stats */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <Card>
+          <CardContent className="p-4 flex items-center gap-4">
+            <div className="bg-primary/10 p-3 rounded-lg">
+              <Heart className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">
+                AVG HEALTH SCORE
+              </p>
+              <div className="flex items-baseline gap-2">
+                <p className="text-2xl font-semibold tracking-tight text-foreground">
+                  {avgHealthScore > 0 ? `${avgHealthScore}/100` : "—"}
+                </p>
+                <p className="text-[10px] text-muted-foreground font-medium">
+                  {healthSnapshots.length} records
+                </p>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </CardContent>
+        </Card>
 
-          {/* Recent Alerts */}
-          <Card>
-            <CardHeader className="pb-2">
-              <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center gap-2 text-sm">
-                  <Bell className="h-4 w-4" />
-                  Recent Alerts
-                </CardTitle>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => navigate("/alerts")}
-                  className="text-xs text-muted-foreground"
+        <Card>
+          <CardContent className="p-4 flex items-center gap-4">
+            <div className="bg-chart-4/10 p-3 rounded-lg">
+              <Activity className="h-5 w-5 text-chart-4" />
+            </div>
+            <div>
+              <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">
+                SENSOR READINGS
+              </p>
+              <div className="flex items-baseline gap-2">
+                <p className="text-2xl font-semibold tracking-tight text-foreground">
+                  {sensorEvents.length}
+                </p>
+                <p className="text-[10px] text-muted-foreground font-medium">
+                  Heart rate events
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold mb-3">
+              SPECIES BREAKDOWN
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {Object.entries(speciesCount).map(([species, count]) => (
+                <Badge
+                  key={species}
+                  variant="outline"
+                  className="text-xs capitalize gap-1"
                 >
-                  View all
-                  <ArrowRight className="ml-1 h-3 w-3" />
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent className="p-0">
-              {recentAlerts.length === 0 ? (
-                <div className="p-6 text-center">
-                  <Bell className="h-8 w-8 text-muted-foreground/30 mx-auto mb-2" />
-                  <p className="text-sm text-muted-foreground">
-                    No active alerts
-                  </p>
-                </div>
-              ) : (
-                <div className="divide-y divide-border">
-                  {recentAlerts.map((alert) => (
-                    <div
-                      key={alert._id}
-                      className="px-4 py-3 hover:bg-muted/50 transition-colors"
+                  {speciesEmojis[species] || "🐾"} {species}: {count}
+                </Badge>
+              ))}
+              {Object.keys(speciesCount).length === 0 && (
+                <span className="text-xs text-muted-foreground">
+                  No animals yet
+                </span>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Map and Recent Alerts */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Farm Map */}
+        <Card className="lg:col-span-2">
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-sm">
+              <MapPin className="h-4 w-4" />
+              Farm Locations
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="h-[400px] relative rounded-b-xl overflow-hidden">
+              {mounted && (
+                <MapContainer
+                  center={[centerLat, centerLng]}
+                  zoom={farmMarkers.length > 0 ? 7 : 5}
+                  style={{ height: "100%", width: "100%" }}
+                  zoomControl={true}
+                  attributionControl={false}
+                >
+                  <TileLayer url={tileUrl} maxZoom={20} />
+
+                  {farmMarkers.map((farm) => (
+                    <Marker
+                      key={farm._id}
+                      position={[farm.lat, farm.lng]}
+                      icon={createBarnIcon(isDark)}
+                      eventHandlers={{
+                        click: () => navigate(`/farms/${farm._id}`),
+                      }}
                     >
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <Badge
-                              className={`text-[8px] uppercase font-bold border-none px-1.5 py-0 rounded-sm ${
-                                SEVERITY_STYLES[alert.severity] ||
-                                SEVERITY_STYLES.low
-                              }`}
-                            >
-                              {alert.severity}
-                            </Badge>
-                            <span className="text-[10px] font-bold uppercase tracking-tight text-muted-foreground">
-                              {alert.type}
-                            </span>
-                          </div>
-                          <p className="text-sm text-foreground font-medium truncate">
-                            {alert.animalId?.name || "Unknown"}
-                          </p>
-                          <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">
-                            {alert.message}
+                      <Tooltip direction="top" offset={[0, -5]}>
+                        <div className="text-sm">
+                          <p className="font-semibold">{farm.name}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {farm.animalCount} animal
+                            {farm.animalCount !== 1 ? "s" : ""}
                           </p>
                         </div>
-                        <span className="text-[10px] text-muted-foreground font-mono whitespace-nowrap">
-                          {new Date(alert.createdAt).toLocaleString(undefined, {
-                            month: "short",
-                            day: "numeric",
-                          })}
-                        </span>
-                      </div>
-                    </div>
+                      </Tooltip>
+                    </Marker>
                   ))}
+                </MapContainer>
+              )}
+              {farmMarkers.length === 0 && !loading && (
+                <div className="absolute inset-0 flex items-center justify-center z-[1000] pointer-events-none">
+                  <div className="bg-card/90 backdrop-blur-sm border border-border rounded-lg p-4 text-center pointer-events-auto">
+                    <MapPin className="h-8 w-8 text-muted-foreground/50 mx-auto mb-2" />
+                    <p className="text-sm text-muted-foreground">
+                      No farms with locations yet
+                    </p>
+                    <Button
+                      variant="link"
+                      size="sm"
+                      onClick={() => navigate("/farms/create")}
+                      className="mt-1"
+                    >
+                      Add a farm
+                    </Button>
+                  </div>
                 </div>
               )}
-            </CardContent>
-          </Card>
-        </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Recent Alerts */}
+        <Card>
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2 text-sm">
+                <Bell className="h-4 w-4" />
+                Recent Alerts
+              </CardTitle>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate("/alerts")}
+                className="text-xs text-muted-foreground"
+              >
+                View all
+                <ArrowRight className="ml-1 h-3 w-3" />
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent className="p-0">
+            {recentAlerts.length === 0 ? (
+              <div className="p-6 text-center">
+                <Bell className="h-8 w-8 text-muted-foreground/30 mx-auto mb-2" />
+                <p className="text-sm text-muted-foreground">
+                  No active alerts
+                </p>
+              </div>
+            ) : (
+              <div className="divide-y divide-border">
+                {recentAlerts.map((alert) => (
+                  <div
+                    key={alert._id}
+                    className="px-4 py-3 hover:bg-muted/50 transition-colors"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <Badge
+                            className={`text-[8px] uppercase font-bold border-none px-1.5 py-0 rounded-sm ${SEVERITY_STYLES[alert.severity] ||
+                              SEVERITY_STYLES.low
+                              }`}
+                          >
+                            {alert.severity}
+                          </Badge>
+                          <span className="text-[10px] font-bold uppercase tracking-tight text-muted-foreground">
+                            {alert.type}
+                          </span>
+                        </div>
+                        <p className="text-sm text-foreground font-medium truncate">
+                          {alert.animalId?.name || "Unknown"}
+                        </p>
+                        <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">
+                          {alert.message}
+                        </p>
+                      </div>
+                      <span className="text-[10px] text-muted-foreground font-mono whitespace-nowrap">
+                        {new Date(alert.createdAt).toLocaleString(undefined, {
+                          month: "short",
+                          day: "numeric",
+                        })}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
-    </Layout>
+    </div>
+    </Layout >
   );
 }

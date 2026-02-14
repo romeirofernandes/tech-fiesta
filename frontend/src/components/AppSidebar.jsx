@@ -1,4 +1,4 @@
-import { Calendar, Home, Tractor, Beef, Syringe, LogOut, User, Activity, Moon, Sun, Globe, BarChart3, Bell } from "lucide-react"
+import { Calendar, Home, Tractor, Beef, Syringe, LogOut, User, Activity, Moon, Sun, Globe, BarChart3, Bell, Sprout } from "lucide-react"
 import { useUser } from "../context/UserContext"
 import { useTheme } from "../context/ThemeContext"
 import { Button } from "@/components/ui/button"
@@ -41,7 +41,12 @@ const items = [
     url: "/calendar",
     icon: Calendar,
   },
- 
+  {
+    title: "Schemes",
+    url: "/schemes",
+    icon: Sprout,
+  },
+
   {
     title: "Alerts",
     url: "/alerts",
@@ -83,8 +88,8 @@ export function AppSidebar() {
             <SidebarMenu>
               {items.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton 
-                    asChild 
+                  <SidebarMenuButton
+                    asChild
                     isActive={isActive(item.url)}
                     className={cn(
                       state === "expanded" && isActive(item.url) && "bg-accent/50 border-l-4 border-primary pl-2"
@@ -113,7 +118,7 @@ export function AppSidebar() {
           </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton asChild className="w-full">
-              <button 
+              <button
                 onClick={toggleTheme}
                 className="flex items-center w-full cursor-pointer"
               >
@@ -136,7 +141,7 @@ export function AppSidebar() {
           </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton asChild className="w-full">
-              <button 
+              <button
                 onClick={logout}
                 className="flex items-center w-full mb-4 cursor-pointer text-destructive hover:text-destructive/90"
               >
