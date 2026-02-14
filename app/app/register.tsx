@@ -38,8 +38,8 @@ export default function RegisterScreen() {
   const [verificationId, setVerificationId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const { setMongoUser } = useUser();
-  const colorScheme = useColorScheme() ?? 'light';
-  const colors = Colors[colorScheme];
+  const { colorScheme } = useColorScheme();
+  const colors = Colors[colorScheme ?? 'light'];
 
   const otpRefs = useRef<(TextInput | null)[]>([]);
 
