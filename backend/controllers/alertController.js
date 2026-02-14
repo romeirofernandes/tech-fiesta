@@ -19,16 +19,54 @@ exports.createAlert = async (req, res) => {
 
 exports.getAlerts = async (req, res) => {
   try {
-    const { animalId, type, severity, isResolved } = req.query;
+    const { animalId, type, severity, isResolved, search, startDate, endDate, page, limit } = req.query;
     
     const filter = {};
     if (animalId) filter.animalId = animalId;
     if (type) filter.type = type;
     if (severity) filter.severity = severity;
     if (isResolved !== undefined) filter.isResolved = isResolved === 'true';
+    if (search) filter.message = { $regex: search, $options: 'i' };
+    if (startDate || endDate) {
+      filter.createdAt = {};
+      if (startDate) filter.createdAt.$gte = new Date(startDate);
+      if (endDate) filter.createdAt.$lte = new Date(endDate);
+    }
 
+    // If pagination params provided, return paginated response
+    if (page || limit) {
+      const pageNum = parseInt(page) || 1;
+      const limitNum = parseInt(limit) || 20;
+      const skip = (pageNum - 1) * limitNum;
+
+      const [alerts, total] = await Promise.all([
+        Alert.find(filter)
+          .populate({
+            path: 'animalId',
+            select: 'name rfid species farmId',
+            populate: { path: 'farmId', select: 'name' }
+          })
+          .sort({ createdAt: -1 })
+          .skip(skip)
+          .limit(limitNum),
+        Alert.countDocuments(filter)
+      ]);
+
+      return res.status(200).json({
+        alerts,
+        total,
+        page: pageNum,
+        totalPages: Math.ceil(total / limitNum),
+      });
+    }
+
+    // Non-paginated (backward-compatible)
     const alerts = await Alert.find(filter)
-      .populate('animalId', 'name rfid species')
+      .populate({
+        path: 'animalId',
+        select: 'name rfid species farmId',
+        populate: { path: 'farmId', select: 'name' }
+      })
       .sort({ createdAt: -1 });
     
     res.status(200).json(alerts);

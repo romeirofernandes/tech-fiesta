@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MapContainer, TileLayer, Marker, Popup, CircleMarker } from "react-leaflet";
 import { MapPin } from "lucide-react";
+import { useTheme } from "@/context/ThemeContext";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import axios from "axios";
@@ -15,6 +16,7 @@ L.Icon.Default.mergeOptions({
 });
 
 export default function FarmDistributionMap() {
+  const { theme } = useTheme();
   const [farms, setFarms] = useState([]);
   const [animals, setAnimals] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -65,6 +67,11 @@ export default function FarmDistributionMap() {
   // Calculate density for heatmap effect
   const maxAnimals = Math.max(...farmMarkers.map(f => f.animalCount), 1);
 
+  const isDark = theme === "dark";
+  const tileUrl = isDark
+    ? "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+    : "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png";
+
   return (
     <Card className="w-full">
       <CardHeader>
@@ -82,8 +89,8 @@ export default function FarmDistributionMap() {
             className="rounded-b-lg"
           >
             <TileLayer
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+              url={tileUrl}
+              maxZoom={20}
             />
             
             {farmMarkers.map((farm) => (

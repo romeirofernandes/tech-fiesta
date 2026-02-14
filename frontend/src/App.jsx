@@ -21,6 +21,7 @@ import BiOverview from './pages/bi/BiOverview';
 import ProductionTracking from './pages/bi/ProductionTracking';
 import FinanceTracking from './pages/bi/FinanceTracking';
 import MarketPrices from './pages/bi/MarketPrices';
+import Alerts from './pages/Alerts';
 import { Layout } from './components/Layout';
 
 
@@ -144,6 +145,11 @@ function App() {
         <Route path="/bi/prices" element={
           <ProtectedRoute>
             <MarketPrices />
+          </ProtectedRoute>
+        } />
+        <Route path="/alerts" element={
+          <ProtectedRoute>
+            <Alerts />
           </ProtectedRoute>
         } />
         <Route path="/admin" element={

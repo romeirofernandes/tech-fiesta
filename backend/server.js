@@ -15,6 +15,7 @@ const expenseRoutes = require('./routes/expenseRoutes');
 const saleRoutes = require('./routes/saleRoutes');
 const marketPriceRoutes = require('./routes/marketPriceRoutes');
 const biRoutes = require('./routes/biRoutes');    
+const heartRateThresholdRoutes = require('./routes/heartRateThresholdRoutes');
 
 const app = express();
 
@@ -40,6 +41,7 @@ app.use('/api/expenses', expenseRoutes);
 app.use('/api/sales', saleRoutes);
 app.use('/api/market-prices', marketPriceRoutes);
 app.use('/api/bi', biRoutes);
+app.use('/api/heart-rate-thresholds', heartRateThresholdRoutes);
 
 const port = process.env.PORT;
 
