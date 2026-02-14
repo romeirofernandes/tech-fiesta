@@ -59,10 +59,21 @@ exports.createFarm = async (req, res) => {
 
 exports.getFarms = async (req, res) => {
     try {
-        const { farmerId } = req.query;
-        const query = farmerId ? { _id: { $in: (await Farmer.findById(farmerId)).farms } } : {};
-        const farms = await Farm.find(query);
-        res.status(200).json(farms);
+        const { farmerId } = req.query;     
+        let farms;
+        if (farmerId) {
+            const farmer = await Farmer.findById(farmerId).select('farms');
+
+            let farmIds = farmer.farms.map(id => id.toString());
+
+            farms = await Farm.find({ _id: { $in: farmIds } }).sort({ createdAt: -1 });
+            
+            if (!farmer) {
+                return res.status(404).json({ message: 'Farmer not found' });
+            }
+        }
+
+        return res.status(200).json(farms);
     } catch (error) {
         res.status(500).json({ message: 'Server Error', error: error.message });
     }

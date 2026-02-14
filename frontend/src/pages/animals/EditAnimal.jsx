@@ -53,7 +53,11 @@ export default function EditAnimal() {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
+
       const animal = response.data.animal;
+
+      console.log("Fetched animal details:", animal);
+
       setFormData({
         name: animal.name,
         rfid: animal.rfid,
@@ -62,7 +66,7 @@ export default function EditAnimal() {
         gender: animal.gender,
         age: animal.age,
         ageUnit: animal.ageUnit,
-        farmId: animal.farmId._id,
+        farmId: animal.farmId? animal.farmId._id: "",
         imageUrl: animal.imageUrl,
       });
       setImagePreview(animal.imageUrl);
@@ -70,6 +74,9 @@ export default function EditAnimal() {
     } catch (error) {
       toast.error("Failed to fetch animal details");
       navigate("/animals");
+    }
+    finally {
+      setFetching(false);
     }
   };
 
@@ -167,7 +174,7 @@ export default function EditAnimal() {
 
   return (
     <Layout>
-      <div className="max-w-6xl mx-auto space-y-6">
+      <div className="space-y-6 max-w-full px-6 mx-auto p-4 md:p-6 lg:p-8">
         <div className="flex items-center justify-between">
           <Button
             variant="ghost"
