@@ -99,7 +99,7 @@ export default function CreateAnimal() {
         model: "gemini-2.5-flash-lite" 
       });
 
-      const prompt = `You are an expert veterinarian and farm animal specialist. Analyze this image of a farm animal and extract as much information as possible. Fill in ALL fields with your best professional estimate
+      const prompt = `You are an expert veterinarian and farm animal specialist. Analyze this image of a farm animal and extract as much information as possible Fill in ALL fields with your best professional estimate
 
 IMPORTANT INSTRUCTIONS:
 - For NAME: Suggest a fitting, cute, or common farm animal name based on the animal's appearance, a good indian domestic
