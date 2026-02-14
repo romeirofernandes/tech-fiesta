@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const { PRODUCT_TYPE_VALUES, PRODUCT_UNITS } = require('../constants/biEnums');
+const { SALE_PRODUCT_TYPE_VALUES, PRODUCT_UNITS } = require('../constants/biEnums');
 
 const saleTransactionSchema = new mongoose.Schema({
   farmId: {
@@ -8,10 +8,16 @@ const saleTransactionSchema = new mongoose.Schema({
     required: true,
     index: true
   },
+  animalId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Animal',
+    default: null,
+    index: true
+  },
   productType: {
     type: String,
     required: true,
-    enum: PRODUCT_TYPE_VALUES
+    enum: SALE_PRODUCT_TYPE_VALUES
   },
   quantity: {
     type: Number,
@@ -64,6 +70,7 @@ const saleTransactionSchema = new mongoose.Schema({
 
 saleTransactionSchema.index({ farmId: 1, date: -1 });
 saleTransactionSchema.index({ farmId: 1, productType: 1 });
+saleTransactionSchema.index({ farmId: 1, animalId: 1 });
 
 saleTransactionSchema.pre('save', function () {
   this.updatedAt = Date.now();

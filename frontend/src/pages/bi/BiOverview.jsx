@@ -74,8 +74,19 @@ export default function BiOverview() {
   const [summary, setSummary] = useState(null);
   const [timeseries, setTimeseries] = useState([]);
   const [underperformers, setUnderperformers] = useState([]);
-  const [insights, setInsights] = useState([]);
+  const [insights, setInsights] = useState(() => {
+    try {
+      const saved = localStorage.getItem('bi_insights');
+      return saved ? JSON.parse(saved).insights || [] : [];
+    } catch { return []; }
+  });
   const [insightsLoading, setInsightsLoading] = useState(false);
+  const [insightsUpdatedAt, setInsightsUpdatedAt] = useState(() => {
+    try {
+      const saved = localStorage.getItem('bi_insights');
+      return saved ? JSON.parse(saved).updatedAt || null : null;
+    } catch { return null; }
+  });
 
   // Date range: last 30 days
   const now = new Date();
@@ -136,7 +147,11 @@ export default function BiOverview() {
       const res = await axios.get(`${API_BASE}/api/bi/insights`, {
         params: { farmId: selectedFarm, from: fromStr, to: toStr },
       });
-      setInsights(res.data.insights || []);
+      const newInsights = res.data.insights || [];
+      const now = new Date().toISOString();
+      setInsights(newInsights);
+      setInsightsUpdatedAt(now);
+      localStorage.setItem('bi_insights', JSON.stringify({ insights: newInsights, updatedAt: now, farmId: selectedFarm }));
     } catch (err) {
       console.error("Failed to fetch insights:", err);
     } finally {
@@ -388,7 +403,14 @@ export default function BiOverview() {
                   <Lightbulb className="h-5 w-5 text-amber-500" />
                   AI-Powered Insights
                 </CardTitle>
-                <CardDescription>Business intelligence powered by Groq LLM</CardDescription>
+                <CardDescription>
+                  Business intelligence powered by Groq LLM
+                  {insightsUpdatedAt && (
+                    <span className="ml-2 text-xs">
+                      — Last updated: {new Date(insightsUpdatedAt).toLocaleString()}
+                    </span>
+                  )}
+                </CardDescription>
               </div>
               <Button onClick={fetchInsights} disabled={insightsLoading || !selectedFarm} variant="outline" size="sm">
                 {insightsLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Lightbulb className="h-4 w-4 mr-2" />}
@@ -418,7 +440,7 @@ export default function BiOverview() {
             <CardContent className="flex items-center justify-between p-4">
               <div className="flex items-center gap-3">
                 <Package className="h-5 w-5 text-blue-600" />
-                <span className="font-medium">Production Tracking</span>
+                <span className="font-medium">Production & Sales</span>
               </div>
               <ArrowRight className="h-4 w-4 text-muted-foreground" />
             </CardContent>
@@ -427,7 +449,7 @@ export default function BiOverview() {
             <CardContent className="flex items-center justify-between p-4">
               <div className="flex items-center gap-3">
                 <DollarSign className="h-5 w-5 text-green-600" />
-                <span className="font-medium">Finance Tracking</span>
+                <span className="font-medium">Expense Tracking</span>
               </div>
               <ArrowRight className="h-4 w-4 text-muted-foreground" />
             </CardContent>

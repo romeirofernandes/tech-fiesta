@@ -19,6 +19,17 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Plus, Trash2, Edit, Download, Loader2, RefreshCw } from "lucide-react";
 import axios from "axios";
 import { toast } from "sonner";
@@ -111,7 +122,6 @@ export default function MarketPricesAdmin() {
   };
 
   const handleDelete = async (id) => {
-    if (!confirm("Delete this market price?")) return;
     try {
       await axios.delete(`${API_BASE}/api/market-prices/${id}`);
       toast.success("Deleted");
@@ -233,7 +243,7 @@ export default function MarketPricesAdmin() {
             </Button>
           </div>
           <p className="text-xs text-muted-foreground mt-2">
-            Fetches livestock/poultry prices from AGMARKNET (last 1 year). Manure, Wool &amp; Goat Hair are manual-only.
+            Fetches livestock/poultry prices from AGMARKNET. Milk variants, Manure, Wool &amp; Goat Hair are manual-only.
           </p>
         </CardContent>
       </Card>
@@ -349,9 +359,25 @@ export default function MarketPricesAdmin() {
                           <Button variant="ghost" size="icon" onClick={() => handleEdit(p)}>
                             <Edit className="h-4 w-4" />
                           </Button>
-                          <Button variant="ghost" size="icon" onClick={() => handleDelete(p._id)}>
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="ghost" size="icon">
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Delete Market Price</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Are you sure you want to delete this market price entry? This action cannot be undone.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => handleDelete(p._id)}>Delete</AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
                         </div>
                       </td>
                     </tr>

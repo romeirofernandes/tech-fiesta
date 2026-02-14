@@ -1,16 +1,35 @@
 const SaleTransaction = require('../models/SaleTransaction');
+const { PRODUCT_UNITS } = require('../constants/biEnums');
 
 // Create
 exports.create = async (req, res) => {
   try {
-    const { farmId, productType, quantity, unit, pricePerUnit, totalAmount, currency, buyerName, date, notes } = req.body;
+    const { farmId, animalId, productType, quantity, unit, pricePerUnit, totalAmount, currency, buyerName, date, notes } = req.body;
+
+    if (productType === 'live_animal' && !animalId) {
+      return res.status(400).json({ message: 'animalId is required when productType is live_animal' });
+    }
+
+    const normalizedQuantity = productType === 'live_animal'
+      ? 1
+      : quantity;
+
+    if (normalizedQuantity == null || Number(normalizedQuantity) <= 0) {
+      return res.status(400).json({ message: 'quantity must be > 0' });
+    }
+
+    if (pricePerUnit == null || Number(pricePerUnit) <= 0) {
+      return res.status(400).json({ message: 'pricePerUnit must be > 0' });
+    }
+
     const sale = new SaleTransaction({
       farmId,
+      animalId: animalId || null,
       productType,
-      quantity,
-      unit,
-      pricePerUnit,
-      totalAmount: totalAmount || quantity * pricePerUnit,
+      quantity: Number(normalizedQuantity),
+      unit: unit || PRODUCT_UNITS[productType] || 'units',
+      pricePerUnit: Number(pricePerUnit),
+      totalAmount: totalAmount || Number(normalizedQuantity) * Number(pricePerUnit),
       currency: currency || 'INR',
       buyerName,
       date,
@@ -38,6 +57,7 @@ exports.list = async (req, res) => {
     }
     const sales = await SaleTransaction.find(filter)
       .populate('farmId', 'name')
+      .populate('animalId', 'name species')
       .sort({ date: -1 })
       .limit(Number(req.query.limit) || 500);
     res.json(sales);
@@ -50,7 +70,9 @@ exports.list = async (req, res) => {
 // Get by ID
 exports.getById = async (req, res) => {
   try {
-    const sale = await SaleTransaction.findById(req.params.id).populate('farmId', 'name');
+    const sale = await SaleTransaction.findById(req.params.id)
+      .populate('farmId', 'name')
+      .populate('animalId', 'name species');
     if (!sale) return res.status(404).json({ message: 'Not found' });
     res.json(sale);
   } catch (error) {
@@ -63,6 +85,16 @@ exports.getById = async (req, res) => {
 exports.update = async (req, res) => {
   try {
     const body = { ...req.body, updatedAt: Date.now() };
+
+    if (body.productType === 'live_animal' && !body.animalId) {
+      return res.status(400).json({ message: 'animalId is required when productType is live_animal' });
+    }
+
+    if (body.productType === 'live_animal') {
+      body.quantity = 1;
+      body.unit = body.unit || PRODUCT_UNITS.live_animal || 'head';
+    }
+
     if (body.quantity && body.pricePerUnit && !body.totalAmount) {
       body.totalAmount = body.quantity * body.pricePerUnit;
     }
