@@ -59,26 +59,22 @@ exports.createFarm = async (req, res) => {
 
 exports.getFarms = async (req, res) => {
     try {
-        const { farmerId } = req.query;
+        const { farmerId } = req.query;     
+        let farms;
         if (farmerId) {
-            console.log(`[getFarms] Querying farms for farmerId: ${farmerId}`);
-            const farmer = await Farmer.findById(farmerId);
+            const farmer = await Farmer.findById(farmerId).select('farms');
+
+            let farmIds = farmer.farms.map(id => id.toString());
+
+            farms = await Farm.find({ _id: { $in: farmIds } }).sort({ createdAt: -1 });
+            
             if (!farmer) {
-                console.log(`[getFarms] No farmer found for farmerId: ${farmerId}`);
                 return res.status(404).json({ message: 'Farmer not found' });
             }
-            console.log(`[getFarms] Farmer's farms: ${JSON.stringify(farmer.farms)}`);
-            const query = { _id: { $in: farmer.farms } };
-            const farms = await Farm.find(query);
-            console.log(`[getFarms] Found ${farms.length} farms for farmerId: ${farmerId}`);
-            res.status(200).json(farms);
-        } else {
-            console.log(`[getFarms] No farmerId provided, returning all farms`);
-            const farms = await Farm.find({});
-            res.status(200).json(farms);
         }
+
+        return res.status(200).json(farms);
     } catch (error) {
-        console.error(`[getFarms] Error: ${error.message}`);
         res.status(500).json({ message: 'Server Error', error: error.message });
     }
 };
