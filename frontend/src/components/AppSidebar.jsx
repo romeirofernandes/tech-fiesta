@@ -1,4 +1,4 @@
-import { Calendar, Home, Tractor, Beef, Syringe, LogOut, User, Activity, Moon, Sun, Globe } from "lucide-react"
+import { Calendar, Home, Tractor, Beef, Syringe, LogOut, User, Activity, Moon, Sun, Globe, BarChart3 } from "lucide-react"
 import { useUser } from "../context/UserContext"
 import { useTheme } from "../context/ThemeContext"
 import { Button } from "@/components/ui/button"
@@ -45,6 +45,11 @@ const items = [
     title: "Live Vitals",
     url: "/live-vitals",
     icon: Activity,
+  },
+  {
+    title: "BI & Analytics",
+    url: "/bi",
+    icon: BarChart3,
   },
 ]
 

@@ -9,7 +9,12 @@ const farmerRoutes = require('./routes/farmerRoutes');
 const sensorEventRoutes = require('./routes/sensorEventRoutes');
 const vaccinationEventRoutes = require('./routes/vaccinationEventRoutes');
 const HealthSnapshotRoutes = require('./routes/healthSnapshotRoutes');
-const farmImageRoutes = require('./routes/farmImageRoutes');    
+const farmImageRoutes = require('./routes/farmImageRoutes');
+const productionRoutes = require('./routes/productionRoutes');
+const expenseRoutes = require('./routes/expenseRoutes');
+const saleRoutes = require('./routes/saleRoutes');
+const marketPriceRoutes = require('./routes/marketPriceRoutes');
+const biRoutes = require('./routes/biRoutes');    
 
 const app = express();
 
@@ -30,6 +35,11 @@ app.use('/api/sensor-events', sensorEventRoutes);
 app.use('/api/vaccination-events', vaccinationEventRoutes); 
 app.use('/api/health-snapshots', HealthSnapshotRoutes);
 app.use('/api/farm-images', farmImageRoutes);
+app.use('/api/production-records', productionRoutes);
+app.use('/api/expenses', expenseRoutes);
+app.use('/api/sales', saleRoutes);
+app.use('/api/market-prices', marketPriceRoutes);
+app.use('/api/bi', biRoutes);
 
 const port = process.env.PORT;
 

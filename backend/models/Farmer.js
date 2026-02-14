@@ -24,6 +24,11 @@ const farmerSchema = new mongoose.Schema({
     type: String,
     default: null
   },
+  role: {
+    type: String,
+    enum: ['farmer', 'admin'],
+    default: 'farmer'
+  },
   farms: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Farm',

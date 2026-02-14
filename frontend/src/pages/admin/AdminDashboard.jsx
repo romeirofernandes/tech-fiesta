@@ -9,7 +9,8 @@ import {
   UserCircle, 
   LogOut,
   Moon,
-  Sun
+  Sun,
+  IndianRupee
 } from "lucide-react";
 import { useTheme } from "@/context/ThemeContext";
 
@@ -37,6 +38,7 @@ import HealthAnalytics from "./tabs/HealthAnalytics";
 import VaccinationTracking from "./tabs/VaccinationTracking";
 import AlertsManagement from "./tabs/AlertsManagement";
 import FarmerManagement from "./tabs/FarmerManagement";
+import MarketPricesAdmin from "./tabs/MarketPricesAdmin";
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState("insights");
@@ -49,6 +51,7 @@ export default function AdminDashboard() {
     { id: "health", label: "Animals", icon: HeartPulse },
     { id: "vaccinations", label: "Vaccination Schedules", icon: Syringe },
     { id: "alerts", label: "Alerts", icon: Bell },
+    { id: "market-prices", label: "Market Prices", icon: IndianRupee },
   ];
 
   return (
@@ -155,6 +158,14 @@ export default function AdminDashboard() {
                     <h1 className="text-3xl font-bold tracking-tight text-foreground font-serif">System Alerts</h1>
                   </header>
                   <AlertsManagement />
+                </TabsContent>
+
+                <TabsContent value="market-prices" className="mt-0 outline-none space-y-8 border-none">
+                  <header>
+                    <h1 className="text-3xl font-bold tracking-tight text-foreground font-serif">Market Prices</h1>
+                    <p className="text-muted-foreground text-sm mt-1">Manage India commodity prices (AGMARKNET + manual)</p>
+                  </header>
+                  <MarketPricesAdmin />
                 </TabsContent>
 
               </div>

@@ -17,6 +17,10 @@ import EditFarm from './pages/farms/EditFarm';
 import LiveVitals from './pages/LiveVitals';
 import VaccinationCalendar from './pages/VaccinationCalendar';
 import AdminDashboard from './pages/admin/AdminDashboard';
+import BiOverview from './pages/bi/BiOverview';
+import ProductionTracking from './pages/bi/ProductionTracking';
+import FinanceTracking from './pages/bi/FinanceTracking';
+import MarketPrices from './pages/bi/MarketPrices';
 import { Layout } from './components/Layout';
 
 
@@ -120,6 +124,26 @@ function App() {
         <Route path="/live-vitals" element={
           <ProtectedRoute>
             <LiveVitals />
+          </ProtectedRoute>
+        } />
+        <Route path="/bi" element={
+          <ProtectedRoute>
+            <BiOverview />
+          </ProtectedRoute>
+        } />
+        <Route path="/bi/production" element={
+          <ProtectedRoute>
+            <ProductionTracking />
+          </ProtectedRoute>
+        } />
+        <Route path="/bi/finance" element={
+          <ProtectedRoute>
+            <FinanceTracking />
+          </ProtectedRoute>
+        } />
+        <Route path="/bi/prices" element={
+          <ProtectedRoute>
+            <MarketPrices />
           </ProtectedRoute>
         } />
         <Route path="/admin" element={
