@@ -138,3 +138,69 @@ h1, h2, h3, h4, h5, h6 {
   width: 100%;
   z-index: 1;
 }
+
+/* Google Translate Customization - NUCLEAR OPTION */
+.goog-te-banner-frame {
+    display: none !important;
+    visibility: hidden !important;
+    height: 0 !important;
+    width: 0 !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    z-index: -1000 !important;
+    position: absolute !important;
+    top: -10000px !important;
+}
+iframe[id^=":"] {
+    display: none !important;
+}
+iframe.goog-te-banner-frame { 
+    display: none !important; 
+} 
+font {
+    background-color: transparent !important;
+    box-shadow: none !important;
+}
+
+.goog-te-banner-frame.skiptranslate {
+    display: none !important;
+    visibility: hidden !important;
+    height: 0 !important;
+}
+
+body {
+    top: 0px !important;
+    position: static !important;
+}
+
+.goog-te-gadget-icon {
+    display: none !important;
+}
+
+.goog-tooltip {
+    display: none !important;
+}
+
+.goog-tooltip:hover {
+    display: none !important;
+}
+
+.goog-text-highlight {
+    background-color: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+
+/* Hide the Google Translate branding in the dropdown/gadget */
+.goog-logo-link {
+    display: none !important;
+}
+
+.goog-te-gadget {
+    color: transparent !important;
+}
+
+/* Styling the hidden widget to ensure functionality without visuals */
+#google_translate_element {
+    display: none;
+}

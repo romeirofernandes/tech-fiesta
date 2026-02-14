@@ -1,9 +1,10 @@
-import { Calendar, Home, Tractor, Beef, Syringe, LogOut, User, Activity, Moon, Sun } from "lucide-react"
+import { Calendar, Home, Tractor, Beef, Syringe, LogOut, User, Activity, Moon, Sun, Globe } from "lucide-react"
 import { useUser } from "../context/UserContext"
 import { useTheme } from "../context/ThemeContext"
-import { Button } from "./ui/button"
+import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { useLocation, useNavigate } from "react-router-dom"
+import { LanguageToggle } from "./LanguageToggle"
 
 import {
   Sidebar,
@@ -108,6 +109,14 @@ export function AppSidebar() {
                 {state === "expanded" && <span>Theme</span>}
               </button>
             </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <LanguageToggle>
+              <SidebarMenuButton className="w-full">
+                <Globe className={cn("h-[1.2rem] w-[1.2rem]", state === "expanded" && "ml-2")} />
+                {state === "expanded" && <span>Language</span>}
+              </SidebarMenuButton>
+            </LanguageToggle>
           </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton asChild className="w-full">
