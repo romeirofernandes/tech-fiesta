@@ -40,6 +40,7 @@ app.use('/api/expenses', expenseRoutes);
 app.use('/api/sales', saleRoutes);
 app.use('/api/market-prices', marketPriceRoutes);
 app.use('/api/bi', biRoutes);
+app.use('/api/heart-rate-thresholds', heartRateThresholdRoutes);
 
 const port = process.env.PORT;
 
