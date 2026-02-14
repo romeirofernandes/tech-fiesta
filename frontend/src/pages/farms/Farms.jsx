@@ -47,9 +47,7 @@ export default function Farms() {
           farmerId = "";
         }
       }
-      const url = farmerId
-        ? `${import.meta.env.VITE_API_BASE_URL}/api/farms?farmerId=${farmerId}`
-        : `${import.meta.env.VITE_API_BASE_URL}/api/farms`;
+      const url = `${import.meta.env.VITE_API_BASE_URL}/api/farms?farmerId=${farmerId}`;
       const response = await axios.get(url, {
         headers: { Authorization: `Bearer ${token}` },
       });

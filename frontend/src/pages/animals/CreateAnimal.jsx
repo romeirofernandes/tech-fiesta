@@ -55,7 +55,17 @@ export default function CreateAnimal() {
   const fetchFarms = async () => {
     try {
       const token = localStorage.getItem("token");
-      const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/farms`, {
+      const mongoUser = localStorage.getItem("mongoUser");
+      let farmerId = "";
+      if (mongoUser) {
+        try {
+          farmerId = JSON.parse(mongoUser)._id;
+        } catch (e) {
+          farmerId = "";
+        }
+      }
+      const url = `${import.meta.env.VITE_API_BASE_URL}/api/farms?farmerId=${farmerId}`;
+      const response = await axios.get(url, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setFarms(Array.isArray(response.data) ? response.data : []);
@@ -216,7 +226,7 @@ export default function CreateAnimal() {
 
   return (
     <Layout>
-      <div className="max-w-6xl mx-auto space-y-6">
+      <div className="space-y-6 max-w-full px-6 mx-auto p-4 md:p-6 lg:p-8">
         {/* Header */}
         <div className="flex items-center justify-between">
           <Button
