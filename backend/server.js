@@ -15,6 +15,7 @@ const expenseRoutes = require('./routes/expenseRoutes');
 const saleRoutes = require('./routes/saleRoutes');
 const marketPriceRoutes = require('./routes/marketPriceRoutes');
 const biRoutes = require('./routes/biRoutes');    
+const heartRateThresholdRoutes = require('./routes/heartRateThresholdRoutes');
 
 const app = express();
 
