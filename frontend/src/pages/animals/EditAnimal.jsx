@@ -158,6 +158,9 @@ export default function EditAnimal() {
       goat: "🐐",
       sheep: "🐑",
       chicken: "🐔",
+      pig: "🐷",
+      horse: "🐴",
+      other: "🐾",
     };
     return emojis[species] || "🐾";
   };
@@ -252,6 +255,9 @@ export default function EditAnimal() {
                       <SelectItem value="goat">🐐 Goat</SelectItem>
                       <SelectItem value="sheep">🐑 Sheep</SelectItem>
                       <SelectItem value="chicken">🐔 Chicken</SelectItem>
+                      <SelectItem value="pig">🐷 Pig</SelectItem>
+                      <SelectItem value="horse">🐴 Horse</SelectItem>
+                      <SelectItem value="other">🐾 Other</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

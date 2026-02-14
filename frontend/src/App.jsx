@@ -5,7 +5,6 @@ import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import Profile from './pages/Profile';
 import VaccinationSchedules from './pages/VaccinationSchedules';
-import VacxDetail from './pages/VacxDetail';
 import NotFound from './pages/NotFound';
 import { useUser } from './context/UserContext';
 import Animals from './pages/animals/Animals';
@@ -79,14 +78,6 @@ function App() {
           element={
             <ProtectedRoute>
               <VaccinationSchedules />
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/vacxx/:id" 
-          element={
-            <ProtectedRoute>
-              <VacxDetail />
             </ProtectedRoute>
           } 
         />

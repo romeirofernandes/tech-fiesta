@@ -158,7 +158,16 @@ export default function VaccinationCalendar() {
   };
 
   const getSpeciesEmoji = (species) => {
-    const emojis = { cow: "🐄", buffalo: "🐃", goat: "🐐", sheep: "🐑", chicken: "🐔" };
+    const emojis = {
+      cow: "🐄",
+      buffalo: "🐃",
+      goat: "🐐",
+      sheep: "🐑",
+      chicken: "🐔",
+      pig: "🐷",
+      horse: "🐴",
+      other: "🐾",
+    };
     return emojis[species] || "🐾";
   };
 

@@ -162,9 +162,30 @@ Return ONLY valid JSON, no markdown formatting or code blocks.`;
           'chicken': 'chicken',
           'rooster': 'chicken',
           'hen': 'chicken',
+          'pig': 'pig',
+          'piglet': 'pig',
+          'hog': 'pig',
+          'swine': 'pig',
+          'boar': 'pig',
+          'horse': 'horse',
+          'equine': 'horse',
+          'pony': 'horse',
         };
-        const mappedSpecies = speciesMap[extractedData.species.toLowerCase()] || extractedData.species.toLowerCase();
-        handleInputChange("species", mappedSpecies);
+
+        const normalized = extractedData.species.toLowerCase().trim();
+        const mapped = speciesMap[normalized] || normalized;
+        const allowed = new Set([
+          'cow',
+          'buffalo',
+          'goat',
+          'sheep',
+          'chicken',
+          'pig',
+          'horse',
+          'other',
+        ]);
+
+        handleInputChange("species", allowed.has(mapped) ? mapped : 'other');
       }
       if (extractedData.breed && !formData.breed) {
         handleInputChange("breed", extractedData.breed);
@@ -361,6 +382,9 @@ Return ONLY valid JSON, no markdown formatting or code blocks.`;
       goat: "🐐",
       sheep: "🐑",
       chicken: "🐔",
+      pig: "🐷",
+      horse: "🐴",
+      other: "🐾",
     };
     return emojis[species] || "🐾";
   };
@@ -486,6 +510,9 @@ Return ONLY valid JSON, no markdown formatting or code blocks.`;
                       <SelectItem value="goat">🐐 Goat</SelectItem>
                       <SelectItem value="sheep">🐑 Sheep</SelectItem>
                       <SelectItem value="chicken">🐔 Chicken</SelectItem>
+                      <SelectItem value="pig">🐷 Pig</SelectItem>
+                      <SelectItem value="horse">🐴 Horse</SelectItem>
+                      <SelectItem value="other">🐾 Other</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

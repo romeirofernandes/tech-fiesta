@@ -96,6 +96,9 @@ export default function AnimalDetail() {
       goat: "🐐",
       sheep: "🐑",
       chicken: "🐔",
+      pig: "🐷",
+      horse: "🐴",
+      other: "🐾",
     };
     return emojis[species] || "🐾";
   };
