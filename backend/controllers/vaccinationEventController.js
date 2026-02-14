@@ -39,13 +39,14 @@ exports.getVaccinationEvents = async (req, res) => {
 
 exports.updateVaccinationEvent = async (req, res) => {
   try {
-    const { eventType, date, notes, repeatsEvery } = req.body;
+    const { vaccineName, eventType, date, notes, repeatsEvery } = req.body;
     const event = await VaccinationEvent.findById(req.params.id);
 
     if (!event) {
       return res.status(404).json({ message: 'Vaccination event not found' });
     }
 
+    if (vaccineName) event.vaccineName = vaccineName;
     if (eventType) event.eventType = eventType;
     if (date) event.date = date;
     if (notes !== undefined) event.notes = notes;
