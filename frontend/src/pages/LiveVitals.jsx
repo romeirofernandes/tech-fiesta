@@ -43,6 +43,7 @@ const TIME_RANGES = {
   "6h": { label: "Last 6 Hours", minutes: 360 },
   "24h": { label: "Last 24 Hours", minutes: 1440 },
   "7d": { label: "Last 7 Days", minutes: 10080 },
+  "all": { label: "All Time", minutes: null },
 };
 
 // Custom tooltip for charts
@@ -194,6 +195,9 @@ export default function LiveVitals() {
           };
           
           // Keep data within time range
+          if (timeRange === "all") {
+            return [...prev, newPoint]; // Keep all data for "all time"
+          }
           const cutoffTime = Date.now() - TIME_RANGES[timeRange].minutes * 60 * 1000;
           const filtered = [...prev, newPoint].filter(
             (point) => point.timestamp > cutoffTime
@@ -244,12 +248,17 @@ export default function LiveVitals() {
           const data = await response.json();
           
           // Filter by time range and transform data
-          const cutoffTime = Date.now() - TIME_RANGES[timeRange].minutes * 60 * 1000;
           const transformed = data
-            .filter((reading) => new Date(reading.timestamp).getTime() > cutoffTime)
+            .filter((reading) => {
+              if (timeRange === "all") {
+                return true; // Include all readings for "all time"
+              }
+              const cutoffTime = Date.now() - TIME_RANGES[timeRange].minutes * 60 * 1000;
+              return new Date(reading.timestamp).getTime() > cutoffTime;
+            })
             .map((reading) => ({
               time: format(new Date(reading.timestamp), 
-                timeRange === "7d" ? "MM/dd HH:mm" : "HH:mm"),
+                timeRange === "7d" || timeRange === "all" ? "MM/dd HH:mm" : "HH:mm"),
               timestamp: new Date(reading.timestamp).getTime(),
               temperature: reading.temperature ? parseFloat(reading.temperature) : null,
               humidity: reading.humidity ? parseFloat(reading.humidity) : null,

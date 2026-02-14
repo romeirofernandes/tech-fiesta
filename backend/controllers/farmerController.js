@@ -38,8 +38,8 @@ exports.authFarmer = async (req, res) => {
     farmer = new Farmer({
       firebaseUid,
       fullName,
-      email,
-      phoneNumber, 
+      email: email || undefined,
+      phoneNumber: phoneNumber || undefined,
       imageUrl
     });
 

@@ -53,21 +53,39 @@ Consider standard vaccination schedules for the species. Be practical and realis
       max_tokens: 2000
     });
 
-    const responseText = completion.choices[0].message.content.trim();
+    let responseText = completion.choices[0].message.content.trim();
     console.log("Raw LLM response:", responseText); // Add this for debugging
 
-    // Try to sanitize single quotes to double quotes (basic fix)
+    // Remove markdown code blocks if present
+    responseText = responseText.replace(/```json\s*/g, '').replace(/```\s*/g, '');
+
+    // Better sanitization: convert single quotes to double quotes
     let sanitized = responseText
-      .replace(/([{,]\s*)'([^']+)'(\s*:)/g, '$1"$2"$3') // property names
-      .replace(/'([^']*)'/g, '"$1"'); // string values
+      .replace(/'/g, '"')  // Replace all single quotes with double quotes
+      .replace(/,\s*}/g, '}')  // Remove trailing commas in objects
+      .replace(/,\s*\]/g, ']'); // Remove trailing commas in arrays
 
     // Extract JSON array
-    const jsonMatch = sanitized.match(/\[[\s\S]*\]/);
+    let jsonMatch = sanitized.match(/\[[\s\S]*\]/);
     if (!jsonMatch) {
       throw new Error('No valid JSON array found in response');
     }
 
-    return JSON.parse(jsonMatch[0]);
+    let jsonStr = jsonMatch[0];
+    
+    // Additional cleanup for common issues
+    jsonStr = jsonStr
+      .replace(/:\s*null\s*([,\}\]])/g, ': null$1')  // Ensure proper null formatting
+      .replace(/True\b/g, 'true')  // Python True to JSON true
+      .replace(/False\b/g, 'false')  // Python False to JSON false
+      .replace(/None\b/g, 'null');  // Python None to JSON null
+
+    try {
+      return JSON.parse(jsonStr);
+    } catch (parseError) {
+      console.error('Failed to parse JSON:', jsonStr);
+      throw parseError;
+    }
   } catch (error) {
     console.error('Error generating vaccination events:', error);
     throw error;

@@ -7,12 +7,18 @@ import ParallaxScrollView from '@/components/parallax-scroll-view';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { IconSymbol } from '@/components/ui/icon-symbol';
-import { Fonts } from '@/constants/theme';
+import { FontFamily, Colors } from '@/constants/theme';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 
 export default function TabTwoScreen() {
+  const colorScheme = useColorScheme() ?? 'light';
+  
   return (
     <ParallaxScrollView
-      headerBackgroundColor={{ light: '#D0D0D0', dark: '#353636' }}
+      headerBackgroundColor={{ 
+        light: Colors.light.primary, 
+        dark: Colors.dark.primary 
+      }}
       headerImage={
         <IconSymbol
           size={310}
@@ -25,7 +31,7 @@ export default function TabTwoScreen() {
         <ThemedText
           type="title"
           style={{
-            fontFamily: Fonts.rounded,
+            fontFamily: FontFamily.rounded,
           }}>
           Explore
         </ThemedText>
@@ -80,7 +86,7 @@ export default function TabTwoScreen() {
           This template includes an example of an animated component. The{' '}
           <ThemedText type="defaultSemiBold">components/HelloWave.tsx</ThemedText> component uses
           the powerful{' '}
-          <ThemedText type="defaultSemiBold" style={{ fontFamily: Fonts.mono }}>
+          <ThemedText type="defaultSemiBold" style={{ fontFamily: FontFamily.mono }}>
             react-native-reanimated
           </ThemedText>{' '}
           library to create a waving hand animation.
