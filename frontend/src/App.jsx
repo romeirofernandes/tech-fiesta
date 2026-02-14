@@ -4,8 +4,6 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import Profile from './pages/Profile';
-import VaccinationSchedules from './pages/VaccinationSchedules';
-import VacxDetail from './pages/VacxDetail';
 import NotFound from './pages/NotFound';
 import { useUser } from './context/UserContext';
 import Animals from './pages/animals/Animals';
@@ -17,6 +15,7 @@ import FarmDetail from './pages/farms/FarmDetail';
 import CreateFarm from './pages/farms/CreateFarm';
 import EditFarm from './pages/farms/EditFarm';
 import LiveVitals from './pages/LiveVitals';
+import VaccinationCalendar from './pages/VaccinationCalendar';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import { Layout } from './components/Layout';
 
@@ -73,22 +72,6 @@ function App() {
             <Profile />
           </ProtectedRoute>
         } />
-        <Route 
-          path="/vaccination-schedules" 
-          element={
-            <ProtectedRoute>
-              <VaccinationSchedules />
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/vacxx/:id" 
-          element={
-            <ProtectedRoute>
-              <VacxDetail />
-            </ProtectedRoute>
-          } 
-        />
         <Route path="/animals" element={
           <ProtectedRoute>
             <Animals />
@@ -127,6 +110,11 @@ function App() {
         <Route path="/farms/:id/edit" element={
           <ProtectedRoute>
             <EditFarm />
+          </ProtectedRoute>
+        } />
+        <Route path="/calendar" element={
+          <ProtectedRoute>
+            <VaccinationCalendar />
           </ProtectedRoute>
         } />
         <Route path="/live-vitals" element={

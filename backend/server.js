@@ -23,7 +23,6 @@ app.use(express.json());
 connectDB();
 
 app.use('/api/farmers', farmerRoutes);
-app.use('/api/vacxx', require('./routes/vacxxRoutes'));
 app.use('/api/animals', animalRoutes);
 app.use('/api/farms', farmRoutes);
 app.use('/api/alerts', alertRoutes);

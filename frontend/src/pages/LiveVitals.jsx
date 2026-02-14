@@ -90,7 +90,7 @@ const VitalChart = ({ data, dataKey, title, color, unit, yDomain }) => (
       <CardDescription>Real-time and historical data</CardDescription>
     </CardHeader>
     <CardContent>
-      <div className="h-[250px]">
+      <div className="h-62.5">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={data} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
@@ -344,7 +344,7 @@ export default function LiveVitals() {
 
   return (
     <Layout>
-      <div className="space-y-6 max-w-6xl mx-auto p-4 md:p-6 lg:p-8">
+      <div className="space-y-6 max-w-full px-6 mx-auto p-4 md:p-6 lg:p-8">
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
@@ -365,7 +365,7 @@ export default function LiveVitals() {
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium">Animal:</span>
             <Select value={selectedAnimal} onValueChange={setSelectedAnimal}>
-              <SelectTrigger className="w-[200px]">
+              <SelectTrigger className="w-50">
                 <SelectValue placeholder="Select animal" />
               </SelectTrigger>
               <SelectContent>
@@ -452,7 +452,7 @@ export default function LiveVitals() {
         {loading ? (
           <div className="grid gap-4 md:grid-cols-3">
             {[1, 2, 3].map((i) => (
-              <Card key={i} className="h-[320px] animate-pulse bg-muted" />
+              <Card key={i} className="h-80 animate-pulse bg-muted" />
             ))}
           </div>
         ) : chartData.length > 0 ? (

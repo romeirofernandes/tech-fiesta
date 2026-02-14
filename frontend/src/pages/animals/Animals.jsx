@@ -104,6 +104,9 @@ export default function Animals() {
       goat: "🐐",
       sheep: "🐑",
       chicken: "🐔",
+      pig: "🐷",
+      horse: "🐴",
+      other: "🐾",
     };
     return emojis[species] || "🐾";
   };
@@ -167,6 +170,15 @@ export default function Animals() {
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setSelectedSpecies("chicken")}>
                     🐔 Chicken
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setSelectedSpecies("pig")}>
+                    🐷 Pig
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setSelectedSpecies("horse")}>
+                    🐴 Horse
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setSelectedSpecies("other")}>
+                    🐾 Other
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>

@@ -22,6 +22,11 @@ import {
 // Menu items.
 const items = [
   {
+    title: "Dashboard",
+    url: "/dashboard",
+    icon: Home,
+  },
+  {
     title: "Farms",
     url: "/farms",
     icon: Tractor,
@@ -30,6 +35,11 @@ const items = [
     title: "Animals",
     url: "/animals",
     icon: Beef,
+  },
+  {
+    title: "Calendar",
+    url: "/calendar",
+    icon: Calendar,
   },
   {
     title: "Live Vitals",
