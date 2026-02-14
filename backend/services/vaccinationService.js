@@ -5,7 +5,10 @@ const groq = new Groq({
 });
 
 async function generateVaccinationEvents(animalData, questionsAnswers) {
+  const nowIsoDate = new Date(Date.now()).toISOString().slice(0, 10);
   const prompt = `You are a veterinary vaccination expert. Based on the following animal information and farmer's answers, generate a vaccination schedule.
+
+Today's Date (current): ${nowIsoDate}
 
 Animal Information:
 - Species: ${animalData.species}

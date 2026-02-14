@@ -124,7 +124,6 @@ Return your analysis in this exact JSON format:
 Make educated guesses based on visible features. Never use null values. Be confident in your professional assessment.
 Return ONLY valid JSON, no markdown formatting or code blocks.`;
 
-      console.log('Sending request to Gemini 1.5 Flash...');
       const result = await model.generateContent([
         prompt,
         {

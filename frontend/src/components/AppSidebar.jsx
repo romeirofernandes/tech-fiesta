@@ -31,6 +31,11 @@ const items = [
     icon: Beef,
   },
   {
+    title: "Calendar",
+    url: "/calendar",
+    icon: Calendar,
+  },
+  {
     title: "Live Vitals",
     url: "/live-vitals",
     icon: Activity,
