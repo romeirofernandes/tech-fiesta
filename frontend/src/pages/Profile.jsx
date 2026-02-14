@@ -198,7 +198,7 @@ export default function Profile() {
 
   return (
     <Layout>
-      <div className="max-w-6xl mx-auto py-12 px-4">
+      <div className="space-y-6 max-w-full px-6 mx-auto p-4 md:p-6 lg:p-8">
         <Card className="mb-8">
           <CardHeader className="flex flex-row items-center gap-6">
             <div className="relative">

@@ -38,7 +38,19 @@ export default function Farms() {
   const fetchFarms = async () => {
     try {
       const token = localStorage.getItem("token");
-      const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/farms`, {
+      const mongoUser = localStorage.getItem("mongoUser");
+      let farmerId = "";
+      if (mongoUser) {
+        try {
+          farmerId = JSON.parse(mongoUser)._id;
+        } catch (e) {
+          farmerId = "";
+        }
+      }
+      const url = farmerId
+        ? `${import.meta.env.VITE_API_BASE_URL}/api/farms?farmerId=${farmerId}`
+        : `${import.meta.env.VITE_API_BASE_URL}/api/farms`;
+      const response = await axios.get(url, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setFarms(Array.isArray(response.data) ? response.data : []);
@@ -80,7 +92,7 @@ export default function Farms() {
 
   return (
     <Layout loading={loading}>
-      <div className="max-w-6xl mx-auto space-y-6">
+      <div className="space-y-6 max-w-full px-6 mx-auto p-4 md:p-6 lg:p-8">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
             <h1 className="text-3xl font-bold">Farms</h1>
