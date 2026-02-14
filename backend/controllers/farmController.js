@@ -71,6 +71,8 @@ exports.getFarms = async (req, res) => {
             if (!farmer) {
                 return res.status(404).json({ message: 'Farmer not found' });
             }
+        }else{
+            farms = await Farm.find().sort({ createdAt: -1 });
         }
 
         return res.status(200).json(farms);
