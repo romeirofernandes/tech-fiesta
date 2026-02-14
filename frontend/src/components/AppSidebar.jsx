@@ -1,4 +1,4 @@
-import { Calendar, Home, Tractor, Beef, Syringe, LogOut, User, Activity, Moon, Sun, Globe, BarChart3, Bell, Sprout } from "lucide-react"
+import { Calendar, Home, Tractor, Beef, Syringe, LogOut, User, Activity, Moon, Sun, Globe, BarChart3, Bell, Sprout, Store, Package, Coins } from "lucide-react"
 import { useUser } from "../context/UserContext"
 import { useTheme } from "../context/ThemeContext"
 import { Button } from "@/components/ui/button"
@@ -46,7 +46,21 @@ const items = [
     url: "/schemes",
     icon: Sprout,
   },
-
+  {
+    title: "Marketplace",
+    url: "/marketplace",
+    icon: Store,
+  },
+  {
+    title: "My Orders",
+    url: "/my-orders",
+    icon: Package,
+  },
+  {
+    title: "My Sales",
+    url: "/my-sales",
+    icon: Coins,
+  },
   {
     title: "Alerts",
     url: "/alerts",

@@ -43,6 +43,8 @@ app.use('/api/market-prices', marketPriceRoutes);
 app.use('/api/bi', biRoutes);
 app.use('/api/heart-rate-thresholds', heartRateThresholdRoutes);
 app.use('/api/schemes', require('./routes/schemeRoutes'));
+app.use('/api/marketplace', require('./routes/marketplaceRoutes'));
+app.use('/api/payments', require('./routes/paymentRoutes'));
 
 const port = process.env.PORT;
 

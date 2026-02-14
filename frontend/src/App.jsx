@@ -24,8 +24,10 @@ import MarketPrices from './pages/bi/MarketPrices';
 import Alerts from './pages/Alerts';
 import Schemes from './pages/Schemes';
 import SchemeDetail from './pages/SchemeDetail';
+import Marketplace from './pages/Marketplace';
 import { Layout } from './components/Layout';
-
+import MyOrders from './pages/MyOrders';
+import MySales from './pages/MySales';
 
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useUser();
@@ -162,6 +164,25 @@ function App() {
         <Route path="/schemes/:slug" element={
           <ProtectedRoute>
             <SchemeDetail />
+          </ProtectedRoute>
+        } />
+        import MyOrders from './pages/MyOrders';
+        import MySales from './pages/MySales';
+
+        // ... (in Routes)
+        <Route path="/marketplace" element={
+          <ProtectedRoute>
+            <Marketplace />
+          </ProtectedRoute>
+        } />
+        <Route path="/my-orders" element={
+          <ProtectedRoute>
+            <MyOrders />
+          </ProtectedRoute>
+        } />
+        <Route path="/my-sales" element={
+          <ProtectedRoute>
+            <MySales />
           </ProtectedRoute>
         } />
         <Route path="/admin" element={

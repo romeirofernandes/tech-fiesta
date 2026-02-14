@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
-import { 
-  LayoutDashboard, 
-  Users, 
-  HeartPulse, 
-  Syringe, 
-  Bell, 
-  UserCircle, 
+import {
+  LayoutDashboard,
+  Users,
+  HeartPulse,
+  Syringe,
+  Bell,
+  UserCircle,
   LogOut,
   Moon,
   Sun,
@@ -39,6 +39,7 @@ import VaccinationTracking from "./tabs/VaccinationTracking";
 import AlertsManagement from "./tabs/AlertsManagement";
 import FarmerManagement from "./tabs/FarmerManagement";
 import MarketPricesAdmin from "./tabs/MarketPricesAdmin";
+import TransactionMonitor from "./tabs/TransactionMonitor";
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState("insights");
@@ -47,6 +48,7 @@ export default function AdminDashboard() {
   // Consistent navigation items matching your Sidebar structure
   const navItems = [
     { id: "insights", label: "Dashboard", icon: LayoutDashboard },
+    { id: "transactions", label: "Transactions", icon: IndianRupee },
     { id: "farmers", label: "Farmers", icon: Users },
     { id: "health", label: "Animals", icon: HeartPulse },
     { id: "vaccinations", label: "Vaccination Schedules", icon: Syringe },
@@ -57,7 +59,7 @@ export default function AdminDashboard() {
   return (
     <AdminSidebarProvider defaultOpen={true}>
       <div className="flex h-screen w-full overflow-hidden">
-        
+
         {/* Admin Sidebar */}
         <AdminSidebar>
           <AdminSidebarHeader>
@@ -119,7 +121,7 @@ export default function AdminDashboard() {
           <div className="flex-1 h-full overflow-y-auto">
             <Tabs value={activeTab} className="w-full">
               <div className="p-8 max-w-400 mx-auto w-full">
-                
+
                 <TabsContent value="insights" className="mt-0 outline-none space-y-8 border-none">
                   <header className="flex justify-between items-end">
                     <div>
