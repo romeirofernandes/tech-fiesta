@@ -22,6 +22,11 @@ import {
 // Menu items.
 const items = [
   {
+    title: "Dashboard",
+    url: "/dashboard",
+    icon: Home,
+  },
+  {
     title: "Farms",
     url: "/farms",
     icon: Tractor,
