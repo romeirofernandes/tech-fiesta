@@ -41,6 +41,69 @@ export async function initDatabase() {
     );
   `);
 
+  // Create Animals table
+  db.execSync(`
+    CREATE TABLE IF NOT EXISTS animals (
+      id TEXT PRIMARY KEY,
+      name TEXT,
+      species TEXT,
+      farmId TEXT,
+      imageUrl TEXT,
+      status TEXT,
+      syncStatus TEXT DEFAULT 'synced'
+    );
+  `);
+
+  // Create Alerts table
+  db.execSync(`
+    CREATE TABLE IF NOT EXISTS alerts (
+      id TEXT PRIMARY KEY,
+      severity TEXT,
+      type TEXT,
+      animalId TEXT,
+      animalName TEXT,
+      message TEXT,
+      createdAt TEXT,
+      isResolved INTEGER DEFAULT 0,
+      syncStatus TEXT DEFAULT 'synced'
+    );
+  `);
+
+  // Create Vaccinations table
+  db.execSync(`
+    CREATE TABLE IF NOT EXISTS vaccinations (
+      id TEXT PRIMARY KEY,
+      animalId TEXT,
+      vaccineName TEXT,
+      date TEXT,
+      status TEXT,
+      eventType TEXT,
+      syncStatus TEXT DEFAULT 'synced'
+    );
+  `);
+
+  // Create Health Snapshots table
+  db.execSync(`
+    CREATE TABLE IF NOT EXISTS health_snapshots (
+      id TEXT PRIMARY KEY,
+      animalId TEXT,
+      score INTEGER,
+      date TEXT,
+      syncStatus TEXT DEFAULT 'synced'
+    );
+  `);
+
+  // Create Sensor Events table
+  db.execSync(`
+    CREATE TABLE IF NOT EXISTS sensor_events (
+      id TEXT PRIMARY KEY,
+      type TEXT,
+      value REAL,
+      date TEXT,
+      syncStatus TEXT DEFAULT 'synced'
+    );
+  `);
+
   console.log('Database initialized successfully');
   return db;
 }

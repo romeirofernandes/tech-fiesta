@@ -1,5 +1,4 @@
 import { View } from 'react-native';
-import { ThemeProvider } from '@react-navigation/native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
@@ -38,54 +37,26 @@ export default function RootLayout() {
     return () => unsubscribe();
   }, [loaded, error]);
 
-  // Create custom theme using the app's color palette
-  const customTheme = {
-    dark: isDark,
-    colors: {
-      primary: colors.primary,
-      background: colors.background,
-      card: colors.card,
-      text: colors.text,
-      border: colors.border,
-      notification: colors.destructive,
-    },
-    fonts: {
-      regular: {
-        fontFamily: FontFamily.sans,
-        fontWeight: '400' as const,
-      },
-      medium: {
-        fontFamily: FontFamily.sans,
-        fontWeight: '600' as const,
-      },
-      bold: {
-        fontFamily: FontFamily.sans,
-        fontWeight: 'bold' as const,
-      },
-      heavy: {
-        fontFamily: FontFamily.sans,
-        fontWeight: '900' as const,
-      },
-    },
-  };
-
   if (!loaded && !error) {
     return null;
   }
 
   return (
     <UserProvider>
-      <ThemeProvider value={customTheme}>
-        <View style={{ flex: 1 }} className={colorScheme}>
-          <Stack>
-            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-            <Stack.Screen name="login" options={{ headerShown: false }} />
-            <Stack.Screen name="register" options={{ headerShown: false }} />
-            <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
-          </Stack>
-          <StatusBar style={isDark ? 'light' : 'dark'} />
-        </View>
-      </ThemeProvider>
+      <View style={{ flex: 1 }} className={colorScheme}>
+        <Stack
+          screenOptions={{ 
+            headerShown: false,
+            contentStyle: { backgroundColor: colors.background }
+          }}
+        >
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="login" options={{ headerShown: false }} />
+          <Stack.Screen name="register" options={{ headerShown: false }} />
+          <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
+        </Stack>
+        <StatusBar style={isDark ? 'light' : 'dark'} />
+      </View>
     </UserProvider>
   );
 }

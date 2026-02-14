@@ -105,7 +105,7 @@ export default function SettingsScreen() {
               <SettingItem 
                 icon={Bell} 
                 label="Notifications" 
-                onPress={() => {}} 
+                onPress={() => router.push('/alerts')} 
               />
             </CardContent>
           </Card>

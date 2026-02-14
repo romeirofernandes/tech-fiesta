@@ -279,11 +279,12 @@ export default function ProfileScreen() {
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
+    <>
       <Stack.Screen options={{ title: 'Profile', headerShadowVisible: false, headerStyle: { backgroundColor: themeColors.background }, headerTintColor: themeColors.text }} />
+      <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
       
       {/* Profile Card */}
-      <Card className="mb-8 p-4">
+      <Card className="mb-8 mt-12 p-4">
         <View className="flex-row items-center gap-4 mb-4">
           <TouchableOpacity onPress={() => isEditingProfile && pickImage('profile')} disabled={!isEditingProfile}>
             <Avatar className="h-24 w-24" alt={profileForm.fullName}>
@@ -370,7 +371,7 @@ export default function ProfileScreen() {
       {/* Farms Section */}
       <View className="flex-row items-center justify-between mb-4">
         <Text className="text-2xl font-semibold">Your Farms</Text>
-        <Button size="sm" onPress={() => { setEditingFarm(null); setFarmForm({ name: "", location: "", imageUrl: "", coordinates: null }); setFarmModalVisible(true); }}>
+        <Button size="sm" onPress={() => router.push('/farms/create')}>
           <Plus size={16} color={themeColors.primaryForeground} />
           <Text className="ml-2 text-primary-foreground">Add Farm</Text>
         </Button>
@@ -491,6 +492,7 @@ export default function ProfileScreen() {
         </View>
       </Modal>
     </ScrollView>
+    </>
   );
 }
 

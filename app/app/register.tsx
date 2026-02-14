@@ -3,16 +3,15 @@ import {
   View,
   TextInput,
   TouchableOpacity,
-  Text,
-  StyleSheet,
-  ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
   ScrollView,
   Alert,
-  Dimensions,
+  KeyboardAvoidingView,
+  Platform,
+  ActivityIndicator,
+  Text as RNText,
+  Pressable,
 } from 'react-native';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Link, router } from 'expo-router';
 import {
   createUserWithEmailAndPassword,
@@ -21,12 +20,22 @@ import {
 } from 'firebase/auth';
 import { auth } from '@/config/firebase';
 import { useUser } from '@/context/UserContext';
-import { ThemedView } from '@/components/themed-view';
-import { ThemedText } from '@/components/themed-text';
-import { Colors, Radius } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
-
-const { width } = Dimensions.get('window');
+import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Text } from '@/components/ui/text';
+import { Separator } from '@/components/ui/separator';
+import { Mail, Phone, ArrowRight, Check, User } from 'lucide-react-native';
+import { Colors } from '@/constants/theme';
 
 export default function RegisterScreen() {
   const [activeTab, setActiveTab] = useState<'email' | 'phone'>('email');
@@ -185,406 +194,236 @@ export default function RegisterScreen() {
   };
 
   return (
-    <SafeAreaProvider>
+    <SafeAreaView className="flex-1 bg-background" edges={['top', 'bottom']}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.keyboardAvoid}>
+        className="flex-1"
+      >
         <ScrollView
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={{ flexGrow: 1, padding: 24, justifyContent: 'center' }}
           keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}>
-        {/* Header Section */}
-        <ThemedView style={styles.header}>
-          <ThemedText style={[styles.title, { color: colors.primary }]}>पशु पहचान</ThemedText>
-          <ThemedText style={[styles.subtitle, { color: colors.mutedForeground }]}>
-            Join our livestock community today
-          </ThemedText>
-        </ThemedView>
-
-        {/* Card */}
-        <ThemedView
-          style={[
-            styles.card,
-            {
-              backgroundColor: colors.card,
-              borderColor: colors.border,
-              shadowColor: colors.foreground,
-            },
-          ]}>
-          {/* Full Name Input */}
-          <View style={styles.inputGroup}>
-            <ThemedText style={[styles.label, { color: colors.foreground }]}>Full Name</ThemedText>
-            <TextInput
-              style={[
-                styles.input,
-                {
-                  backgroundColor: colors.input,
-                  color: colors.foreground,
-                  borderColor: colors.border,
-                },
-              ]}
-              placeholder="John Doe"
-              placeholderTextColor={colors.mutedForeground}
-              value={fullName}
-              onChangeText={setFullName}
-              editable={!loading}
-            />
+        >
+          <View className="mb-8 items-center">
+            <Text className="text-3xl font-bold text-primary font-serif mb-2">पशु पहचान</Text>
+            <Text className="text-muted-foreground text-center">
+              Join our livestock community today
+            </Text>
           </View>
 
-          {/* Tab Navigation */}
-          <View style={styles.tabNavigation}>
-            <TouchableOpacity
-              style={[
-                styles.tabButton,
-                activeTab === 'email' && [
-                  styles.tabButtonActive,
-                  { backgroundColor: colors.primary },
-                ],
-              ]}
-              onPress={() => setActiveTab('email')}>
-              <Text
-                style={[
-                  styles.tabButtonText,
-                  {
-                    color:
-                      activeTab === 'email' ? colors.primaryForeground : colors.mutedForeground,
-                    fontWeight: activeTab === 'email' ? '700' : '500',
-                  },
-                ]}>
-                Email
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                styles.tabButton,
-                activeTab === 'phone' && [
-                  styles.tabButtonActive,
-                  { backgroundColor: colors.primary },
-                ],
-              ]}
-              onPress={() => setActiveTab('phone')}>
-              <Text
-                style={[
-                  styles.tabButtonText,
-                  {
-                    color:
-                      activeTab === 'phone' ? colors.primaryForeground : colors.mutedForeground,
-                    fontWeight: activeTab === 'phone' ? '700' : '500',
-                  },
-                ]}>
-                Phone
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Content */}
-          {activeTab === 'email' ? (
-            <View style={styles.content}>
-              <View style={styles.inputGroup}>
-                <ThemedText style={[styles.label, { color: colors.foreground }]}>Email</ThemedText>
-                <TextInput
-                  style={[
-                    styles.input,
-                    {
-                      backgroundColor: colors.input,
-                      color: colors.foreground,
-                      borderColor: colors.border,
-                    },
-                  ]}
-                  placeholder="you@example.com"
-                  placeholderTextColor={colors.mutedForeground}
-                  value={email}
-                  onChangeText={setEmail}
-                  keyboardType="email-address"
-                  autoCapitalize="none"
+          <Card className="w-full max-w-md mx-auto">
+            <CardHeader className="items-center pb-2">
+              <CardTitle>Create an account</CardTitle>
+              <CardDescription>
+                Start your journey with us
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {/* Common Field: Full Name */}
+              <View className="gap-1.5 mb-4">
+                <Label className="pl-1">Full Name</Label>
+                <Input
+                  placeholder="John Doe"
+                  value={fullName}
+                  onChangeText={setFullName}
                   editable={!loading}
                 />
               </View>
 
-              <View style={styles.inputGroup}>
-                <ThemedText style={[styles.label, { color: colors.foreground }]}>Password</ThemedText>
-                <TextInput
-                  style={[
-                    styles.input,
-                    {
-                      backgroundColor: colors.input,
-                      color: colors.foreground,
-                      borderColor: colors.border,
-                    },
-                  ]}
-                  placeholder="••••••••"
-                  placeholderTextColor={colors.mutedForeground}
-                  value={password}
-                  onChangeText={setPassword}
-                  secureTextEntry
-                  editable={!loading}
-                />
+              {/* Tab Navigation */}
+              <View className="flex-row bg-muted/50 p-1 rounded-lg mb-6">
+                <Pressable
+                  style={{
+                    flex: 1,
+                    paddingVertical: 8,
+                    paddingHorizontal: 12,
+                    borderRadius: 6,
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 8,
+                    backgroundColor: activeTab === 'email' ? colors.background : 'transparent',
+                    shadowColor: activeTab === 'email' ? '#000' : 'transparent',
+                    shadowOffset: { width: 0, height: 1 },
+                    shadowOpacity: activeTab === 'email' ? 0.05 : 0,
+                    shadowRadius: 2,
+                    elevation: activeTab === 'email' ? 1 : 0,
+                  }}
+                  onPress={() => setActiveTab('email')}
+                >
+                  <Mail size={16} color={activeTab === 'email' ? colors.primary : colors.mutedForeground} />
+                  <RNText style={{ fontSize: 14, fontWeight: '500', color: activeTab === 'email' ? colors.text : colors.mutedForeground }}>
+                    Email
+                  </RNText>
+                </Pressable>
+                <Pressable
+                  style={{
+                    flex: 1,
+                    paddingVertical: 8,
+                    paddingHorizontal: 12,
+                    borderRadius: 6,
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 8,
+                    backgroundColor: activeTab === 'phone' ? colors.background : 'transparent',
+                    shadowColor: activeTab === 'phone' ? '#000' : 'transparent',
+                    shadowOffset: { width: 0, height: 1 },
+                    shadowOpacity: activeTab === 'phone' ? 0.05 : 0,
+                    shadowRadius: 2,
+                    elevation: activeTab === 'phone' ? 1 : 0,
+                  }}
+                  onPress={() => setActiveTab('phone')}
+                >
+                  <Phone size={16} color={activeTab === 'phone' ? colors.primary : colors.mutedForeground} />
+                  <RNText style={{ fontSize: 14, fontWeight: '500', color: activeTab === 'phone' ? colors.text : colors.mutedForeground }}>
+                    Phone
+                  </RNText>
+                </Pressable>
               </View>
 
-              <TouchableOpacity
-                style={[styles.submitButton, { backgroundColor: colors.primary }]}
-                onPress={handleEmailRegister}
-                disabled={loading}
-                activeOpacity={0.8}>
-                {loading ? (
-                  <ActivityIndicator color={colors.primaryForeground} size="small" />
-                ) : (
-                  <Text style={[styles.submitButtonText, { color: colors.primaryForeground }]}>
-                    Create Account
-                  </Text>
-                )}
-              </TouchableOpacity>
-            </View>
-          ) : (
-            <View style={styles.content}>
-              {!verificationId ? (
-                <>
-                  <View style={styles.inputGroup}>
-                    <ThemedText style={[styles.label, { color: colors.foreground }]}>
-                      Phone Number
-                    </ThemedText>
-                    <TextInput
-                      style={[
-                        styles.input,
-                        {
-                          backgroundColor: colors.input,
-                          color: colors.foreground,
-                          borderColor: colors.border,
-                        },
-                      ]}
-                      placeholder="8097996263"
-                      placeholderTextColor={colors.mutedForeground}
-                      value={phone}
-                      onChangeText={setPhone}
-                      keyboardType="phone-pad"
+              {activeTab === 'email' ? (
+                <View className="gap-4">
+                  <View className="gap-1.5">
+                    <Label className="pl-1">Email address</Label>
+                    <Input
+                      placeholder="name@example.com"
+                      value={email}
+                      onChangeText={setEmail}
+                      keyboardType="email-address"
+                      autoCapitalize="none"
                       editable={!loading}
                     />
                   </View>
 
-                  <TouchableOpacity
-                    style={[styles.submitButton, { backgroundColor: colors.primary }]}
-                    onPress={handleSendOtp}
-                    disabled={loading}
-                    activeOpacity={0.8}>
+                  <View className="gap-1.5">
+                    <Label className="pl-1">Password</Label>
+                    <Input
+                      placeholder="Create a strong password"
+                      value={password}
+                      onChangeText={setPassword}
+                      secureTextEntry
+                      editable={!loading}
+                    />
+                  </View>
+
+                  <Button 
+                    onPress={handleEmailRegister} 
+                    disabled={loading} 
+                    className="w-full mt-2"
+                    size="lg"
+                  >
                     {loading ? (
-                      <ActivityIndicator color={colors.primaryForeground} size="small" />
+                      <ActivityIndicator color="#fff" size="small" />
                     ) : (
-                      <Text style={[styles.submitButtonText, { color: colors.primaryForeground }]}>
-                        Send OTP
-                      </Text>
+                      <>
+                        <Text className="text-primary-foreground font-semibold mr-2">Create Account</Text>
+                        <ArrowRight size={18} color="#fff" />
+                      </>
                     )}
-                  </TouchableOpacity>
-                </>
+                  </Button>
+                </View>
               ) : (
-                <>
-                  <View style={styles.otpSection}>
-                    <ThemedText style={[styles.label, { color: colors.foreground }]}>
-                      Enter OTP
-                    </ThemedText>
-                    <ThemedText
-                      style={[styles.otpHint, { color: colors.mutedForeground }]}>
-                      Check your SMS for the verification code
-                    </ThemedText>
-                  </View>
+                <View className="gap-4">
+                  {!verificationId ? (
+                    <>
+                      <View className="gap-1.5">
+                        <Label className="pl-1">Phone Number</Label>
+                        <Input
+                          placeholder="9876543210"
+                          value={phone}
+                          onChangeText={setPhone}
+                          keyboardType="phone-pad"
+                          editable={!loading}
+                        />
+                         <Text className="text-xs text-muted-foreground pl-1">
+                          We'll send a 6-digit verification code.
+                        </Text>
+                      </View>
 
-                  <View style={styles.otpInputGroup}>
-                    {otp.map((digit, index) => (
-                      <TextInput
-                        key={index}
-                        ref={(ref) => {
-                          if (ref) {
-                            otpRefs.current[index] = ref;
-                          }
-                        }}
-                        style={[
-                          styles.otpInput,
-                          {
-                            backgroundColor: colors.input,
-                            color: colors.foreground,
-                            borderColor: digit ? colors.primary : colors.border,
-                          },
-                        ]}
-                        value={digit}
-                        onChangeText={(value) => handleOtpChange(value, index)}
-                        onKeyPress={({ nativeEvent }) =>
-                          handleOtpKeyPress(nativeEvent.key, index)
-                        }
-                        keyboardType="number-pad"
-                        maxLength={1}
-                        editable={!loading}
-                      />
-                    ))}
-                  </View>
+                      <Button 
+                        onPress={handleSendOtp} 
+                        disabled={loading} 
+                        className="w-full mt-2"
+                        size="lg"
+                      >
+                         {loading ? (
+                          <ActivityIndicator color="#fff" size="small" />
+                        ) : (
+                          <>
+                            <Text className="text-primary-foreground font-semibold mr-2">Send Code</Text>
+                            <ArrowRight size={18} color="#fff" />
+                          </>
+                        )}
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      <View className="gap-2 items-center mb-2">
+                        <Text className="text-sm text-center text-muted-foreground">
+                          Enter the code sent to {phone}
+                        </Text>
+                      </View>
 
-                  <TouchableOpacity
-                    style={[styles.submitButton, { backgroundColor: colors.primary }]}
-                    onPress={handleVerifyOtp}
-                    disabled={loading}
-                    activeOpacity={0.8}>
-                    {loading ? (
-                      <ActivityIndicator color={colors.primaryForeground} size="small" />
-                    ) : (
-                      <Text style={[styles.submitButtonText, { color: colors.primaryForeground }]}>
-                        Verify OTP
-                      </Text>
-                    )}
-                  </TouchableOpacity>
-                </>
+                      <View className="flex-row justify-between gap-2 mb-4">
+                        {otp.map((digit, index) => (
+                          <Input
+                            key={index}
+                            ref={(ref) => {
+                              if (ref) {
+                                otpRefs.current[index] = ref;
+                              }
+                            }}
+                            className="w-12 h-12 text-center text-lg font-bold p-0"
+                            value={digit}
+                            onChangeText={(value) => handleOtpChange(value, index)}
+                            onKeyPress={({ nativeEvent }) =>
+                              handleOtpKeyPress(nativeEvent.key, index)
+                            }
+                            keyboardType="number-pad"
+                            maxLength={1}
+                            editable={!loading}
+                          />
+                        ))}
+                      </View>
+
+                      <Button 
+                        onPress={handleVerifyOtp} 
+                        disabled={loading} 
+                        className="w-full"
+                        size="lg"
+                      >
+                         {loading ? (
+                          <ActivityIndicator color="#fff" size="small" />
+                        ) : (
+                          <>
+                            <Text className="text-primary-foreground font-semibold mr-2">Verify</Text>
+                            <Check size={18} color="#fff" />
+                          </>
+                        )}
+                      </Button>
+                    </>
+                  )}
+                </View>
               )}
-            </View>
-          )}
-
-          {/* Footer */}
-          <View style={styles.footer}>
-            <ThemedText style={[styles.footerText, { color: colors.mutedForeground }]}>
-              Already have an account?{' '}
-              <Link href="/login" asChild>
-                <TouchableOpacity>
-                  <Text style={[styles.footerLink, { color: colors.primary }]}>Login</Text>
+            </CardContent>
+            
+            <CardFooter className="flex-col items-center gap-4 pt-2">
+              <View className="flex-row items-center w-full gap-2">
+                <Separator className="flex-1" />
+                <Text className="text-xs text-muted-foreground uppercase">Or</Text>
+                <Separator className="flex-1" />
+              </View>
+              
+              <View className="flex-row gap-1">
+                <Text className="text-sm text-muted-foreground">Already have an account?</Text>
+                <TouchableOpacity onPress={() => router.push('/login')}>
+                    <Text className="text-sm font-semibold text-primary">Login</Text>
                 </TouchableOpacity>
-              </Link>
-            </ThemedText>
-          </View>
-        </ThemedView>
-      </ScrollView>
+              </View>
+            </CardFooter>
+          </Card>
+        </ScrollView>
       </KeyboardAvoidingView>
-    </SafeAreaProvider>
+    </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  keyboardAvoid: {
-    flex: 1,
-  },
-  scrollContent: {
-    flexGrow: 1,
-    paddingHorizontal: 20,
-    paddingTop: 30,
-    paddingBottom: 40,
-  },
-  header: {
-    marginTop: 20,
-    marginBottom: 20,
-    alignItems: 'center',
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '800',
-    marginBottom: 6,
-    letterSpacing: 0.5,
-  },
-  subtitle: {
-    fontSize: 12,
-    fontWeight: '500',
-  },
-  card: {
-    borderRadius: Radius.lg,
-    padding: 28,
-    borderWidth: 1,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  inputGroup: {
-    gap: 10,
-  },
-  label: {
-    fontSize: 13,
-    fontWeight: '600',
-    letterSpacing: 0.3,
-  },
-  input: {
-    height: 52,
-    borderRadius: Radius.md,
-    paddingHorizontal: 16,
-    fontSize: 16,
-    borderWidth: 1.5,
-  },
-  tabNavigation: {
-    flexDirection: 'row',
-    gap: 12,
-    marginBottom: 28,
-    marginTop: 20,
-    backgroundColor: 'rgba(0,0,0,0.02)',
-    padding: 4,
-    borderRadius: Radius.md,
-  },
-  tabButton: {
-    flex: 1,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: Radius.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  tabButtonActive: {
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  tabButtonText: {
-    fontSize: 14,
-  },
-  content: {
-    gap: 20,
-  },
-  otpSection: {
-    marginBottom: 8,
-  },
-  otpHint: {
-    fontSize: 12,
-    marginTop: 6,
-    fontWeight: '400',
-  },
-  otpInputGroup: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 10,
-    marginBottom: 24,
-  },
-  otpInput: {
-    flex: 1,
-    height: 56,
-    borderRadius: Radius.md,
-    textAlign: 'center',
-    fontSize: 24,
-    fontWeight: '700',
-    borderWidth: 1.5,
-  },
-  submitButton: {
-    height: 54,
-    borderRadius: Radius.md,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 12,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
-    elevation: 4,
-  },
-  submitButtonText: {
-    fontSize: 16,
-    fontWeight: '700',
-    letterSpacing: 0.5,
-  },
-  footer: {
-    marginTop: 28,
-    paddingTop: 20,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(0,0,0,0.05)',
-    alignItems: 'center',
-  },
-  footerText: {
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  footerLink: {
-    fontWeight: '700',
-    textDecorationLine: 'underline',
-  },
-});
