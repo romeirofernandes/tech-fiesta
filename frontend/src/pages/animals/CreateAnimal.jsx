@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ArrowLeft, Upload, Loader2, ChevronRight, ChevronLeft, Image as ImageIcon } from "lucide-react";
+import { ArrowLeft, Upload, Loader2, ChevronRight, ChevronLeft, Image as ImageIcon, Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import axios from "axios";
@@ -20,13 +20,13 @@ import {
 export default function CreateAnimal() {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [analyzingImage, setAnalyzingImage] = useState(false);
   const [farms, setFarms] = useState([]);
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const fileInputRef = useRef(null);
   const navigate = useNavigate();
 
-  // Form data
   const [formData, setFormData] = useState({
     name: "",
     rfid: "",
@@ -38,7 +38,6 @@ export default function CreateAnimal() {
     farmId: "",
   });
 
-  // Questionnaire answers
   const [answers, setAnswers] = useState({
     hasVaccinations: "",
     lastVaccinationDate: "",
@@ -71,23 +70,171 @@ export default function CreateAnimal() {
       setFarms(Array.isArray(response.data) ? response.data : []);
     } catch (error) {
       toast.error("Failed to fetch farms");
-      setFarms([]); // Ensure farms is always an array
+      setFarms([]);
     }
   };
 
-  const handleImageChange = (e) => {
+ const analyzeImageWithGemini = async (file, retryCount = 0) => {
+    setAnalyzingImage(true);
+    toast.info("Analyzing image with AI...", { duration: 2000 });
+
+    try {
+      const base64Image = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const base64 = reader.result.split(',')[1];
+          resolve(base64);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+
+      console.log('=== CALLING GEMINI API ===');
+      console.log('Image size:', base64Image.length, 'characters');
+
+      const { GoogleGenerativeAI } = await import("@google/generative-ai");
+      const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY);
+      
+      const model = genAI.getGenerativeModel({ 
+        model: "gemini-2.5-flash-lite" 
+      });
+
+      const prompt = `You are an expert veterinarian and farm animal specialist. Analyze this image of a farm animal and extract as much information as possible. Fill in ALL fields with your best professional estimate.
+
+IMPORTANT INSTRUCTIONS:
+- For NAME: Suggest a fitting, cute, or common farm animal name based on the animal's appearance, a good indian domestic
+- For SPECIES: Identify the exact species (cow, buffalo, goat, sheep, chicken, horse, pig, etc.)
+- For BREED: Make your best estimate of the breed based on physical characteristics, color patterns, body structure, and features. Be as specific as possible.
+- For GENDER: Estimate based on physical characteristics, body structure, horns/antlers, facial features
+- For AGE: Provide your best estimate based on size, physical development, teeth visibility, body proportions, and other age indicators
+- For AGE_UNIT: Choose the most appropriate unit (days for newborns, months for young animals, years for adults)
+- For NOTES: Include any observations about health, physical condition, distinctive markings, or features
+
+Return your analysis in this exact JSON format:
+{
+  "name": "a suggested name (REQUIRED - never use null)",
+  "species": "the species name (REQUIRED - never use null)",
+  "breed": "your best estimate of the breed (REQUIRED - be specific, never use null)",
+  "gender": "male or female (make your best estimate, never use null)",
+  "age": a number representing estimated age (REQUIRED - never use null),
+  "ageUnit": "days, months, or years (REQUIRED - never use null)",
+  "notes": "detailed observations about the animal"
+}
+
+Make educated guesses based on visible features. Never use null values. Be confident in your professional assessment.
+Return ONLY valid JSON, no markdown formatting or code blocks.`;
+
+      console.log('Sending request to Gemini 1.5 Flash...');
+      const result = await model.generateContent([
+        prompt,
+        {
+          inlineData: {
+            mimeType: file.type,
+            data: base64Image
+          }
+        }
+      ]);
+
+      const response = await result.response;
+      const text = response.text();
+      
+      
+      const jsonMatch = text.match(/```json\n?([\s\S]*?)\n?```/) || text.match(/\{[\s\S]*\}/);
+      const jsonString = jsonMatch ? (jsonMatch[1] || jsonMatch[0]) : text;
+      
+      
+      const extractedData = JSON.parse(jsonString.trim());
+
+      if (extractedData.name && !formData.name) {
+        handleInputChange("name", extractedData.name);
+        console.log('✓ Filled name:', extractedData.name);
+      }
+      if (extractedData.species && !formData.species) {
+        const speciesMap = {
+          'cow': 'cow',
+          'cattle': 'cow',
+          'bull': 'cow',
+          'calf': 'cow',
+          'buffalo': 'buffalo',
+          'water buffalo': 'buffalo',
+          'goat': 'goat',
+          'sheep': 'sheep',
+          'lamb': 'sheep',
+          'chicken': 'chicken',
+          'rooster': 'chicken',
+          'hen': 'chicken',
+        };
+        const mappedSpecies = speciesMap[extractedData.species.toLowerCase()] || extractedData.species.toLowerCase();
+        handleInputChange("species", mappedSpecies);
+      }
+      if (extractedData.breed && !formData.breed) {
+        handleInputChange("breed", extractedData.breed);
+      }
+      if (extractedData.gender && !formData.gender) {
+        handleInputChange("gender", extractedData.gender.toLowerCase());
+      }
+      if (extractedData.age && !formData.age) {
+        handleInputChange("age", extractedData.age.toString());
+      }
+      if (extractedData.ageUnit && !formData.ageUnit) {
+        const validUnits = ['days', 'months', 'years'];
+        const unit = extractedData.ageUnit.toLowerCase();
+        if (validUnits.includes(unit)) {
+          handleInputChange("ageUnit", unit);
+        }
+      }
+
+      const filledFields = [];
+      if (extractedData.name) filledFields.push('name');
+      if (extractedData.species) filledFields.push('species');
+      if (extractedData.breed) filledFields.push('breed');
+      if (extractedData.gender) filledFields.push('gender');
+      if (extractedData.age) filledFields.push('age');
+
+      toast.success(`✨ AI filled ${filledFields.length} fields: ${filledFields.join(', ')}`, { duration: 4000 });
+      
+      if (extractedData.notes) {
+        toast.info(`AI Notes: ${extractedData.notes}`, { duration: 6000 });
+      }
+
+    } catch (error) {
+     
+      
+      if ((error.message?.includes('429') || error.message?.includes('quota')) && retryCount < 2) {
+        const waitTime = (retryCount + 1) * 3000; // 3s, 6s
+        toast.info(`Rate limit reached. Retrying in ${waitTime/1000} seconds...`, { duration: waitTime });
+        
+        await new Promise(resolve => setTimeout(resolve, waitTime));
+        return analyzeImageWithGemini(file, retryCount + 1);
+      }
+      
+      if (error.message?.includes('429') || error.message?.includes('quota')) {
+        toast.error("API rate limit reached. Please wait a moment and try again.", { duration: 5000 });
+      } else {
+        toast.error("Failed to analyze image. You can still fill the form manually.");
+      }
+    } finally {
+      setAnalyzingImage(false);
+    }
+  };
+
+  const handleImageChange = async (e) => {
     const file = e.target.files[0];
     if (file) {
       if (file.size > 5 * 1024 * 1024) {
         toast.error("Image size should be less than 5MB");
         return;
       }
+      
       setImageFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
         setImagePreview(reader.result);
       };
       reader.readAsDataURL(file);
+
+    
+      await analyzeImageWithGemini(file);
     }
   };
 
@@ -144,17 +291,14 @@ export default function CreateAnimal() {
       const token = localStorage.getItem("token");
       const submitData = new FormData();
 
-      // Add basic animal data
       Object.keys(formData).forEach((key) => {
         submitData.append(key, formData[key]);
       });
 
-      // Add image if exists
       if (imageFile) {
         submitData.append("image", imageFile);
       }
 
-      // Format questions and answers for LLM
       const questionsAnswers = [
         {
           question: "Has this animal received any vaccinations previously?",
@@ -174,7 +318,6 @@ export default function CreateAnimal() {
         },
       ];
 
-      // Add pregnancy status for females
       if (formData.gender === "female") {
         questionsAnswers.push({
           question: "Is the animal currently pregnant or has it given birth recently?",
@@ -182,7 +325,6 @@ export default function CreateAnimal() {
         });
       }
 
-      // Add additional info if provided
       if (answers.additionalInfo.trim()) {
         questionsAnswers.push({
           question: "Any additional information about the animal's health or vaccination history?",
@@ -259,27 +401,54 @@ export default function CreateAnimal() {
             <CardContent className="space-y-6">
               {/* Image Upload */}
               <div className="flex flex-col items-center gap-4">
-                <Avatar className="h-32 w-32 border-4 border-primary/20 cursor-pointer" onClick={() => fileInputRef.current?.click()}>
-                  <AvatarImage src={imagePreview} className="object-contain" />
-                  <AvatarFallback className="text-6xl flex items-center justify-center">
-                    <ImageIcon className="w-12 h-12 text-muted-foreground" />
-                  </AvatarFallback>
-                </Avatar>
+                <div className="relative">
+                  <Avatar 
+                    className="h-32 w-32 border-4 border-primary/20 cursor-pointer" 
+                    onClick={() => !analyzingImage && fileInputRef.current?.click()}
+                  >
+                    <AvatarImage src={imagePreview} className="object-cover" />
+                    <AvatarFallback className="text-6xl flex items-center justify-center">
+                      <ImageIcon className="w-12 h-12 text-muted-foreground" />
+                    </AvatarFallback>
+                  </Avatar>
+                  {analyzingImage && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full">
+                      <Loader2 className="h-8 w-8 animate-spin text-white" />
+                    </div>
+                  )}
+                </div>
                 <input
                   ref={fileInputRef}
                   type="file"
                   accept="image/*"
                   onChange={handleImageChange}
                   className="hidden"
+                  disabled={analyzingImage}
                 />
                 <Button
                   type="button"
                   variant="outline"
                   onClick={() => fileInputRef.current?.click()}
+                  disabled={analyzingImage}
                 >
-                  <Upload className="mr-2 h-4 w-4" />
-                  Upload Photo
+                  {analyzingImage ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Analyzing with AI...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="mr-2 h-4 w-4" />
+                      Upload Photo
+                    </>
+                  )}
                 </Button>
+                {imageFile && !analyzingImage && (
+                  <p className="text-sm text-muted-foreground flex items-center gap-1">
+                    <Sparkles className="h-3 w-3" />
+                    AI has analyzed your image
+                  </p>
+                )}
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
