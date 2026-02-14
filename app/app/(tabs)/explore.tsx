@@ -11,7 +11,7 @@ import { FontFamily, Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 
 export default function TabTwoScreen() {
-  const colorScheme = useColorScheme() ?? 'light';
+  const { colorScheme } = useColorScheme();
   
   return (
     <ParallaxScrollView
@@ -22,7 +22,7 @@ export default function TabTwoScreen() {
       headerImage={
         <IconSymbol
           size={310}
-          color="#808080"
+          color={Colors[colorScheme ?? 'light'].mutedForeground}
           name="chevron.left.forwardslash.chevron.right"
           style={styles.headerImage}
         />
@@ -106,7 +106,7 @@ export default function TabTwoScreen() {
 
 const styles = StyleSheet.create({
   headerImage: {
-    color: '#808080',
+    color: '#808080', // Kept for now as stylesheets don't support dynamic theme values directly without hook
     bottom: -90,
     left: -35,
     position: 'absolute',

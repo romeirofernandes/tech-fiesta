@@ -11,7 +11,8 @@ import { Link } from 'expo-router';
 import { useUser } from '@/context/UserContext';
 
 export default function HomeScreen() {
-  const colorScheme = useColorScheme() ?? 'light';
+  const { colorScheme: nativeColorScheme } = useColorScheme();
+  const colorScheme = nativeColorScheme ?? 'light';
   const { firebaseUser, mongoUser, logout } = useUser();
   
   return (
@@ -42,7 +43,7 @@ export default function HomeScreen() {
           style={[styles.logoutButton, { backgroundColor: Colors[colorScheme].destructive }]}
           onPress={logout}
         >
-          <ThemedText style={styles.logoutText}>Logout</ThemedText>
+          <ThemedText style={{ color: Colors[colorScheme].destructiveForeground, fontWeight: '600' }}>Logout</ThemedText>
         </TouchableOpacity>
       </ThemedView>
 
@@ -124,10 +125,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: 'center',
   },
-  logoutText: {
-    color: '#ffffff',
-    fontWeight: '600',
-  },
+
   reactLogo: {
     height: 178,
     width: 290,

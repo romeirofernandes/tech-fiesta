@@ -76,6 +76,7 @@ export const Colors = {
     accent: '#eeede8',                  // oklch(0.94 0.005 95)
     accentForeground: '#3c3c3d',        // oklch(0.25 0.008 90)
     destructive: '#df2b2a',             // oklch(0.577 0.245 27.325)
+    destructiveForeground: '#fafafa',   // oklch(0 0 98)
     // borders / inputs / rings
     border: '#e1e0da',                  // oklch(0.89 0.006 95)
     input: '#e1e0da',                   // oklch(0.89 0.006 95)
@@ -121,6 +122,7 @@ export const Colors = {
     accent: '#44484a',                  // oklch(0.28 0.010 105)
     accentForeground: '#f7f6f5',        // oklch(0.97 0.002 100)
     destructive: '#ff7875',             // oklch(0.704 0.191 22.216)
+    destructiveForeground: '#f7f6f5',   // oklch(0.97 0.002 100)
     // borders / inputs / rings
     border: 'rgba(255,255,255,0.12)',   // oklch(1 0 0 / 12%)
     input: 'rgba(255,255,255,0.16)',    // oklch(1 0 0 / 16%)

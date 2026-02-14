@@ -10,6 +10,7 @@ interface MongoUser {
   email?: string;
   phoneNumber?: string;
   role?: string;
+  imageUrl?: string;
   createdAt?: string;
 }
 
