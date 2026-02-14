@@ -3,6 +3,7 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { AppSidebar } from "@/components/AppSidebar"
 import { AppBreadcrumb } from "@/components/AppBreadcrumb"
 
+
 export function Layout({ children, loading = false }) {
   return (
     <SidebarProvider>

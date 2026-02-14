@@ -20,6 +20,7 @@ import LiveVitals from './pages/LiveVitals';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import { Layout } from './components/Layout';
 
+
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useUser();
   

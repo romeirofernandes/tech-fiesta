@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import React from 'react'
 import { cn } from '@/lib/utils'
 import { ThemeToggle } from '../ThemeToggle'
+import { LanguageToggle } from '../LanguageToggle'
 import { useUser } from '../../context/UserContext'
 
 export const Navbar = () => {
@@ -38,6 +39,7 @@ export const Navbar = () => {
               </Link>
 
               <div className="flex items-center gap-2 lg:hidden">
+                <LanguageToggle />
                 <ThemeToggle />
                 <button
                   onClick={() => setMenuState(!menuState)}
@@ -64,7 +66,8 @@ export const Navbar = () => {
               </div>
 
               <div className="flex w-full flex-col space-y-3 sm:flex-row sm:gap-3 sm:space-y-0 md:w-fit items-center">
-                <div className="hidden lg:block">
+                <div className="hidden lg:flex items-center gap-2">
+                  <LanguageToggle />
                   <ThemeToggle />
                 </div>
                 {user ? (
