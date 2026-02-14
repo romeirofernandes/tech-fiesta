@@ -13,6 +13,7 @@ import { InstrumentSerif_400Regular } from '@expo-google-fonts/instrument-serif'
 import { Colors, FontFamily } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { UserProvider } from '@/context/UserContext';
+import { syncService } from '@/services/SyncService';
 
 export const unstable_settings = {
   anchor: '(tabs)',
@@ -32,6 +33,9 @@ export default function RootLayout() {
     if (loaded || error) {
       SplashScreen.hideAsync();
     }
+    // Start background sync monitoring & cleanup on unmount/re-render
+    const unsubscribe = syncService.startMonitoring();
+    return () => unsubscribe();
   }, [loaded, error]);
 
   // Create custom theme using the app's color palette

@@ -1,23 +1,27 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { View, ScrollView, TouchableOpacity, Alert, Platform, Modal, StyleSheet, ActivityIndicator } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { Image } from 'expo-image';
+import { View, ScrollView, TouchableOpacity, Alert, Modal, StyleSheet, ActivityIndicator } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { useUser } from '@/context/UserContext';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Text } from '@/components/ui/text';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Plus, Pencil, Trash2, Save, X, CloudUpload, Image as ImageIcon } from 'lucide-react-native';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { Colors } from '@/constants/theme';
+import { db, initDatabase } from '@/lib/db';
+import { syncService } from '@/services/SyncService';
 
 interface Farm {
-  _id: string;
+  id: string; // Changed from _id to match local DB consistency
   name: string;
   location: string;
   imageUrl?: string;
   coordinates?: number[] | null;
+  syncStatus?: 'synced' | 'pending' | 'failed';
 }
 
 export default function ProfileScreen() {
@@ -43,17 +47,36 @@ export default function ProfileScreen() {
 
   const API_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
 
+  // Initialize DB and load local data
   useEffect(() => {
-    if (mongoUser?._id) {
-      fetch(`${API_URL}/api/farms?farmerId=${mongoUser._id}`)
-        .then(res => res.json())
-        .then(data => setFarms(Array.isArray(data) ? data : []))
-        .catch(err => {
-          console.error("Error fetching farms:", err);
-          setFarms([]);
-        });
+    const setup = async () => {
+      try {
+        await initDatabase();
+        loadLocalFarms();
+        if (mongoUser?._id) {
+           // Helper to sync in background
+           syncService.pullFarms(mongoUser._id).then(() => loadLocalFarms());
+           syncService.processQueue();
+        }
+      } catch (e) {
+        console.error("DB Setup Error:", e);
+      }
+    };
+    setup();
+  }, [mongoUser]);
+
+  const loadLocalFarms = () => {
+    try {
+        const result = db.getAllSync('SELECT * FROM farms');
+        const loadedFarms = result.map((row: any) => ({
+            ...row,
+            coordinates: row.coordinates ? JSON.parse(row.coordinates) : null
+        }));
+        setFarms(loadedFarms);
+    } catch (e) {
+        console.error("Error loading local farms:", e);
     }
-  }, [mongoUser, API_URL]);
+  };
 
   useEffect(() => {
     if (mongoUser) {
@@ -77,6 +100,7 @@ export default function ProfileScreen() {
     if (!result.canceled) {
       const uri = result.assets[0].uri;
       if (type === 'profile') {
+        // Here we ideally save image locally first, then upload
         handleProfileImageUpload(uri);
       } else {
         handleFarmImageUpload(uri);
@@ -85,6 +109,8 @@ export default function ProfileScreen() {
   };
 
   const handleProfileImageUpload = async (uri: string) => {
+    // For offline-first, we'd store the URI locally. 
+    // Implementing direct upload for now as binary sync is complex
     setProfileImageUploading(true);
     const formData = new FormData();
     formData.append("image", {
@@ -94,19 +120,22 @@ export default function ProfileScreen() {
     } as any);
 
     try {
-      const res = await fetch(`${API_URL}/api/farm-images/upload`, {
-        method: "POST",
-        body: formData,
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-      const data = await res.json();
-      if (data.url) {
-        setProfileForm(prev => ({ ...prev, imageUrl: data.url }));
-        Alert.alert("Success", "Profile image uploaded!");
+      // Direct upload if online
+      if (await syncService.isOnline()) {
+          const res = await fetch(`${API_URL}/api/farm-images/upload`, {
+            method: "POST",
+            body: formData,
+            headers: {
+              'Content-Type': 'multipart/form-data',
+            },
+          });
+          const data = await res.json();
+          if (data.url) {
+            setProfileForm(prev => ({ ...prev, imageUrl: data.url }));
+            Alert.alert("Success", "Profile image uploaded!");
+          } 
       } else {
-        Alert.alert("Error", "Upload failed");
+          Alert.alert("Offline", "Image upload requires internet connection for now.");
       }
     } catch (error) {
       console.error(error);
@@ -118,85 +147,99 @@ export default function ProfileScreen() {
 
   const handleProfileSave = async () => {
     if (!mongoUser?._id) return;
+    
+    // Save to local DB (UserProfile table needs to be populated/updated)
     try {
-      const res = await fetch(`${API_URL}/api/farmers/${mongoUser._id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(profileForm)
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setMongoUser(data);
+        db.runSync(
+            `INSERT OR REPLACE INTO user_profile (id, fullName, email, phoneNumber, imageUrl, syncStatus) VALUES (?, ?, ?, ?, ?, ?)`,
+            [mongoUser._id, profileForm.fullName, profileForm.email, profileForm.phoneNumber, profileForm.imageUrl, 'pending']
+        );
+
+        // Queue sync
+        await syncService.addToQueue('UPDATE', 'user_profile', { ...profileForm, _id: mongoUser._id });
+        
+        // Optimistic update
+        setMongoUser({ ...mongoUser, ...profileForm });
         setIsEditingProfile(false);
-        Alert.alert("Success", "Profile updated!");
-      } else {
-        Alert.alert("Error", data.message || "Failed to update profile");
-      }
+        Alert.alert("Saved", "Profile saved locally and will sync when online.");
     } catch (error) {
-      Alert.alert("Error", "Network error");
+       console.error("Profile save error:", error);
+       Alert.alert("Error", "Failed to save profile locally");
     }
   };
 
   const handleFarmImageUpload = async (uri: string) => {
-    setFarmImageUploading(true);
-    const formData = new FormData();
-    formData.append("image", {
-      uri,
-      name: 'farm.jpg',
-      type: 'image/jpeg',
-    } as any);
+      setFarmImageUploading(true);
+      // Simpler approach: verify online, then upload. Complex binary sync skipped for brevity as user asked for "data" sync mostly.
+      try {
+          if (await syncService.isOnline()) {
+            const formData = new FormData();
+            formData.append("image", {
+              uri,
+              name: 'farm.jpg',
+              type: 'image/jpeg',
+            } as any);
 
-    try {
-      const res = await fetch(`${API_URL}/api/farm-images/upload`, {
-        method: "POST",
-        body: formData,
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-      const data = await res.json();
-      if (data.url) {
-        setFarmForm(prev => ({ ...prev, imageUrl: data.url }));
-        Alert.alert("Success", "Farm image uploaded!");
-      } else {
-        Alert.alert("Error", "Upload failed");
+            const res = await fetch(`${API_URL}/api/farm-images/upload`, {
+                method: "POST",
+                body: formData,
+                headers: { 'Content-Type': 'multipart/form-data' },
+            });
+            const data = await res.json();
+            if (data.url) {
+                setFarmForm(prev => ({ ...prev, imageUrl: data.url }));
+                Alert.alert("Success", "Image uploaded!");
+            }
+          } else {
+              Alert.alert("Offline", "Please connect to internet to upload new images.");
+          }
+      } catch (e) {
+          Alert.alert("Error", "Upload failed");
+      } finally {
+          setFarmImageUploading(false);
       }
-    } catch (error) {
-      Alert.alert("Error", "Upload failed");
-    } finally {
-      setFarmImageUploading(false);
-    }
   };
 
   const handleFarmSave = async () => {
     if (!mongoUser?._id) return;
-    const method = editingFarm ? "PUT" : "POST";
-    const url = editingFarm
-      ? `${API_URL}/api/farms/${editingFarm._id}`
-      : `${API_URL}/api/farms`;
-    const body = { ...farmForm, farmerId: mongoUser._id };
     
+    const tempId = Date.now().toString(); // Temporary ID for local
+    const isNew = !editingFarm;
+    
+    const farmData = {
+        id: isNew ? tempId : editingFarm.id,
+        name: farmForm.name,
+        location: farmForm.location,
+        imageUrl: farmForm.imageUrl,
+        coordinates: farmForm.coordinates,
+        farmerId: mongoUser._id,
+        syncStatus: 'pending'
+    };
+
     try {
-      const res = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body)
-      });
-      const data = await res.json();
-      if (res.ok) {
+        if (isNew) {
+            db.runSync(
+                `INSERT INTO farms (id, name, location, imageUrl, coordinates, farmerId, syncStatus, tempId) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+                [tempId, farmData.name, farmData.location, farmData.imageUrl || '', JSON.stringify(farmData.coordinates), farmData.farmerId, 'pending', tempId]
+            );
+            await syncService.addToQueue('CREATE', 'farms', { ...farmData, tempId });
+        } else {
+            db.runSync(
+                `UPDATE farms SET name = ?, location = ?, imageUrl = ?, coordinates = ?, syncStatus = ? WHERE id = ?`,
+                [farmData.name, farmData.location, farmData.imageUrl || '', JSON.stringify(farmData.coordinates), 'pending', farmData.id]
+            );
+            await syncService.addToQueue('UPDATE', 'farms', { ...farmData, _id: farmData.id });
+        }
+
         setFarmModalVisible(false);
         setEditingFarm(null);
         setFarmForm({ name: "", location: "", imageUrl: "", coordinates: null });
-        // Refresh farms
-        fetch(`${API_URL}/api/farms?farmerId=${mongoUser._id}`)
-          .then(res => res.json())
-          .then(data => setFarms(data));
-        Alert.alert("Success", editingFarm ? "Farm updated!" : "Farm created!");
-      } else {
-        Alert.alert("Error", data.message || "Failed to save farm");
-      }
-    } catch {
-      Alert.alert("Error", "Network error");
+        loadLocalFarms(); // Refresh UI
+        Alert.alert("Saved", isNew ? "Farm created locally!" : "Farm updated locally!");
+        
+    } catch (e) {
+        console.error("Save Farm Error:", e);
+        Alert.alert("Error", "Failed to save locally");
     }
   };
 
@@ -222,15 +265,12 @@ export default function ProfileScreen() {
           style: "destructive", 
           onPress: async () => {
             try {
-              const res = await fetch(`${API_URL}/api/farms/${farmId}`, { method: "DELETE" });
-              if (res.ok) {
-                setFarms(farms.filter(f => f._id !== farmId));
-                Alert.alert("Success", "Farm deleted!");
-              } else {
-                Alert.alert("Error", "Failed to delete farm");
-              }
-            } catch {
-              Alert.alert("Error", "Network error");
+              db.runSync('DELETE FROM farms WHERE id = ?', [farmId]);
+              await syncService.addToQueue('DELETE', 'farms', { _id: farmId });
+              loadLocalFarms();
+            } catch (e) {
+              console.error("Delete error:", e);
+              Alert.alert("Error", "Failed to delete locally");
             }
           }
         }
@@ -338,28 +378,33 @@ export default function ProfileScreen() {
 
       <View className="gap-4 pb-20">
         {farms.map(farm => (
-          <Card key={farm._id} className="overflow-hidden">
+          <Card key={farm.id} className="overflow-hidden">
             {farm.imageUrl ? (
-              <Avatar className="w-full h-40 rounded-none" alt={farm.name}>
-                <AvatarImage source={{ uri: farm.imageUrl }} className="object-cover" />
-                <AvatarFallback className="w-full h-40 rounded-none bg-muted items-center justify-center">
-                  <ImageIcon size={40} color={iconColor} />
-                </AvatarFallback>
-              </Avatar>
+              <View className="w-full h-48 bg-muted">
+                <Image 
+                  source={{ uri: farm.imageUrl }} 
+                  style={{ width: '100%', height: '100%' }}
+                  contentFit="cover"
+                  transition={200}
+                />
+              </View>
             ) : (
-               <View className="w-full h-40 bg-muted items-center justify-center">
-                 <ImageIcon size={40} color={iconColor} />
+               <View className="w-full h-48 bg-muted items-center justify-center">
+                 <ImageIcon size={48} color={iconColor} />
                </View>
             )}
             <CardContent className="pt-4">
               <Text className="font-semibold text-lg">{farm.name}</Text>
               <Text className="text-muted-foreground text-sm">{farm.location}</Text>
+              {farm.syncStatus === 'pending' && (
+                  <Text className="text-yellow-600 text-xs mt-1">Sync Pending...</Text>
+              )}
               <View className="flex-row gap-2 mt-4">
                 <Button size="sm" variant="outline" onPress={() => handleEditFarm(farm)} className="flex-1 flex-row items-center justify-center">
                   <Pencil size={16} color={iconColor} />
                   <Text className="ml-2">Edit</Text>
                 </Button>
-                <Button size="sm" variant="destructive" onPress={() => handleDeleteFarm(farm._id)} className="flex-1 flex-row items-center justify-center">
+                <Button size="sm" variant="destructive" onPress={() => handleDeleteFarm(farm.id)} className="flex-1 flex-row items-center justify-center">
                   <Trash2 size={16} color={themeColors.destructiveForeground || '#fff'} />
                   <Text className="ml-2 text-destructive-foreground">Delete</Text>
                 </Button>
