@@ -1,16 +1,25 @@
 import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import { Platform, StyleSheet, TouchableOpacity, View } from 'react-native';
 
 import { HelloWave } from '@/components/hello-wave';
 import ParallaxScrollView from '@/components/parallax-scroll-view';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { Colors } from '@/constants/theme';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 import { Link } from 'expo-router';
+import { useUser } from '@/context/UserContext';
 
 export default function HomeScreen() {
+  const colorScheme = useColorScheme() ?? 'light';
+  const { firebaseUser, mongoUser, logout } = useUser();
+  
   return (
     <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
+      headerBackgroundColor={{ 
+        light: Colors.light.primary, 
+        dark: Colors.dark.primary 
+      }}
       headerImage={
         <Image
           source={require('@/assets/images/partial-react-logo.png')}
@@ -21,6 +30,22 @@ export default function HomeScreen() {
         <ThemedText type="title">Welcome!</ThemedText>
         <HelloWave />
       </ThemedView>
+      
+      <ThemedView style={styles.userContainer}>
+        <ThemedText type="subtitle">User Info</ThemedText>
+        <ThemedText>Email: {firebaseUser?.email || 'N/A'}</ThemedText>
+        <ThemedText>Phone: {firebaseUser?.phoneNumber || mongoUser?.phoneNumber || 'N/A'}</ThemedText>
+        {mongoUser && (
+          <ThemedText>Name: {mongoUser.fullName}</ThemedText>
+        )}
+        <TouchableOpacity 
+          style={[styles.logoutButton, { backgroundColor: Colors[colorScheme].destructive }]}
+          onPress={logout}
+        >
+          <ThemedText style={styles.logoutText}>Logout</ThemedText>
+        </TouchableOpacity>
+      </ThemedView>
+
       <ThemedView style={styles.stepContainer}>
         <ThemedText type="subtitle">Step 1: Try it</ThemedText>
         <ThemedText>
@@ -87,6 +112,21 @@ const styles = StyleSheet.create({
   stepContainer: {
     gap: 8,
     marginBottom: 8,
+  },
+  userContainer: {
+    gap: 8,
+    marginBottom: 16,
+    padding: 16,
+  },
+  logoutButton: {
+    marginTop: 12,
+    padding: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  logoutText: {
+    color: '#ffffff',
+    fontWeight: '600',
   },
   reactLogo: {
     height: 178,

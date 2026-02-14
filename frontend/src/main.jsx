@@ -9,7 +9,7 @@ import { Toaster } from "@/components/ui/sonner"
 import { initElevenLabsWidget } from './utils/elevenLabsWidget.js'
 
 // Initialize ElevenLabs widget
-initElevenLabsWidget()
+// initElevenLabsWidget()
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>

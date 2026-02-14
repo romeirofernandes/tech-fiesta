@@ -1,13 +1,30 @@
-import { Tabs } from 'expo-router';
+import { Tabs, Redirect } from 'expo-router';
 import React from 'react';
 
 import { HapticTab } from '@/components/haptic-tab';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useUser } from '@/context/UserContext';
+import { ActivityIndicator, View, StyleSheet } from 'react-native';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
+  const { firebaseUser, loading } = useUser();
+
+  // Show loading screen while checking auth
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={Colors[colorScheme ?? 'light'].primary} />
+      </View>
+    );
+  }
+
+  // Redirect to login if not authenticated
+  if (!firebaseUser) {
+    return <Redirect href="/login" />;
+  }
 
   return (
     <Tabs
@@ -33,3 +50,11 @@ export default function TabLayout() {
     </Tabs>
   );
 }
+
+const styles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+});

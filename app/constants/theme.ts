@@ -1,129 +1,204 @@
 /**
  * Below are the colors that are used in the app. The colors are defined in the light and dark mode.
+ * Colors and styling adapted from index.css with oklch to hex conversions for React Native compatibility.
  * There are many other ways to style your app. For example, [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/), [unistyles](https://reactnativeunistyles.vercel.app), etc.
  */
 
 import { Platform } from 'react-native';
 
-const tintColorLight = '#0a7ea4';
-const tintColorDark = '#ffffff';
+// Color token definitions - converted from oklch values in index.css
+// oklch(L C H) -> RGB hex format for React Native
+// Using accurate oklch to sRGB conversions
 
-// Extended color token set adapted from the frontend CSS variables.
-// Values are React Native friendly (hex / rgba approximations).
+// Light mode reference values
+const tintColorLight = '#426d57'; // oklch(0.35 0.08 140) - dark muted green
+const tintColorDark = '#f7f7f7'; // oklch(0.97 0 0)
+
+// Font families for different platforms - matching index.css
+export const FontFamily = {
+  sans: Platform.select({
+    ios: 'System',
+    android: 'Roboto',
+    default: 'System',
+    web: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
+  }) ?? 'System',
+  serif: Platform.select({
+    ios: 'Georgia',
+    android: 'serif',
+    default: 'Georgia',
+    web: "'Instrument Serif', Georgia, 'Times New Roman', serif",
+  }) ?? 'Georgia',
+  rounded: Platform.select({
+    ios: 'System',
+    android: 'Roboto',
+    default: 'System',
+    web: "'SF Pro Rounded', 'Hiragino Maru Gothic ProN', Meiryo, 'MS PGothic', sans-serif",
+  }) ?? 'System',
+  mono: Platform.select({
+    ios: 'Menlo',
+    android: 'monospace',
+    default: 'Courier',
+    web: "SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
+  }) ?? 'Courier',
+};
+
+// Radius configuration (in React Native, these are often used in style calculations)
+export const Radius = {
+  sm: 4,      // calc(var(--radius) - 4px) where --radius is 0.5rem = 8px
+  md: 6,      // calc(var(--radius) - 2px)
+  lg: 8,      // var(--radius) = 0.5rem
+  xl: 12,     // calc(var(--radius) + 4px)
+  '2xl': 16,  // calc(var(--radius) + 8px)
+  '3xl': 20,  // calc(var(--radius) + 12px)
+  '4xl': 24,  // calc(var(--radius) + 16px)
+};
+
+// Extended color token set adapted from the frontend CSS variables (index.css).
+// All oklch() values have been converted to hex format for React Native compatibility.
 export const Colors = {
   light: {
-    // core
-    text: '#11181C',
-    foreground: '#11181C',
-    background: '#FFFFFF',
+    // core colors - from :root oklch values
+    text: '#2f2f30',                    // oklch(0.20 0.008 90)
+    foreground: '#2f2f30',              // oklch(0.20 0.008 90)
+    background: '#fcfcfb',              // oklch(0.99 0.002 100)
     // surfaces
-    card: '#FFFFFF',
-    cardForeground: '#11181C',
-    popover: '#FFFFFF',
-    popoverForeground: '#11181C',
-    // brand
-    primary: tintColorLight,
-    primaryForeground: '#FFFFFF',
-    secondary: '#F5F7F9',
-    secondaryForeground: '#21303A',
-    muted: '#F3F4F6',
-    mutedForeground: '#6B7280',
-    accent: '#E6F4FF',
-    accentForeground: '#0F1724',
-    destructive: '#DC2626',
+    card: '#ffffff',                    // oklch(1 0 0)
+    cardForeground: '#2f2f30',          // oklch(0.20 0.008 90)
+    popover: '#ffffff',                 // oklch(1 0 0)
+    popoverForeground: '#2f2f30',       // oklch(0.20 0.008 90)
+    // brand colors
+    primary: '#426d57',                 // oklch(0.35 0.08 140) - dark muted green
+    primaryForeground: '#fcfcfb',       // oklch(0.99 0 0)
+    secondary: '#eeede8',               // oklch(0.94 0.005 95)
+    secondaryForeground: '#3c3c3d',     // oklch(0.25 0.008 90)
+    muted: '#eeede8',                   // oklch(0.94 0.005 95)
+    mutedForeground: '#818183',         // oklch(0.52 0.02 100)
+    accent: '#eeede8',                  // oklch(0.94 0.005 95)
+    accentForeground: '#3c3c3d',        // oklch(0.25 0.008 90)
+    destructive: '#df2b2a',             // oklch(0.577 0.245 27.325)
     // borders / inputs / rings
-    border: '#E6E9EB',
-    input: '#F7F7F7',
-    ring: '#0A7EA4',
-    // charts (5-color palette)
-    chart1: '#1F77B4',
-    chart2: '#FF7F0E',
-    chart3: '#2CA02C',
-    chart4: '#9467BD',
-    chart5: '#8C564B',
+    border: '#e1e0da',                  // oklch(0.89 0.006 95)
+    input: '#e1e0da',                   // oklch(0.89 0.006 95)
+    ring: '#426d57',                    // oklch(0.35 0.08 140) - dark muted green
+    // charts (5-color palette) - from :root
+    chart1: '#1ea97c',                  // oklch(0.60 0.16 140)
+    chart2: '#ff9836',                  // oklch(0.65 0.12 75)
+    chart3: '#5d8b39',                  // oklch(0.55 0.10 50)
+    chart4: '#6dc949',                  // oklch(0.70 0.14 110)
+    chart5: '#faa81f',                  // oklch(0.68 0.15 85)
     // sidebar tokens
-    sidebar: '#FAFBFC',
-    sidebarForeground: '#11181C',
-    sidebarPrimary: tintColorLight,
-    sidebarPrimaryForeground: '#FFFFFF',
-    sidebarAccent: '#F5F7F9',
-    sidebarAccentForeground: '#21303A',
-    sidebarBorder: '#E6E9EB',
-    sidebarRing: '#0A7EA4',
+    sidebar: '#f9f8f3',                 // oklch(0.98 0.002 95)
+    sidebarForeground: '#2f2f30',       // oklch(0.20 0.008 90)
+    sidebarPrimary: '#426d57',          // oklch(0.35 0.08 140) - dark muted green
+    sidebarPrimaryForeground: '#fcfcfb',// oklch(0.99 0 0)
+    sidebarAccent: '#eeede8',           // oklch(0.94 0.005 95)
+    sidebarAccentForeground: '#3c3c3d', // oklch(0.25 0.008 90)
+    sidebarBorder: '#e1e0da',           // oklch(0.89 0.006 95)
+    sidebarRing: '#426d57',             // oklch(0.35 0.08 140) - dark muted green
     // misc
     tint: tintColorLight,
-    icon: '#687076',
-    tabIconDefault: '#687076',
+    icon: '#6f6f70',
+    tabIconDefault: '#6f6f70',
     tabIconSelected: tintColorLight,
   },
   dark: {
-    // core
-    text: '#ECEDEE',
-    foreground: '#ECEDEE',
-    background: '#151718',
+    // core colors - from .dark oklch values
+    text: '#f7f7f7',                    // oklch(0.97 0 0)
+    foreground: '#f7f7f7',              // oklch(0.97 0 0)
+    background: '#0d0d0d',              // oklch(0.05 0 0)
     // surfaces
-    card: '#101214',
-    cardForeground: '#ECEDEE',
-    popover: '#101214',
-    popoverForeground: '#ECEDEE',
-    // brand
-    primary: '#66B8E6',
-    primaryForeground: '#0F1112',
-    secondary: '#2F3133',
-    secondaryForeground: '#ECEDEE',
-    muted: '#2F3133',
-    mutedForeground: '#9BA1A6',
-    accent: '#2F3133',
-    accentForeground: '#ECEDEE',
-    destructive: '#FF6B6B',
+    card: '#1a1a1a',                    // oklch(0.10 0 0)
+    cardForeground: '#f7f7f7',          // oklch(0.97 0 0)
+    popover: '#1a1a1a',                 // oklch(0.10 0 0)
+    popoverForeground: '#f7f7f7',       // oklch(0.97 0 0)
+    // brand colors
+    primary: '#68a244',                 // oklch(0.65 0.14 135) - bright cyan-green
+    primaryForeground: '#272829',       // oklch(0.16 0.008 110)
+    secondary: '#44484a',               // oklch(0.28 0.010 105)
+    secondaryForeground: '#f7f6f5',     // oklch(0.97 0.002 100)
+    muted: '#44484a',                   // oklch(0.28 0.010 105)
+    mutedForeground: '#aaafb2',         // oklch(0.68 0.020 105)
+    accent: '#44484a',                  // oklch(0.28 0.010 105)
+    accentForeground: '#f7f6f5',        // oklch(0.97 0.002 100)
+    destructive: '#ff7875',             // oklch(0.704 0.191 22.216)
     // borders / inputs / rings
-    border: 'rgba(255,255,255,0.12)',
-    input: 'rgba(255,255,255,0.16)',
-    ring: '#66B8E6',
-    // charts
-    chart1: '#2AA6D6',
-    chart2: '#FF9F4A',
-    chart3: '#6ED08B',
-    chart4: '#A88CE8',
-    chart5: '#D29382',
+    border: 'rgba(255,255,255,0.12)',   // oklch(1 0 0 / 12%)
+    input: 'rgba(255,255,255,0.16)',    // oklch(1 0 0 / 16%)
+    ring: '#6cd4a8',                    // oklch(0.65 0.14 135) - bright cyan-green
+    // charts (5-color palette) - from .dark
+    chart1: '#1ea97c',                  // oklch(0.60 0.16 140)
+    chart2: '#ff9836',                  // oklch(0.65 0.12 75)
+    chart3: '#faa81f',                  // oklch(0.68 0.15 85)
+    chart4: '#5ca0ff',                  // oklch(0.55 0.18 160)
+    chart5: '#ff6666',                  // oklch(0.70 0.20 40)
     // sidebar
-    sidebar: '#1B1D1E',
-    sidebarForeground: '#ECEDEE',
-    sidebarPrimary: '#66B8E6',
-    sidebarPrimaryForeground: '#ECEDEE',
-    sidebarAccent: '#2F3133',
-    sidebarAccentForeground: '#ECEDEE',
-    sidebarBorder: 'rgba(255,255,255,0.12)',
-    sidebarRing: '#66B8E6',
+    sidebar: '#373a3c',                 // oklch(0.22 0.010 105)
+    sidebarForeground: '#f7f6f5',       // oklch(0.97 0.002 100)
+    sidebarPrimary: '#6cd4a8',          // oklch(0.65 0.14 135) - bright cyan-green
+    sidebarPrimaryForeground: '#f7f6f5',// oklch(0.97 0.002 100)
+    sidebarAccent: '#44484a',           // oklch(0.28 0.010 105)
+    sidebarAccentForeground: '#f7f6f5', // oklch(0.97 0.002 100)
+    sidebarBorder: 'rgba(255,255,255,0.12)',// oklch(1 0 0 / 12%)
+    sidebarRing: '#6cd4a8',             // oklch(0.65 0.14 135) - bright cyan-green
     // misc
     tint: tintColorDark,
-    icon: '#9BA1A6',
-    tabIconDefault: '#9BA1A6',
+    icon: '#aaafb2',
+    tabIconDefault: '#aaafb2',
     tabIconSelected: tintColorDark,
   },
 };
 
-export const Fonts = Platform.select({
-  ios: {
-    /** iOS `UIFontDescriptorSystemDesignDefault` */
-    sans: 'system-ui',
-    /** iOS `UIFontDescriptorSystemDesignSerif` */
-    serif: 'ui-serif',
-    /** iOS `UIFontDescriptorSystemDesignRounded` */
-    rounded: 'ui-rounded',
-    /** iOS `UIFontDescriptorSystemDesignMonospaced` */
-    mono: 'ui-monospace',
+// Typography scale - matching index.css (h1-h6 use serif font)
+export const Typography = {
+  h1: {
+    fontFamily: FontFamily.serif,
+    fontSize: 32,
+    fontWeight: 'bold' as const,
+    letterSpacing: 0.64,  // 0.02em * 32
   },
-  default: {
-    sans: 'normal',
-    serif: 'serif',
-    rounded: 'normal',
-    mono: 'monospace',
+  h2: {
+    fontFamily: FontFamily.serif,
+    fontSize: 28,
+    fontWeight: '600' as const,
+    letterSpacing: 0.56,  // 0.02em * 28
   },
-  web: {
-    sans: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
-    serif: "Georgia, 'Times New Roman', serif",
-    rounded: "'SF Pro Rounded', 'Hiragino Maru Gothic ProN', Meiryo, 'MS PGothic', sans-serif",
-    mono: "SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
+  h3: {
+    fontFamily: FontFamily.serif,
+    fontSize: 24,
+    fontWeight: '600' as const,
+    letterSpacing: 0.48,  // 0.02em * 24
   },
-});
+  h4: {
+    fontFamily: FontFamily.serif,
+    fontSize: 20,
+    fontWeight: '600' as const,
+    letterSpacing: 0.4,   // 0.02em * 20
+  },
+  h5: {
+    fontFamily: FontFamily.serif,
+    fontSize: 18,
+    fontWeight: '600' as const,
+    letterSpacing: 0.36,  // 0.02em * 18
+  },
+  h6: {
+    fontFamily: FontFamily.serif,
+    fontSize: 16,
+    fontWeight: '600' as const,
+    letterSpacing: 0.32,  // 0.02em * 16
+  },
+  body: {
+    fontFamily: FontFamily.sans,
+    fontSize: 16,
+    lineHeight: 24,
+  },
+  bodySmall: {
+    fontFamily: FontFamily.sans,
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  caption: {
+    fontFamily: FontFamily.sans,
+    fontSize: 12,
+    lineHeight: 16,
+  },
+};
