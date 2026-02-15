@@ -7,6 +7,8 @@ router.post('/', upload.single('image'), animalController.createAnimal);
 router.get('/', animalController.getAnimals);
 router.get('/:id', animalController.getAnimalById);
 router.put('/:id', upload.single('image'), animalController.updateAnimal);
+router.post('/identify', upload.single('image'), animalController.identifyAnimal);
+router.post('/monitor', upload.single('image'), animalController.monitorFarm);
 router.delete('/:id', animalController.deleteAnimal);
 
 module.exports = router;

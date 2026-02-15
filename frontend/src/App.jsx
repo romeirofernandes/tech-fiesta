@@ -28,6 +28,8 @@ import Marketplace from './pages/Marketplace';
 import { Layout } from './components/Layout';
 import MyOrders from './pages/MyOrders';
 import MySales from './pages/MySales';
+import AnimalIdentification from './pages/AnimalIdentification';
+import FarmMonitoring from './pages/FarmMonitoring';
 
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useUser();
@@ -166,10 +168,16 @@ function App() {
             <SchemeDetail />
           </ProtectedRoute>
         } />
-        import MyOrders from './pages/MyOrders';
-        import MySales from './pages/MySales';
-
-        // ... (in Routes)
+        <Route path="/farm-monitoring" element={
+          <ProtectedRoute>
+            <FarmMonitoring />
+          </ProtectedRoute>
+        } />
+        <Route path="/animal-identification" element={
+          <ProtectedRoute>
+            <AnimalIdentification />
+          </ProtectedRoute>
+        } />
         <Route path="/marketplace" element={
           <ProtectedRoute>
             <Marketplace />

@@ -1,4 +1,4 @@
-import { Calendar, Home, Tractor, Beef, Syringe, LogOut, User, Activity, Moon, Sun, Globe, BarChart3, Bell, Sprout, Store, Package, Coins } from "lucide-react"
+import { Calendar, Home, Tractor, Beef, Syringe, LogOut, User, Activity, Moon, Sun, Globe, BarChart3, Bell, Sprout, Store, Package, Coins, ScanFace, Video } from "lucide-react"
 import { useUser } from "../context/UserContext"
 import { useTheme } from "../context/ThemeContext"
 import { Button } from "@/components/ui/button"
@@ -35,6 +35,16 @@ const items = [
     title: "Animals",
     url: "/animals",
     icon: Beef,
+  },
+  // {
+  //   title: "Animal ID",
+  //   url: "/animal-identification",
+  //   icon: ScanFace, 
+  // },
+  {
+    title: "Farm Monitor",
+    url: "/farm-monitoring",
+    icon: Video,
   },
   {
     title: "Calendar",

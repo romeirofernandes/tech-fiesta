@@ -2,6 +2,8 @@ const Animal = require('../models/Animal');
 const VaccinationEvent = require('../models/VaccinationEvent');
 const cloudinary = require('../config/cloudinary');
 const { generateVaccinationEvents } = require('../services/vaccinationService');
+const { generateEmbedding, cosineSimilarity, detectAndCropAnimals } = require('../services/embeddingService');
+const AnimalEmbedding = require('../models/AnimalEmbedding');
 
 exports.createAnimal = async (req, res) => {
     try {
@@ -62,6 +64,22 @@ exports.createAnimal = async (req, res) => {
                         })
                     )
                 );
+
+                // Generate embedding if image exists
+                if (imageUrl) {
+                    try {
+                        // Pass the Cloudinary URL to the embedding service
+                        const vector = await generateEmbedding(imageUrl);
+                        await AnimalEmbedding.create({
+                            animalId: newAnimal._id,
+                            embedding: vector
+                        });
+                    } catch (embError) {
+                        console.error('Embedding generation failed:', embError);
+                        // We don't fail the request, just log it. 
+                        // The animal is created, just not searchable by face yet.
+                    }
+                }
 
                 return res.status(201).json({ 
                     animal: newAnimal,
@@ -171,5 +189,188 @@ exports.deleteAnimal = async (req, res) => {
         res.status(200).json({ message: 'Animal and associated records deleted successfully' });
     } catch (error) {
         res.status(500).json({ message: 'Server Error', error: error.message });
+    }
+};
+
+exports.identifyAnimal = async (req, res) => {
+    try {
+        const { farmId } = req.body;
+        
+        if (!req.file) {
+            return res.status(400).json({ message: 'Image is required for identification' });
+        }
+
+        if (!farmId) {
+             return res.status(400).json({ message: 'Farm ID is required' });
+        }
+
+        // 1. Upload the query image to Cloudinary (temp or standard folder)
+        const stream = require("stream");
+        const bufferStream = new stream.PassThrough();
+        bufferStream.end(req.file.buffer);
+        
+        const uploadResult = await new Promise((resolve, reject) => {
+            const uploadStream = cloudinary.uploader.upload_stream(
+                { folder: 'temp_identification' }, // separate folder or same
+                (error, result) => {
+                    if (error) return reject(error);
+                    resolve(result);
+                }
+            );
+            bufferStream.pipe(uploadStream);
+        });
+
+        const queryImageUrl = uploadResult.secure_url;
+
+        // 2. Generate embedding for query image
+        let queryVector;
+        try {
+            queryVector = await generateEmbedding(queryImageUrl);
+        } catch (err) {
+            console.error(err);
+             return res.status(500).json({ message: 'Failed to generate embedding for the image' });
+        }
+
+        // 3. Fetch all animals for this farm to filter embeddings
+        // Optimization: We could fetch embeddings directly if we denormalized farmId, 
+        // but for now strict relational check is safer.
+        const farmAnimals = await Animal.find({ farmId }).select('_id');
+        const farmAnimalIds = farmAnimals.map(a => a._id);
+
+        if (farmAnimalIds.length === 0) {
+            return res.status(404).json({ message: 'No animals found for this farm to match against.' });
+        }
+
+        // 4. Fetch embeddings for these animals
+        const candidateEmbeddings = await AnimalEmbedding.find({
+            animalId: { $in: farmAnimalIds }
+        }).populate('animalId');
+
+        // 5. Find best match
+        let bestMatch = null;
+        let maxSimilarity = -1;
+        const THRESHOLD = 0.80; // 80% similarity threshold
+
+        for (const candidate of candidateEmbeddings) {
+            // Check if embedding exists and is valid
+            if (!candidate.embedding || candidate.embedding.length === 0) continue;
+
+            const sim = cosineSimilarity(queryVector, candidate.embedding);
+            if (sim > maxSimilarity) {
+                maxSimilarity = sim;
+                bestMatch = candidate;
+            }
+        }
+
+        if (bestMatch && maxSimilarity >= THRESHOLD) {
+            // Found a match
+             return res.status(200).json({
+                 match: true,
+                 similarity: maxSimilarity,
+                 animal: bestMatch.animalId
+             });
+        } else {
+             return res.status(200).json({
+                 match: false,
+                 similarity: maxSimilarity,
+                 message: 'No matching animal found'
+             });
+        }
+
+    } catch (error) {
+        console.error('Identification Error:', error);
+        res.status(500).json({ message: 'Server Error during identification', error: error.message });
+    }
+};
+
+exports.monitorFarm = async (req, res) => {
+    try {
+        const { farmId } = req.body;
+        
+        if (!req.file) {
+            return res.status(400).json({ message: 'Frame is required for monitoring' });
+        }
+
+        if (!farmId) {
+             return res.status(400).json({ message: 'Farm ID is required' });
+        }
+
+        const buffer = req.file.buffer;
+
+        // 1. Detect and Crop Animals
+        let crops = [];
+        try {
+            crops = await detectAndCropAnimals(buffer);
+        } catch (err) {
+            console.error('Detection Error:', err);
+             return res.status(500).json({ message: 'Failed to detect animals in frame' });
+        }
+
+        // 2. Fetch all known embeddings for this farm
+        const farmAnimals = await Animal.find({ farmId });
+        const farmAnimalIds = farmAnimals.map(a => a._id);
+        const candidateEmbeddings = await AnimalEmbedding.find({
+            animalId: { $in: farmAnimalIds }
+        }).populate('animalId');
+
+        const presentAnimals = new Set();
+        const detections = [];
+
+        // 3. For each crop, generate embedding and find match
+        for (const crop of crops) {
+            let embedding;
+            try {
+                // Pass buffer directly to embedding generator
+                embedding = await generateEmbedding(crop.buffer);
+            } catch (err) {
+                console.error('Embedding Error for crop:', err);
+                continue;
+            }
+
+            let bestMatch = null;
+            let maxSimilarity = -1;
+            const THRESHOLD = 0.65; // Slightly lower threshold for crops which might be lower quality
+
+            for (const candidate of candidateEmbeddings) {
+                if (!candidate.embedding) continue;
+                const sim = cosineSimilarity(embedding, candidate.embedding);
+                if (sim > maxSimilarity) {
+                    maxSimilarity = sim;
+                    bestMatch = candidate;
+                }
+            }
+
+            if (bestMatch && maxSimilarity >= THRESHOLD) {
+                presentAnimals.add(bestMatch.animalId._id.toString());
+                detections.push({
+                    box: crop.box,
+                    label: crop.label,
+                    animal: bestMatch.animalId,
+                    similarity: maxSimilarity
+                });
+            } else {
+                detections.push({
+                    box: crop.box,
+                    label: crop.label,
+                    animal: null, // Unknown animal
+                    similarity: maxSimilarity
+                });
+            }
+        }
+
+        // 4. Determine Missing Animals
+        const missingAnimals = farmAnimals.filter(a => !presentAnimals.has(a._id.toString()));
+        const presentList = farmAnimals.filter(a => presentAnimals.has(a._id.toString()));
+
+        res.status(200).json({
+            present: presentList,
+            missing: missingAnimals,
+            detections: detections,
+            totalChecked: crops.length
+        });
+
+    } catch (error) {
+        console.error('Monitoring Error:', error);
+        res.status(500).json({ message: 'Server Error during monitoring', error: error.message });
     }
 };
