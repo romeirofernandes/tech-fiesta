@@ -27,9 +27,20 @@ export function useIotPolling(apiBase, options = {}) {
   const pollTimer = useRef(null);
   const isFirstFetch = useRef(true);
 
-  // Fetch latest sensor data
+  // Store onNewData in a ref so it never causes re-renders / interval resets
+  const onNewDataRef = useRef(onNewData);
+  onNewDataRef.current = onNewData;
+
+  // Keep a ref to isMounted to prevent state updates after unmount
+  const mountedRef = useRef(true);
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => { mountedRef.current = false; };
+  }, []);
+
+  // Fetch latest sensor data — only stable deps (no onNewData)
   const fetchData = useCallback(async (useSince = true) => {
-    if (!enabled) return;
+    if (!enabled || !mountedRef.current) return;
 
     try {
       setStatus('polling');
@@ -53,6 +64,9 @@ export function useIotPolling(apiBase, options = {}) {
       }
 
       const newData = await response.json();
+
+      if (!mountedRef.current) return;
+
       setStatus('connected');
       setError(null);
       setLastUpdated(Date.now());
@@ -77,16 +91,18 @@ export function useIotPolling(apiBase, options = {}) {
             return merged.slice(-500);
           });
           
-          // Notify callback of new data
-          onNewData?.(newData);
+          // Notify callback via ref (won't cause re-renders)
+          onNewDataRef.current?.(newData);
         }
       }
     } catch (err) {
       console.error('IoT polling error:', err);
-      setStatus('error');
-      setError(err.message);
+      if (mountedRef.current) {
+        setStatus('error');
+        setError(err.message);
+      }
     }
-  }, [apiBase, rfid, limit, enabled, onNewData]);
+  }, [apiBase, rfid, limit, enabled]);
 
   // Manual refetch (resets and fetches all data)
   const refetch = useCallback(() => {
@@ -96,7 +112,7 @@ export function useIotPolling(apiBase, options = {}) {
     fetchData(false);
   }, [fetchData]);
 
-  // Start polling
+  // Start polling — stable deps prevent infinite interval resets
   useEffect(() => {
     if (!enabled) {
       setStatus('idle');

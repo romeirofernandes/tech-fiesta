@@ -38,12 +38,12 @@ const PRODUCT_UNITS = {
 
 /** Which species can produce which product types */
 const SPECIES_PRODUCT_MAP = {
-  cow:     ['cow_milk', 'manure', 'meat_liveweight'],
-  buffalo: ['buffalo_milk', 'manure', 'meat_liveweight'],
-  goat:    ['goat_milk', 'goat_hair', 'manure', 'meat_liveweight'],
-  sheep:   ['sheep_milk', 'wool', 'manure', 'meat_liveweight'],
-  chicken: ['eggs', 'manure', 'meat_liveweight'],
-  pig:     ['manure', 'meat_liveweight'],
+  cow:     ['cow_milk', 'manure'],
+  buffalo: ['buffalo_milk', 'manure'],
+  goat:    ['goat_milk', 'goat_hair', 'manure'],
+  sheep:   ['sheep_milk', 'wool', 'manure'],
+  chicken: ['eggs', 'manure'],
+  pig:     ['manure'],
   horse:   ['manure'],
   other:   ['manure'],
 };
@@ -85,7 +85,7 @@ const AGMARKNET_COMMODITY_IDS = {
 const AGMARKNET_COMMODITIES = Object.keys(AGMARKNET_COMMODITY_IDS);
 
 /** Manual-only commodity keys (not available on AGMARKNET) */
-const MANUAL_ONLY_COMMODITIES = ['manure', 'wool', 'goat_hair', 'cow_milk', 'buffalo_milk', 'goat_milk', 'sheep_milk'];
+const MANUAL_ONLY_COMMODITIES = ['manure', 'wool', 'goat_hair', 'cow_milk', 'buffalo_milk', 'goat_milk', 'sheep_milk', 'horse'];
 
 /** All valid market-price commodity keys */
 const MARKET_COMMODITIES = [...AGMARKNET_COMMODITIES, ...MANUAL_ONLY_COMMODITIES];
@@ -108,6 +108,7 @@ const MARKET_COMMODITY_LABELS = {
   buffalo_milk:  'Buffalo Milk',
   goat_milk:     'Goat Milk',
   sheep_milk:    'Sheep Milk',
+  horse:         'Horse',
 };
 
 const GRANULARITY = ['day', 'week', 'month'];

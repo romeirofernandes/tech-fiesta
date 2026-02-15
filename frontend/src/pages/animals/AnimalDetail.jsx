@@ -1,11 +1,18 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { Layout } from "@/components/Layout";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ArrowLeft, Edit2, MapPin, Plus } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { ArrowLeft, Edit2, MapPin, Plus, Thermometer, Droplets, Heart, Activity } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import axios from "axios";
@@ -19,11 +26,30 @@ import {
   isSameMonth,
   isSameDay,
 } from "date-fns";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip as RechartsTooltip,
+  ResponsiveContainer,
+} from "recharts";
 import { EditVaccinationEventDialog } from "@/components/EditVaccinationEventDialog";
 import { AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from "@/components/ui/alert-dialog";
 import { VaccinationCalendarViews } from "@/components/VaccinationCalendarViews";
+import { useIotPolling } from "@/hooks/useIotPolling";
 
 const TODAY = Date.now();
+const API_BASE = import.meta.env.VITE_API_BASE_URL;
+
+const TIME_RANGES = {
+  "1h":  { label: "1 Hour",  minutes: 60 },
+  "6h":  { label: "6 Hours", minutes: 360 },
+  "24h": { label: "24 Hours", minutes: 1440 },
+  "7d":  { label: "7 Days",  minutes: 10080 },
+  "all": { label: "All Data", minutes: Infinity },
+};
 
 export default function AnimalDetail() {
   const [animal, setAnimal] = useState(null);
@@ -35,8 +61,59 @@ export default function AnimalDetail() {
   const [deleteEvent, setDeleteEvent] = useState(null);
   const [currentMonth, setCurrentMonth] = useState(startOfMonth(TODAY));
   const [view, setView] = useState("month"); // list, 2col, month, week
+  const [timeRange, setTimeRange] = useState("24h");
   const navigate = useNavigate();
   const { id } = useParams();
+
+  // IoT polling for animal vital signs
+  const { 
+    data: pollingData, 
+    latestReading: polledLatestReading, 
+    status, 
+    lastUpdated,
+    refetch 
+  } = useIotPolling(API_BASE, {
+    pollInterval: 5000,
+    rfid: animal?.rfid || null,
+    limit: 500,
+    enabled: !!animal?.rfid,
+    onNewData: useCallback((newData) => {
+      if (newData.length > 0) {
+        console.log(`[AnimalDetail] Received ${newData.length} new readings for ${animal?.rfid}`);
+      }
+    }, [animal?.rfid])
+  });
+
+  // Transform polling data for charts (filter by time range)
+  const historicalData = useMemo(() => {
+    if (!pollingData || pollingData.length === 0) return [];
+    
+    return pollingData
+      .filter((reading) => {
+        if (timeRange === "all") return true;
+        const cutoffTime = Date.now() - TIME_RANGES[timeRange].minutes * 60 * 1000;
+        return new Date(reading.timestamp).getTime() > cutoffTime;
+      })
+      .map((reading) => ({
+        time: format(
+          new Date(reading.timestamp),
+          timeRange === "7d" || timeRange === "all" ? "MM/dd HH:mm" : "HH:mm"
+        ),
+        timestamp: new Date(reading.timestamp).getTime(),
+        temperature: reading.temperature ? parseFloat(reading.temperature) : null,
+        humidity: reading.humidity ? parseFloat(reading.humidity) : null,
+        heart_rate: reading.heartRate || reading.heart_rate,
+      }));
+  }, [pollingData, timeRange]);
+
+  // Get latest reading with normalized field names
+  const latestReading = useMemo(() => {
+    if (!polledLatestReading) return null;
+    return {
+      ...polledLatestReading,
+      heart_rate: polledLatestReading.heartRate || polledLatestReading.heart_rate,
+    };
+  }, [polledLatestReading]);
 
   useEffect(() => {
     fetchAnimalDetails();
@@ -219,6 +296,133 @@ export default function AnimalDetail() {
             </div>
           </CardContent>
         </Card>
+
+        {/* IoT Vital Signs Monitoring */}
+        {animal.rfid && (
+          <Card>
+            <CardHeader className="pb-2">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Activity className="h-5 w-5 text-blue-600" />
+                    Live Vitals
+                  </CardTitle>
+                  <CardDescription>
+                    Real-time sensor data from RFID {animal.rfid} • Status: <Badge variant={status === "connected" ? "default" : status === "error" ? "destructive" : "secondary"} className="ml-1 text-xs">{status}</Badge>
+                  </CardDescription>
+                </div>
+                <Select value={timeRange} onValueChange={setTimeRange}>
+                  <SelectTrigger className="w-40">
+                    <SelectValue placeholder="Time Range" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(TIME_RANGES).map(([key, val]) => (
+                      <SelectItem key={key} value={key}>{val.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {/* Latest Readings */}
+              {latestReading && (
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+                  <div className="flex items-center gap-3 p-3 rounded-lg border bg-muted/30">
+                    <Thermometer className="h-8 w-8 text-red-500" />
+                    <div>
+                      <p className="text-xs text-muted-foreground">Temperature</p>
+                      <p className="text-xl font-bold">{latestReading.temperature ? `${parseFloat(latestReading.temperature).toFixed(1)}°C` : "—"}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 p-3 rounded-lg border bg-muted/30">
+                    <Droplets className="h-8 w-8 text-blue-500" />
+                    <div>
+                      <p className="text-xs text-muted-foreground">Humidity</p>
+                      <p className="text-xl font-bold">{latestReading.humidity ? `${parseFloat(latestReading.humidity).toFixed(1)}%` : "—"}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 p-3 rounded-lg border bg-muted/30">
+                    <Heart className="h-8 w-8 text-pink-500" />
+                    <div>
+                      <p className="text-xs text-muted-foreground">Heart Rate</p>
+                      <p className="text-xl font-bold">{latestReading.heart_rate ? `${latestReading.heart_rate} bpm` : "—"}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Charts */}
+              {historicalData.length > 0 ? (
+                <div className="grid gap-4 grid-cols-1 lg:grid-cols-3">
+                  {/* Temperature Chart */}
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm">Temperature</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="h-48">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <LineChart data={historicalData} margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
+                            <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                            <XAxis dataKey="time" tick={{ fontSize: 10 }} tickLine={false} />
+                            <YAxis tick={{ fontSize: 10 }} tickFormatter={v => `${v}°C`} />
+                            <RechartsTooltip />
+                            <Line type="monotone" dataKey="temperature" stroke="#ef4444" strokeWidth={2} dot={false} name="Temp (°C)" />
+                          </LineChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Humidity Chart */}
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm">Humidity</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="h-48">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <LineChart data={historicalData} margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
+                            <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                            <XAxis dataKey="time" tick={{ fontSize: 10 }} tickLine={false} />
+                            <YAxis tick={{ fontSize: 10 }} tickFormatter={v => `${v}%`} />
+                            <RechartsTooltip />
+                            <Line type="monotone" dataKey="humidity" stroke="#3b82f6" strokeWidth={2} dot={false} name="Humidity (%)" />
+                          </LineChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Heart Rate Chart */}
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm">Heart Rate</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="h-48">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <LineChart data={historicalData} margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
+                            <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                            <XAxis dataKey="time" tick={{ fontSize: 10 }} tickLine={false} />
+                            <YAxis tick={{ fontSize: 10 }} tickFormatter={v => `${v}`} />
+                            <RechartsTooltip />
+                            <Line type="monotone" dataKey="heart_rate" stroke="#ec4899" strokeWidth={2} dot={false} name="HR (bpm)" />
+                          </LineChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center h-40 text-muted-foreground">
+                  <Activity className="h-8 w-8 mb-2 opacity-50" />
+                  <p className="text-sm">{status === "error" ? "Failed to load sensor data" : "No sensor data available yet"}</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         <VaccinationCalendarViews
           today={TODAY}

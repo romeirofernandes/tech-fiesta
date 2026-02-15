@@ -36,11 +36,12 @@ import {
   ArrowRight,
   Loader2,
   PawPrint,
+  Coins,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "@/context/UserContext";
 import axios from "axios";
-import { formatINR, PRODUCT_LABELS } from "@/utils/biHelpers";
+import { formatINR, PRODUCT_LABELS, SPECIES_PRODUCT_MAP, SELLABLE_SPECIES } from "@/utils/biHelpers";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
@@ -236,6 +237,50 @@ export default function BiOverview() {
             color={underperformers.length > 0 ? "text-amber-500" : "text-green-600"}
           />
         </div>
+
+        {/* Ways to Make Money */}
+        {animalsBySpecies.length > 0 && (
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Coins className="h-5 w-5 text-amber-500" />
+                Ways to Make Money
+              </CardTitle>
+              <CardDescription>
+                Income opportunities based on the animals currently on your farm
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {animalsBySpecies.map(({ name }) => {
+                  const speciesKey = name.toLowerCase();
+                  const products = SPECIES_PRODUCT_MAP[speciesKey] || [];
+                  const canSellLive = SELLABLE_SPECIES.includes(speciesKey);
+                  if (products.length === 0 && !canSellLive) return null;
+                  return (
+                    <div key={speciesKey} className="p-3 rounded-lg border bg-muted/30">
+                      <p className="font-semibold text-sm capitalize mb-1.5">{name}</p>
+                      <ul className="space-y-1">
+                        {products.map(p => (
+                          <li key={p} className="text-xs text-muted-foreground flex items-center gap-1.5">
+                            <span className="h-1.5 w-1.5 rounded-full bg-green-500 inline-block" />
+                            Sell {PRODUCT_LABELS[p]}
+                          </li>
+                        ))}
+                        {canSellLive && (
+                          <li className="text-xs text-muted-foreground flex items-center gap-1.5">
+                            <span className="h-1.5 w-1.5 rounded-full bg-blue-500 inline-block" />
+                            Sell Live Animal
+                          </li>
+                        )}
+                      </ul>
+                    </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Charts Row */}
         <div className="grid gap-6 grid-cols-1 lg:grid-cols-2">
@@ -440,7 +485,7 @@ export default function BiOverview() {
             <CardContent className="flex items-center justify-between p-4">
               <div className="flex items-center gap-3">
                 <Package className="h-5 w-5 text-blue-600" />
-                <span className="font-medium">Production & Sales</span>
+                <span className="font-medium">Production Tracking</span>
               </div>
               <ArrowRight className="h-4 w-4 text-muted-foreground" />
             </CardContent>
@@ -449,7 +494,7 @@ export default function BiOverview() {
             <CardContent className="flex items-center justify-between p-4">
               <div className="flex items-center gap-3">
                 <DollarSign className="h-5 w-5 text-green-600" />
-                <span className="font-medium">Expense Tracking</span>
+                <span className="font-medium">Finance Tracking</span>
               </div>
               <ArrowRight className="h-4 w-4 text-muted-foreground" />
             </CardContent>
