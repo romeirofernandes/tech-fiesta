@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { Layout } from "@/components/Layout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { useUser } from "@/context/UserContext";
 import {
   Select,
   SelectContent,

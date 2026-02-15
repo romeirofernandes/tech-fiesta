@@ -3,9 +3,9 @@ const Farmer = require('../models/Farmer');
 const cloudinary = require('../config/cloudinary');
 
 const getCloudinaryPublicId = (url) => {
-  if (!url) return null;
-  const match = url.match(/\/upload\/(?:v\d+\/)?([^\.]+)/);
-  return match ? match[1] : null;
+    if (!url) return null;
+    const match = url.match(/\/upload\/(?:v\d+\/)?([^\.]+)/);
+    return match ? match[1] : null;
 };
 
 exports.createFarm = async (req, res) => {
@@ -17,15 +17,15 @@ exports.createFarm = async (req, res) => {
             const result = await cloudinary.uploader.upload_stream(
                 { folder: 'farms' },
                 (error, result) => {
-                if (error) throw error;
-                return result;
+                    if (error) throw error;
+                    return result;
                 }
             );
 
             const stream = require("stream");
             const bufferStream = new stream.PassThrough();
             bufferStream.end(req.file.buffer);
-            
+
             const uploadResult = await new Promise((resolve, reject) => {
                 const uploadStream = cloudinary.uploader.upload_stream(
                     { folder: 'farms' },
@@ -59,19 +59,19 @@ exports.createFarm = async (req, res) => {
 
 exports.getFarms = async (req, res) => {
     try {
-        const { farmerId } = req.query;     
+        const { farmerId } = req.query;
         let farms;
         if (farmerId) {
             const farmer = await Farmer.findById(farmerId).select('farms');
 
-            let farmIds = farmer.farms.map(id => id.toString());
-
-            farms = await Farm.find({ _id: { $in: farmIds } }).sort({ createdAt: -1 });
-            
             if (!farmer) {
                 return res.status(404).json({ message: 'Farmer not found' });
             }
-        }else{
+
+            let farmIds = farmer.farms.map(id => id.toString());
+
+            farms = await Farm.find({ _id: { $in: farmIds } }).sort({ createdAt: -1 });
+        } else {
             farms = await Farm.find().sort({ createdAt: -1 });
         }
 

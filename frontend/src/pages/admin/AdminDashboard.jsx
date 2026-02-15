@@ -120,7 +120,7 @@ export default function AdminDashboard() {
         <AdminSidebarInset>
           <div className="flex-1 h-full overflow-y-auto">
             <Tabs value={activeTab} className="w-full">
-              <div className="p-8 max-w-400 mx-auto w-full">
+              <div className="p-4 md:p-8 max-w-7xl mx-auto w-full">
 
                 <TabsContent value="insights" className="mt-0 outline-none space-y-8 border-none">
                   <header className="flex justify-between items-end">
@@ -160,6 +160,14 @@ export default function AdminDashboard() {
                     <h1 className="text-3xl font-bold tracking-tight text-foreground font-serif">System Alerts</h1>
                   </header>
                   <AlertsManagement />
+                </TabsContent>
+
+                <TabsContent value="transactions" className="mt-0 outline-none space-y-8 border-none">
+                  <header>
+                    <h1 className="text-3xl font-bold tracking-tight text-foreground font-serif">Transactions</h1>
+                    <p className="text-muted-foreground text-sm mt-1">Escrow and payment monitoring</p>
+                  </header>
+                  <TransactionMonitor />
                 </TabsContent>
 
                 <TabsContent value="market-prices" className="mt-0 outline-none space-y-8 border-none">

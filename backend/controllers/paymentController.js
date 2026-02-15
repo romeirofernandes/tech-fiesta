@@ -120,12 +120,14 @@ exports.releaseFunds = async (req, res) => {
 
         // --- ASSET TRANSFER LOGIC ---
         // If the item is 'cattle' and we have a destination farm, move the animal
-        if (transaction.itemId.type === 'cattle' && transaction.destinationFarmId && transaction.itemId.animalId) {
+        if (transaction.itemId.type === 'cattle' && transaction.destinationFarmId && transaction.itemId.linkedAnimalId) {
             const Animal = require('../models/Animal');
-            await Animal.findByIdAndUpdate(transaction.itemId.animalId, {
-                farm: transaction.destinationFarmId
+            // Update the animal's farmId to the new owner's farm
+            await Animal.findByIdAndUpdate(transaction.itemId.linkedAnimalId, {
+                farmId: transaction.destinationFarmId,
+                updatedAt: Date.now()
             });
-            console.log(`Transferred Animal ${transaction.itemId.animalId} to Farm ${transaction.destinationFarmId}`);
+            console.log(`Transferred Animal ${transaction.itemId.linkedAnimalId} to Farm ${transaction.destinationFarmId}`);
         }
 
         // Mark item as sold (already done in verify usually, but ensure consistency)

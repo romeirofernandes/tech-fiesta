@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useUser } from "@/context/UserContext";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,16 +22,18 @@ export default function SellCattleModal({ onSuccess }) {
         description: ''
     });
 
+    const { mongoUser } = useUser();
+
     useEffect(() => {
-        if (open) {
+        if (open && mongoUser) {
             fetchAnimals();
         }
-    }, [open]);
+    }, [open, mongoUser]);
 
     const fetchAnimals = async () => {
         try {
             const base = import.meta.env.VITE_API_BASE_URL;
-            const res = await axios.get(`${base}/api/animals`); // Assuming this endpoint returns user's animals
+            const res = await axios.get(`${base}/api/animals?farmerId=${mongoUser._id}`);
             setAnimals(res.data);
         } catch (err) {
             console.error("Error fetching animals:", err);
@@ -53,7 +56,7 @@ export default function SellCattleModal({ onSuccess }) {
             const base = import.meta.env.VITE_API_BASE_URL;
             await axios.post(`${base}/api/marketplace`, {
                 type: 'cattle',
-                seller: 'Demo Farmer',
+                seller: mongoUser?.fullName || 'Unknown Farmer',
                 name: selectedAnimal.name + ` (${selectedAnimal.breed})`, // Construct display name
                 description: `${selectedAnimal.breed} - ${selectedAnimal.age} ${selectedAnimal.ageUnit} old.\n${formData.description}`,
                 price: formData.price,

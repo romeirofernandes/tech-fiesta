@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useUser } from "@/context/UserContext";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,8 +9,10 @@ import { Loader2, Upload } from "lucide-react";
 import axios from 'axios';
 
 export default function AddEquipmentModal({ onSuccess }) {
+    const { mongoUser } = useUser();
     const [open, setOpen] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [imageUploading, setImageUploading] = useState(false);
     const [formData, setFormData] = useState({
         name: '',
         description: '',
@@ -17,8 +20,34 @@ export default function AddEquipmentModal({ onSuccess }) {
         priceUnit: 'per day',
         location: '',
         contact: '',
-        imageUrl: '' // In a real app, we'd handle file upload here
+        imageUrl: ''
     });
+
+    const handleImageChange = async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        setImageUploading(true);
+        const uploadFormData = new FormData();
+        uploadFormData.append("image", file);
+        try {
+            const base = import.meta.env.VITE_API_BASE_URL;
+            const res = await fetch(`${base}/api/farm-images/upload`, {
+                method: "POST",
+                body: uploadFormData
+            });
+            const data = await res.json();
+            if (data.url) {
+                setFormData(prev => ({ ...prev, imageUrl: data.url }));
+            } else {
+                alert("Upload failed");
+            }
+        } catch (error) {
+            console.error("Error uploading image:", error);
+            alert("Upload failed");
+        } finally {
+            setImageUploading(false);
+        }
+    };
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -31,7 +60,7 @@ export default function AddEquipmentModal({ onSuccess }) {
             const base = import.meta.env.VITE_API_BASE_URL;
             await axios.post(`${base}/api/marketplace`, {
                 type: 'equipment',
-                seller: 'Demo Farmer',
+                seller: mongoUser?.fullName || 'Unknown Seller',
                 ...formData
             });
             setOpen(false);
@@ -91,8 +120,35 @@ export default function AddEquipmentModal({ onSuccess }) {
                         <Input id="contact" name="contact" placeholder="+91 XXXXX XXXXX" required onChange={handleChange} />
                     </div>
                     <div className="space-y-2">
-                        <Label htmlFor="imageUrl">Image URL (Optional)</Label>
-                        <Input id="imageUrl" name="imageUrl" placeholder="https://..." onChange={handleChange} />
+                        <Label>Equipment Image</Label>
+                        <div className="flex items-center gap-4">
+                            {formData.imageUrl && (
+                                <img src={formData.imageUrl} alt="Equipment" className="w-20 h-20 object-cover rounded-lg border" />
+                            )}
+                            <Button
+                                type="button"
+                                variant="outline"
+                                disabled={imageUploading}
+                                className="relative"
+                            >
+                                {imageUploading ? (
+                                    <>
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Uploading...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Upload className="mr-2 h-4 w-4" /> Upload Image
+                                    </>
+                                )}
+                                <input
+                                    type="file"
+                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
+                                    onChange={handleImageChange}
+                                    disabled={imageUploading}
+                                    accept="image/*"
+                                />
+                            </Button>
+                        </div>
                     </div>
                     <Button type="submit" className="w-full" disabled={loading}>
                         {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}

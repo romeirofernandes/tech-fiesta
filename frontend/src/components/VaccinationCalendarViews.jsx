@@ -9,6 +9,7 @@ import {
   CalendarDays,
   Pencil,
   Trash2,
+  CheckCircle,
 } from "lucide-react";
 import { useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
@@ -61,6 +62,7 @@ export function VaccinationCalendarViews({
   extraControls = null,
   onEditEvent,
   onDeleteEvent,
+  onResolveEvent,
 }) {
   const totalEvents = vaccinationEvents.length;
 
@@ -187,6 +189,7 @@ export function VaccinationCalendarViews({
           maxVisible={maxVisible}
           onEditEvent={onEditEvent}
           onDeleteEvent={onDeleteEvent}
+          onResolveEvent={onResolveEvent}
         />
       ) : view === "week" ? (
         <WeekView
@@ -195,6 +198,7 @@ export function VaccinationCalendarViews({
           getAnimalName={getAnimalName}
           onEditEvent={onEditEvent}
           onDeleteEvent={onDeleteEvent}
+          onResolveEvent={onResolveEvent}
         />
       ) : view === "list" ? (
         <ListView
@@ -204,6 +208,7 @@ export function VaccinationCalendarViews({
           today={today}
           onEditEvent={onEditEvent}
           onDeleteEvent={onDeleteEvent}
+          onResolveEvent={onResolveEvent}
         />
       ) : (
         <TwoColumnView
@@ -219,10 +224,24 @@ export function VaccinationCalendarViews({
   );
 }
 
-function EventActions({ event, onEditEvent, onDeleteEvent }) {
-  if (!onEditEvent && !onDeleteEvent) return null;
+function EventActions({ event, onEditEvent, onDeleteEvent, onResolveEvent }) {
+  if (!onEditEvent && !onDeleteEvent && !onResolveEvent) return null;
+  const canResolve = onResolveEvent && (event.eventType === 'scheduled' || event.eventType === 'missed');
   return (
     <div className="absolute right-0.5 top-0 bottom-0 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+      {canResolve && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onResolveEvent(event);
+          }}
+          className="p-0.5 rounded hover:bg-white/20"
+          type="button"
+          title="Mark as Done"
+        >
+          <CheckCircle className="h-2.5 w-2.5" />
+        </button>
+      )}
       {onEditEvent && (
         <button
           onClick={(e) => {
@@ -261,6 +280,7 @@ function MonthView({
   maxVisible,
   onEditEvent,
   onDeleteEvent,
+  onResolveEvent,
 }) {
   const weekDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -329,6 +349,7 @@ function MonthView({
                           event={event}
                           onEditEvent={onEditEvent}
                           onDeleteEvent={onDeleteEvent}
+                          onResolveEvent={onResolveEvent}
                         />
                       </div>
                     </TooltipTrigger>
@@ -383,7 +404,7 @@ function MonthView({
 }
 
 /* ======================== WEEK VIEW (VERTICAL) ======================== */
-function WeekView({ today, eventsByDate, getAnimalName, onEditEvent, onDeleteEvent }) {
+function WeekView({ today, eventsByDate, getAnimalName, onEditEvent, onDeleteEvent, onResolveEvent }) {
   const weekStart = startOfWeek(today, { weekStartsOn: 0 });
   const weekDays = useMemo(
     () => Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)),
@@ -444,6 +465,7 @@ function WeekView({ today, eventsByDate, getAnimalName, onEditEvent, onDeleteEve
                           event={event}
                           onEditEvent={onEditEvent}
                           onDeleteEvent={onDeleteEvent}
+                          onResolveEvent={onResolveEvent}
                         />
                       </div>
                     </TooltipTrigger>
@@ -482,6 +504,7 @@ function ListView({
   today,
   onEditEvent,
   onDeleteEvent,
+  onResolveEvent,
 }) {
   const monthEvents = vaccinationEvents.filter((e) =>
     isSameMonth(new Date(e.date), currentMonth)
@@ -556,8 +579,19 @@ function ListView({
                   {format(new Date(event.date), "h:mm a")}
                 </span>
 
-                {(onEditEvent || onDeleteEvent) && (
+                {(onEditEvent || onDeleteEvent || onResolveEvent) && (
                   <div className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
+                    {onResolveEvent && (event.eventType === 'scheduled' || event.eventType === 'missed') && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 text-green-600 hover:text-green-700"
+                        onClick={() => onResolveEvent(event)}
+                        title="Mark as Done"
+                      >
+                        <CheckCircle className="h-3.5 w-3.5" />
+                      </Button>
+                    )}
                     {onEditEvent && (
                       <Button
                         variant="ghost"

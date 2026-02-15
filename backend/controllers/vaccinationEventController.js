@@ -1,4 +1,5 @@
 const VaccinationEvent = require('../models/VaccinationEvent');
+const Alert = require('../models/Alert');
 
 exports.createVaccinationEvent = async (req, res) => {
   try {
@@ -22,6 +23,12 @@ exports.createVaccinationEvent = async (req, res) => {
 exports.getVaccinationEvents = async (req, res) => {
   try {
     const { animalId, eventType } = req.query;
+
+    // Auto-detect missed vaccinations before returning
+    const now = new Date();
+    const missedFilter = { eventType: 'scheduled', date: { $lt: now } };
+    if (animalId) missedFilter.animalId = animalId;
+    await VaccinationEvent.updateMany(missedFilter, { $set: { eventType: 'missed' } });
     
     const filter = {};
     if (animalId) filter.animalId = animalId;
@@ -71,5 +78,45 @@ exports.deleteVaccinationEvent = async (req, res) => {
     res.status(200).json({ message: 'Vaccination event deleted successfully' });
   } catch (error) {
     res.status(500).json({ message: error.message });
+  }
+};
+
+/**
+ * Resolve a vaccination event — marks it as 'administered' and resolves any matching alert.
+ * PUT /api/vaccination-events/:id/resolve
+ */
+exports.resolveVaccinationEvent = async (req, res) => {
+  try {
+    const event = await VaccinationEvent.findById(req.params.id);
+
+    if (!event) {
+      return res.status(404).json({ message: 'Vaccination event not found' });
+    }
+
+    // Mark vaccination as administered
+    event.eventType = 'administered';
+    event.date = new Date();
+    await event.save();
+
+    // Find and resolve any matching alert for this vaccination
+    const matchingAlerts = await Alert.find({
+      animalId: event.animalId,
+      type: 'vaccination',
+      isResolved: false,
+      message: { $regex: event.vaccineName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), $options: 'i' }
+    });
+
+    for (const alert of matchingAlerts) {
+      alert.isResolved = true;
+      alert.resolvedAt = new Date();
+      await alert.save();
+    }
+
+    res.status(200).json({
+      event,
+      resolvedAlerts: matchingAlerts.length
+    });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
   }
 };

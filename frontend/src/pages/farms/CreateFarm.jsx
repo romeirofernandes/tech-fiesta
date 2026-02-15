@@ -1,4 +1,5 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
+import { useUser } from "@/context/UserContext";
 import { Layout } from "@/components/Layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -18,6 +19,7 @@ export default function CreateFarm() {
   const [coordinates, setCoordinates] = useState(null);
   const fileInputRef = useRef(null);
   const navigate = useNavigate();
+  const { mongoUser } = useUser();
 
   const [formData, setFormData] = useState({
     name: "",
@@ -74,6 +76,9 @@ export default function CreateFarm() {
 
       submitData.append("name", formData.name);
       submitData.append("location", formData.location);
+      if (mongoUser) {
+        submitData.append("farmerId", mongoUser._id);
+      }
 
       if (imageFile) {
         submitData.append("image", imageFile);

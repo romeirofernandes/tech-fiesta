@@ -24,26 +24,40 @@ export const UserProvider = ({ children }) => {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      console.log("Auth State Changed. Firebase User:", firebaseUser ? "Yes" : "No");
+
       if (firebaseUser) {
-        console.log("Firebase User:", firebaseUser);
         setUser(firebaseUser);
-        
-        // Check if mongoUser is missing when firebase user is present
-        const savedMongoUser = localStorage.getItem('mongoUser');
-        const isAuthPage = window.location.pathname === '/login' || window.location.pathname === '/register';
 
-        if (!savedMongoUser && !mongoUser && !isAuthPage) {
-             // Give it a small grace period or check if we are on a public route? 
-             // Actually, if we are refreshing, mongoUser should be in localStorage.
-             // If it's not, we should logout.
-             console.warn("No Mongo User found for authenticated Firebase user. Logging out.");
-             await signOut(auth);
-             setUser(null);
-             setMongoUser(null);
+        // If we have a firebase user but no mongoUser, try to fetch it from backend
+        // This handles page refreshes where localStorage might be cleared or sync was incomplete
+        if (!mongoUser) {
+          const savedMongoUser = localStorage.getItem('mongoUser');
+          if (savedMongoUser) {
+            setMongoUser(JSON.parse(savedMongoUser));
+          } else {
+            // Potential sync if not on login/register page
+            const isAuthPage = window.location.pathname === '/login' || window.location.pathname === '/register';
+            if (!isAuthPage) {
+              try {
+                console.log("Attempting to auto-sync missing Mongo user...");
+                const base = import.meta.env.VITE_API_BASE_URL;
+                const response = await fetch(`${base}/api/farmers/auth`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ firebaseUid: firebaseUser.uid }),
+                });
+                if (response.ok) {
+                  const data = await response.json();
+                  setMongoUser(data);
+                }
+              } catch (err) {
+                console.error("Auto-sync failed:", err);
+              }
+            }
+          }
         }
-
       } else {
-        console.log("User signed out");
         setUser(null);
         setMongoUser(null);
         localStorage.removeItem('mongoUser');
@@ -52,7 +66,7 @@ export const UserProvider = ({ children }) => {
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [mongoUser]);
 
   useEffect(() => {
     console.log("User Context State Changed:", { user, mongoUser });

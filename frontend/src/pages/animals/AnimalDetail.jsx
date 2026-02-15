@@ -187,6 +187,18 @@ export default function AnimalDetail() {
     }
   };
 
+  const handleResolveEvent = async (event) => {
+    try {
+      await axios.put(
+        `${import.meta.env.VITE_API_BASE_URL}/api/vaccination-events/${event._id}/resolve`
+      );
+      toast.success("Vaccination marked as done!");
+      fetchAnimalDetails();
+    } catch (error) {
+      toast.error("Failed to resolve vaccination event");
+    }
+  };
+
 
 
   const getAnimalName = () => animal?.name || "Unknown";
@@ -446,6 +458,7 @@ export default function AnimalDetail() {
           getAnimalName={getAnimalName}
           onEditEvent={handleEditEvent}
           onDeleteEvent={setDeleteEvent}
+          onResolveEvent={handleResolveEvent}
           extraControls={
             <Button variant="outline" size="sm" onClick={handleAddEvent}>
               <Plus className="mr-2 h-4 w-4" />

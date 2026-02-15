@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
-  Beef,
+  Zap,
   Tractor,
   AlertTriangle,
   Syringe,
@@ -14,9 +14,11 @@ import {
   MapPin,
   ArrowRight,
   Sprout,
+  Beef,
 } from "lucide-react";
 import { MapContainer, TileLayer, Marker, Tooltip } from "react-leaflet";
 import { useTheme } from "@/context/ThemeContext";
+import { useUser } from "@/context/UserContext";
 import { useNavigate } from "react-router-dom";
 import L from "leaflet";
 import axios from "axios";
@@ -67,6 +69,7 @@ const SEVERITY_STYLES = {
 };
 
 export default function Dashboard() {
+  const { mongoUser } = useUser();
   const { theme } = useTheme();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
@@ -82,12 +85,17 @@ export default function Dashboard() {
 
   useEffect(() => {
     setMounted(true);
-    fetchDashboardData();
-  }, []);
+    if (mongoUser) {
+      fetchDashboardData();
+    }
+  }, [mongoUser]);
 
   const fetchDashboardData = async () => {
+    if (!mongoUser) return;
     try {
       const base = import.meta.env.VITE_API_BASE_URL;
+      const params = { farmerId: mongoUser._id };
+      
       const [
         animalsRes,
         farmsRes,
@@ -96,15 +104,15 @@ export default function Dashboard() {
         healthRes,
         sensorRes,
       ] = await Promise.all([
-        axios.get(`${base}/api/animals`).catch(() => ({ data: [] })),
-        axios.get(`${base}/api/farms`).catch(() => ({ data: [] })),
-        axios.get(`${base}/api/alerts`).catch(() => ({ data: [] })),
+        axios.get(`${base}/api/animals`, { params }).catch(() => ({ data: [] })),
+        axios.get(`${base}/api/farms`, { params }).catch(() => ({ data: [] })),
+        axios.get(`${base}/api/alerts`, { params }).catch(() => ({ data: [] })),
         axios
-          .get(`${base}/api/vaccination-events`)
+          .get(`${base}/api/vaccination-events`, { params })
           .catch(() => ({ data: [] })),
-        axios.get(`${base}/api/health-snapshots`).catch(() => ({ data: [] })),
+        axios.get(`${base}/api/health-snapshots`, { params }).catch(() => ({ data: [] })),
         axios
-          .get(`${base}/api/sensor-events?type=heartRate`)
+          .get(`${base}/api/sensor-events?type=heartRate`, { params })
           .catch(() => ({ data: [] })),
       ]);
 

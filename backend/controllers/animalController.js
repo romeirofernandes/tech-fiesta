@@ -1,9 +1,138 @@
 const Animal = require('../models/Animal');
+const Farmer = require('../models/Farmer');
 const VaccinationEvent = require('../models/VaccinationEvent');
 const VaccinationSchedule = require('../models/VaccinationSchedule');
+const Alert = require('../models/Alert');
+const SensorEvent = require('../models/SensorEvent');
+const IotSensorReading = require('../models/IotSensorReading');
+const HeartRateThreshold = require('../models/HeartRateThreshold');
+const HealthSnapshot = require('../models/HealthSnapshot');
+const RFIDEvent = require('../models/RFIDEvent');
 const cloudinary = require('../config/cloudinary');
 const { generateEmbedding, cosineSimilarity, detectAndCropAnimals } = require('../services/embeddingService');
 const AnimalEmbedding = require('../models/AnimalEmbedding');
+const { parseVaccinationAgeToMonths, computeVaccinationTarget } = require('../utils/ageUtils');
+
+/**
+ * Generate vaccination events for an animal based on static vaccination schedules.
+ * Computes proper dates based on the animal's actual age (derived from createdAt + age/ageUnit).
+ * Skips vaccines that already have a VaccinationEvent for this animal.
+ * Past-due vaccinations are marked as 'missed', future ones as 'scheduled'.
+ */
+async function generateVaccinationEventsForAnimal(animal) {
+    const speciesLower = (animal.species || '').toLowerCase();
+    const searchSpecies = (speciesLower === 'cattle') ? 'cow' : speciesLower;
+    const gender = (animal.gender || 'female').toLowerCase();
+
+    const filter = {
+        species: searchSpecies,
+        $or: [
+            { genderSpecific: 'all' },
+            { genderSpecific: gender }
+        ]
+    };
+    const schedules = await VaccinationSchedule.find(filter);
+    if (schedules.length === 0) return [];
+
+    // Get existing vaccination events for this animal to avoid duplicates
+    const existingEvents = await VaccinationEvent.find({ animalId: animal._id });
+    const existingVaccineNames = new Set(existingEvents.map(e => e.vaccineName));
+
+    const eventsToCreate = [];
+
+    for (const schedule of schedules) {
+        const vaccineName = schedule.vaccineName !== '—'
+            ? `${schedule.disease} - ${schedule.vaccineName}`
+            : schedule.disease;
+
+        // Skip if this vaccine already has an event for this animal
+        if (existingVaccineNames.has(vaccineName)) continue;
+
+        const vaccAgeInMonths = parseVaccinationAgeToMonths(schedule.primaryVaccinationAge);
+        
+        let targetDate, eventType;
+        if (vaccAgeInMonths !== null) {
+            const result = computeVaccinationTarget(animal, vaccAgeInMonths);
+            targetDate = result.targetDate;
+            eventType = result.eventType;
+        } else {
+            // Can't parse age — default to scheduled for today
+            targetDate = new Date();
+            eventType = 'scheduled';
+        }
+
+        const notes = [
+            schedule.doseAndRoute !== '—' ? `Dose: ${schedule.doseAndRoute}` : '',
+            schedule.boosterSchedule !== '—' ? `Schedule: ${schedule.boosterSchedule}` : '',
+            schedule.notes || ''
+        ].filter(Boolean).join('. ');
+
+        eventsToCreate.push({
+            animalId: animal._id,
+            vaccineName,
+            eventType,
+            date: targetDate,
+            notes: notes || null,
+            repeatsEvery: null
+        });
+    }
+
+    if (eventsToCreate.length === 0) return existingEvents;
+
+    const created = await VaccinationEvent.insertMany(eventsToCreate);
+    return [...existingEvents, ...created].sort((a, b) => new Date(a.date) - new Date(b.date));
+}
+
+/**
+ * Check for missed vaccinations across all animals (or a specific animal).
+ * Marks scheduled events with past dates as 'missed' and creates alerts.
+ * @param {string|null} animalId - Optional: check only this animal
+ */
+async function checkMissedVaccinations(animalId = null) {
+    const now = new Date();
+    const filter = {
+        eventType: 'scheduled',
+        date: { $lt: now }
+    };
+    if (animalId) filter.animalId = animalId;
+
+    // Find all overdue scheduled events
+    const overdueEvents = await VaccinationEvent.find(filter).populate('animalId', 'name rfid');
+
+    if (overdueEvents.length === 0) return;
+
+    // Batch update to 'missed'
+    const overdueIds = overdueEvents.map(e => e._id);
+    await VaccinationEvent.updateMany(
+        { _id: { $in: overdueIds } },
+        { $set: { eventType: 'missed' } }
+    );
+
+    // Create alerts for each, avoiding duplicates
+    for (const event of overdueEvents) {
+        if (!event.animalId) continue;
+        
+        const message = `Missed vaccination: ${event.vaccineName} was due on ${event.date.toLocaleDateString()}`;
+        
+        // Check if alert already exists
+        const existingAlert = await Alert.findOne({
+            animalId: event.animalId._id || event.animalId,
+            type: 'vaccination',
+            message: { $regex: event.vaccineName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), $options: 'i' },
+            isResolved: false
+        });
+
+        if (!existingAlert) {
+            const daysPastDue = Math.floor((now - event.date) / (1000 * 60 * 60 * 24));
+            await Alert.create({
+                animalId: event.animalId._id || event.animalId,
+                type: 'vaccination',
+                severity: daysPastDue > 30 ? 'high' : 'medium',
+                message
+            });
+        }
+    }
+}
 
 exports.createAnimal = async (req, res) => {
     try {
@@ -44,81 +173,27 @@ exports.createAnimal = async (req, res) => {
         await newAnimal.save();
 
         // Generate vaccination events from static schedule data
+        let vaccinationEvents = [];
         try {
-            // Ensure species names are handled correctly (case-insensitive or mapped)
-            const speciesLower = species.toLowerCase();
-            const searchSpecies = (speciesLower === 'cattle') ? 'cow' : speciesLower;
+            vaccinationEvents = await generateVaccinationEventsForAnimal(newAnimal);
 
-            const filter = {
-                species: searchSpecies,
-                $or: [
-                    { genderSpecific: 'all' },
-                    { genderSpecific: gender.toLowerCase() }
-                ]
-            };
-            const schedules = await VaccinationSchedule.find(filter);
-
-            if (schedules.length > 0) {
-                const now = new Date();
-                const vaccinationEvents = await Promise.all(
-                    schedules.map(schedule => {
-                        // Calculate target date based on animal age and primary vaccination age
-                        let targetDate = new Date(now);
-                        const ageInMonths = ageUnit === 'years' ? age * 12 : ageUnit === 'days' ? age / 30 : Number(age);
-                        const ageMatch = schedule.primaryVaccinationAge.match(/(\d+)\s*(month|day|week|year)/i);
-                        
-                        if (ageMatch) {
-                            const vaccAge = parseInt(ageMatch[1]);
-                            const vaccUnit = ageMatch[2].toLowerCase();
-                            let vaccAgeInMonths = vaccAge;
-                            if (vaccUnit.startsWith('day')) vaccAgeInMonths = vaccAge / 30;
-                            else if (vaccUnit.startsWith('week')) vaccAgeInMonths = vaccAge / 4;
-                            else if (vaccUnit.startsWith('year')) vaccAgeInMonths = vaccAge * 12;
-
-                            const monthsUntilVacc = vaccAgeInMonths - ageInMonths;
-                            if (monthsUntilVacc > 0) {
-                                targetDate.setMonth(targetDate.getMonth() + Math.ceil(monthsUntilVacc));
-                            }
-                        }
-
-                        const notes = [
-                            schedule.doseAndRoute !== '—' ? `Dose: ${schedule.doseAndRoute}` : '',
-                            schedule.boosterSchedule !== '—' ? `Schedule: ${schedule.boosterSchedule}` : '',
-                            schedule.notes || ''
-                        ].filter(Boolean).join('. ');
-
-                        return VaccinationEvent.create({
-                            animalId: newAnimal._id,
-                            vaccineName: schedule.vaccineName !== '—' ? `${schedule.disease} - ${schedule.vaccineName}` : schedule.disease,
-                            eventType: 'scheduled',
-                            date: targetDate,
-                            notes: notes || null,
-                            repeatsEvery: null,
-                        });
-                    })
-                );
-
-                // Generate embedding if image exists
-                if (imageUrl) {
-                    try {
-                        // Pass the Cloudinary URL to the embedding service
-                        const vector = await generateEmbedding(imageUrl);
-                        await AnimalEmbedding.create({
-                            animalId: newAnimal._id,
-                            embedding: vector
-                        });
-                    } catch (embError) {
-                        console.error('Embedding generation failed:', embError);
-                        // We don't fail the request, just log it. 
-                        // The animal is created, just not searchable by face yet.
-                    }
+            // Generate embedding if image exists
+            if (imageUrl) {
+                try {
+                    const vector = await generateEmbedding(imageUrl);
+                    await AnimalEmbedding.create({
+                        animalId: newAnimal._id,
+                        embedding: vector
+                    });
+                } catch (embError) {
+                    console.error('Embedding generation failed:', embError);
                 }
-
-                return res.status(201).json({ 
-                    animal: newAnimal,
-                    vaccinationEvents 
-                });
             }
+
+            return res.status(201).json({ 
+                animal: newAnimal,
+                vaccinationEvents 
+            });
         } catch (scheduleError) {
             console.error('Schedule Error:', scheduleError);
             // Return animal even if vaccination generation fails
@@ -137,8 +212,32 @@ exports.createAnimal = async (req, res) => {
 
 exports.getAnimals = async (req, res) => {
     try {
-        const { farmId } = req.query;
-        const filter = farmId ? { farmId } : {};
+        const { farmId, farmerId } = req.query;
+        let filter = {};
+
+        if (farmId) {
+            filter.farmId = farmId;
+        }
+
+        if (farmerId) {
+            const farmer = await Farmer.findById(farmerId);
+            if (!farmer) {
+                return res.status(404).json({ message: 'Farmer not found' });
+            }
+            
+            if (!farmer.farms || farmer.farms.length === 0) {
+                 return res.status(200).json([]);
+            }
+
+            if (farmId) {
+                const ownsFarm = farmer.farms.some(f => f.toString() === farmId);
+                if (!ownsFarm) {
+                    return res.status(403).json({ message: 'Access denied: You do not own this farm' });
+                }
+            } else {
+                filter.farmId = { $in: farmer.farms };
+            }
+        }
         
         const animals = await Animal.find(filter).populate('farmId', 'name location imageUrl');
         res.status(200).json(animals);
@@ -154,6 +253,13 @@ exports.getAnimalById = async (req, res) => {
             return res.status(404).json({ message: 'Animal not found' });
         }
         
+        // Check for missed vaccinations and create alerts
+        try {
+            await checkMissedVaccinations(req.params.id);
+        } catch (err) {
+            console.error("Missed vaccination check failed:", err);
+        }
+
         // Get vaccination events for this animal
         let vaccinationEvents = await VaccinationEvent.find({ animalId: req.params.id })
             .sort({ date: 1 });
@@ -161,69 +267,9 @@ exports.getAnimalById = async (req, res) => {
         // If no events exist, try to generate them from schedule (backfill for existing animals)
         if (vaccinationEvents.length === 0 && animal.species) {
             try {
-                const speciesName = animal.species.toLowerCase();
-                const gender = animal.gender ? animal.gender.toLowerCase() : 'female'; // default to female if unknown
-                
-                // Allow both 'cow' and 'cattle' to match 'CATTLE & BUFFALO'
-                const searchSpecies = (speciesName === 'cattle') ? 'cow' : speciesName;
-
-                const filter = {
-                    species: searchSpecies,
-                    $or: [
-                        { genderSpecific: 'all' },
-                        { genderSpecific: gender }
-                    ]
-                };
-                
-                const schedules = await VaccinationSchedule.find(filter);
-
-                if (schedules.length > 0) {
-                    const now = new Date();
-                    const newEvents = await Promise.all(
-                        schedules.map(schedule => {
-                            let targetDate = new Date(now);
-                            const age = animal.age || 0;
-                            const ageUnit = animal.ageUnit || 'months';
-                            
-                            const ageInMonths = ageUnit === 'years' ? age * 12 : ageUnit === 'days' ? age / 30 : Number(age);
-                            const ageMatch = schedule.primaryVaccinationAge.match(/(\d+)\s*(month|day|week|year)/i);
-                            
-                            if (ageMatch) {
-                                const vaccAge = parseInt(ageMatch[1]);
-                                const vaccUnit = ageMatch[2].toLowerCase();
-                                let vaccAgeInMonths = vaccAge;
-                                if (vaccUnit.startsWith('day')) vaccAgeInMonths = vaccAge / 30;
-                                else if (vaccUnit.startsWith('week')) vaccAgeInMonths = vaccAge / 4;
-                                else if (vaccUnit.startsWith('year')) vaccAgeInMonths = vaccAge * 12;
-
-                                const monthsUntilVacc = vaccAgeInMonths - ageInMonths;
-                                if (monthsUntilVacc > 0) {
-                                    targetDate.setMonth(targetDate.getMonth() + Math.ceil(monthsUntilVacc));
-                                }
-                            }
-
-                            const notes = [
-                                schedule.doseAndRoute !== '—' ? `Dose: ${schedule.doseAndRoute}` : '',
-                                schedule.boosterSchedule !== '—' ? `Schedule: ${schedule.boosterSchedule}` : '',
-                                schedule.notes || ''
-                            ].filter(Boolean).join('. ');
-
-                            return VaccinationEvent.create({
-                                animalId: animal._id,
-                                vaccineName: schedule.vaccineName !== '—' ? `${schedule.disease} - ${schedule.vaccineName}` : schedule.disease,
-                                eventType: 'scheduled',
-                                date: targetDate, // If overdue, defaults to now()
-                                notes: notes || null,
-                                repeatsEvery: null
-                            });
-                        })
-                    );
-                    
-                    vaccinationEvents = newEvents.sort((a, b) => new Date(a.date) - new Date(b.date));
-                }
+                vaccinationEvents = await generateVaccinationEventsForAnimal(animal);
             } catch (err) {
                 console.error("Auto-generation of schedule failed:", err);
-                // Continue with empty events if generation fails
             }
         }
         
@@ -285,8 +331,17 @@ exports.deleteAnimal = async (req, res) => {
             return res.status(404).json({ message: 'Animal not found' });
         }
         
-        // Also delete associated vaccination events
-        await VaccinationEvent.deleteMany({ animalId: id });
+        // Delete ALL associated records in parallel
+        await Promise.all([
+            VaccinationEvent.deleteMany({ animalId: id }),
+            Alert.deleteMany({ animalId: id }),
+            SensorEvent.deleteMany({ animalId: id }),
+            IotSensorReading.deleteMany({ animalId: id }),
+            HeartRateThreshold.deleteMany({ animalId: id }),
+            HealthSnapshot.deleteMany({ animalId: id }),
+            AnimalEmbedding.deleteMany({ animalId: id }),
+            RFIDEvent.deleteMany({ animalId: id }),
+        ]);
         
         res.status(200).json({ message: 'Animal and associated records deleted successfully' });
     } catch (error) {
