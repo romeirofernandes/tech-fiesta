@@ -41,7 +41,6 @@ export const PRODUCT_LABELS = {
   sheep_milk: 'Sheep Milk',
   eggs: 'Eggs',
   live_animal: 'Live Animal',
-  meat_liveweight: 'Meat (Live Weight)',
   wool: 'Wool',
   manure: 'Manure',
   goat_hair: 'Goat Hair',
@@ -89,7 +88,7 @@ export const EXPENSE_LABELS = {
   other: 'Other',
 };
 
-export const PRODUCT_TYPES = ['cow_milk', 'buffalo_milk', 'goat_milk', 'sheep_milk', 'eggs', 'live_animal', 'meat_liveweight', 'wool', 'manure', 'goat_hair'];
+export const PRODUCT_TYPES = ['cow_milk', 'buffalo_milk', 'goat_milk', 'sheep_milk', 'eggs', 'live_animal', 'wool', 'manure', 'goat_hair'];
 export const EXPENSE_CATEGORIES = ['feed', 'veterinary', 'labour', 'equipment', 'transport', 'utilities', 'insurance', 'other'];
 
 /** Default units per product type */
@@ -100,7 +99,6 @@ export const PRODUCT_UNITS = {
   sheep_milk: 'litres',
   eggs: 'units',
   live_animal: 'head',
-  meat_liveweight: 'kg',
   wool: 'kg',
   manure: 'kg',
   goat_hair: 'kg',
@@ -108,12 +106,12 @@ export const PRODUCT_UNITS = {
 
 /** Which species can produce which product types */
 export const SPECIES_PRODUCT_MAP = {
-  cow:     ['cow_milk', 'manure', 'meat_liveweight'],
-  buffalo: ['buffalo_milk', 'manure', 'meat_liveweight'],
-  goat:    ['goat_milk', 'goat_hair', 'manure', 'meat_liveweight'],
-  sheep:   ['sheep_milk', 'wool', 'manure', 'meat_liveweight'],
-  chicken: ['eggs', 'manure', 'meat_liveweight'],
-  pig:     ['manure', 'meat_liveweight'],
+  cow:     ['cow_milk', 'manure'],
+  buffalo: ['buffalo_milk', 'manure'],
+  goat:    ['goat_milk', 'goat_hair', 'manure'],
+  sheep:   ['sheep_milk', 'wool', 'manure'],
+  chicken: ['eggs'],
+  pig:     ['manure'],
   horse:   ['manure'],
   other:   ['manure'],
 };
