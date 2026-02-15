@@ -29,6 +29,7 @@ import {
 import { toast } from "sonner";
 import axios from "axios";
 import { getSpeciesIcon } from "@/lib/animalIcons";
+import { useUser } from "@/context/UserContext";
 import {
   format,
   startOfMonth,
@@ -60,6 +61,7 @@ const EVENT_DOT_COLORS = {
 };
 
 export default function VaccinationCalendar() {
+  const { mongoUser } = useUser();
   const [animals, setAnimals] = useState([]);
   const [selectedAnimalId, setSelectedAnimalId] = useState("all");
   const [vaccinationEvents, setVaccinationEvents] = useState([]);
@@ -68,19 +70,25 @@ export default function VaccinationCalendar() {
   const [view, setView] = useState("month"); // list, 2col, month, week
 
   useEffect(() => {
-    fetchAnimals();
-  }, []);
+    if (mongoUser) {
+        fetchAnimals();
+    }
+  }, [mongoUser]);
 
   useEffect(() => {
     fetchVaccinationEvents();
   }, [selectedAnimalId]);
 
   const fetchAnimals = async () => {
+    if (!mongoUser) return;
     try {
       const token = localStorage.getItem("token");
       const response = await axios.get(
         `${import.meta.env.VITE_API_BASE_URL}/api/animals`,
-        { headers: { Authorization: `Bearer ${token}` } }
+        { 
+            headers: { Authorization: `Bearer ${token}` },
+            params: { farmerId: mongoUser._id }
+        }
       );
       setAnimals(response.data);
     } catch (error) {

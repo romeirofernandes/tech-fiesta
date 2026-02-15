@@ -9,6 +9,7 @@ import { Plus, Search, Filter, Trash2, Edit2, Eye } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import axios from "axios";
+import { useUser } from "@/context/UserContext";
 import { getSpeciesIcon, speciesOptions } from "@/lib/animalIcons";
 import {
   DropdownMenu,
@@ -28,6 +29,7 @@ import {
 } from "@/components/ui/alert-dialog";
 
 export default function Animals() {
+  const { mongoUser } = useUser();
   const [animals, setAnimals] = useState([]);
   const [filteredAnimals, setFilteredAnimals] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -37,25 +39,30 @@ export default function Animals() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    fetchAnimals();
-  }, []);
+    if (mongoUser) {
+      fetchAnimals();
+    }
+  }, [mongoUser]);
 
   useEffect(() => {
     filterAnimals();
   }, [searchQuery, selectedSpecies, animals]);
 
   const fetchAnimals = async () => {
+    if (!mongoUser) return;
     try {
       const token = localStorage.getItem("token");
       const response = await axios.get(
         `${import.meta.env.VITE_API_BASE_URL}/api/animals`,
         {
           headers: { Authorization: `Bearer ${token}` },
+          params: { farmerId: mongoUser._id }
         }
       );
       setAnimals(Array.isArray(response.data) ? response.data : []);
       setLoading(false);
     } catch (error) {
+      console.error(error);
       toast.error("Failed to fetch animals");
       setLoading(false);
     }

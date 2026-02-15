@@ -1,4 +1,5 @@
 const Animal = require('../models/Animal');
+const Farmer = require('../models/Farmer');
 const VaccinationEvent = require('../models/VaccinationEvent');
 const VaccinationSchedule = require('../models/VaccinationSchedule');
 const Alert = require('../models/Alert');
@@ -211,8 +212,32 @@ exports.createAnimal = async (req, res) => {
 
 exports.getAnimals = async (req, res) => {
     try {
-        const { farmId } = req.query;
-        const filter = farmId ? { farmId } : {};
+        const { farmId, farmerId } = req.query;
+        let filter = {};
+
+        if (farmId) {
+            filter.farmId = farmId;
+        }
+
+        if (farmerId) {
+            const farmer = await Farmer.findById(farmerId);
+            if (!farmer) {
+                return res.status(404).json({ message: 'Farmer not found' });
+            }
+            
+            if (!farmer.farms || farmer.farms.length === 0) {
+                 return res.status(200).json([]);
+            }
+
+            if (farmId) {
+                const ownsFarm = farmer.farms.some(f => f.toString() === farmId);
+                if (!ownsFarm) {
+                    return res.status(403).json({ message: 'Access denied: You do not own this farm' });
+                }
+            } else {
+                filter.farmId = { $in: farmer.farms };
+            }
+        }
         
         const animals = await Animal.find(filter).populate('farmId', 'name location imageUrl');
         res.status(200).json(animals);
