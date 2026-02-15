@@ -66,13 +66,14 @@ export const MARKET_COMMODITY_LABELS = {
   buffalo_milk:  'Buffalo Milk',
   goat_milk:     'Goat Milk',
   sheep_milk:    'Sheep Milk',
+  horse:         'Horse',
 };
 
 /** Commodities that can be fetched from AGMARKNET */
 export const AGMARKNET_COMMODITIES = ['cow', 'calf', 'bull', 'egg', 'goat', 'hen', 'buffalo', 'pigs', 'sheep'];
 
 /** Manual-only commodities */
-export const MANUAL_COMMODITIES = ['manure', 'wool', 'goat_hair', 'cow_milk', 'buffalo_milk', 'goat_milk', 'sheep_milk'];
+export const MANUAL_COMMODITIES = ['manure', 'wool', 'goat_hair', 'cow_milk', 'buffalo_milk', 'goat_milk', 'sheep_milk', 'horse'];
 
 /** All market commodity keys */
 export const MARKET_COMMODITIES = [...AGMARKNET_COMMODITIES, ...MANUAL_COMMODITIES];
@@ -114,4 +115,23 @@ export const SPECIES_PRODUCT_MAP = {
   pig:     ['manure'],
   horse:   ['manure'],
   other:   ['manure'],
+};
+
+/**
+ * Which species can be sold as live animals.
+ * Every species that exists on a farm can potentially be sold.
+ */
+export const SELLABLE_SPECIES = ['cow', 'buffalo', 'goat', 'sheep', 'chicken', 'pig', 'horse'];
+
+/**
+ * Map species to AGMARKNET/manual market commodity key for price lookup.
+ */
+export const SPECIES_COMMODITY_MAP = {
+  cow: 'cow',
+  buffalo: 'buffalo',
+  goat: 'goat',
+  sheep: 'sheep',
+  pig: 'pigs',
+  chicken: 'hen',
+  horse: 'horse',
 };
