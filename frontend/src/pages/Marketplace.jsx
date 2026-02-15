@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Search, Tractor, Calendar, MapPin, Zap, Filter, Star, CheckCircle2,Store,ArrowRight } from "lucide-react";
+import { Search, Tractor, Calendar, MapPin, Zap, Filter, Star, CheckCircle2, Store, ArrowRight } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -52,13 +52,16 @@ export default function Marketplace() {
             const base = import.meta.env.VITE_API_BASE_URL;
             // Assuming endpoint exists or using specific query. 
             // In a real app with auth, GET /api/farms would return user's farms.
-            // For now, let's assume we can fetch all farms and filter or use a specific endpoint if avail.
-            // If not available, we might mock or need to create it. 
-            // Let's assume GET /api/farms returns all farms for the demo user if no auth.
             const res = await axios.get(`${base}/api/farms`);
-            setUserFarms(res.data);
+            if (Array.isArray(res.data)) {
+                setUserFarms(res.data);
+            } else {
+                console.error("Unexpected farms response:", res.data);
+                setUserFarms([]);
+            }
         } catch (err) {
             console.error("Error fetching farms:", err);
+            setUserFarms([]);
         }
     };
 
@@ -311,12 +314,12 @@ export default function Marketplace() {
                                         <SelectValue placeholder="Select your farm..." />
                                     </SelectTrigger>
                                     <SelectContent className="rounded-xl border-border/50 shadow-xl">
-                                        {userFarms.map(farm => (
+                                        {Array.isArray(userFarms) && userFarms.map(farm => (
                                             <SelectItem key={farm._id} value={farm._id} className="rounded-lg my-1">
                                                 {farm.name} <span className="text-muted-foreground text-xs ml-2">({farm.location.city})</span>
                                             </SelectItem>
                                         ))}
-                                        {userFarms.length === 0 && (
+                                        {(!Array.isArray(userFarms) || userFarms.length === 0) && (
                                             <div className="p-4 text-center text-sm text-muted-foreground">No farms found. Please create one first.</div>
                                         )}
                                     </SelectContent>

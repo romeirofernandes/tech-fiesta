@@ -60,37 +60,221 @@ const fetchSchemes = async () => {
             }
         });
 
-        // Filter Strict Agriculture
-        const agriKeywords = ['kisan', 'krishi', 'agriculture', 'farm', 'crop', 'soil', 'irrigation', 'dairy', 'animal', 'fisheries'];
+        // Filter Strict Agriculture with expanded keyword set
+        const agriKeywords = [
+            'kisan', 'krishi', 'agriculture', 'farm', 'crop', 'soil', 'irrigation',
+            'dairy', 'animal', 'fisheries', 'livestock', 'poultry', 'horticulture',
+            'fertilizer', 'pesticide', 'organic', 'mandis', 'e-nam', 'warehousing',
+            'cold storage', 'rural', 'panchayat', 'subsidy', 'insurance', 'matsya',
+            'sinchayee', 'sampada', 'vikas', 'nidhi', 'bima', 'horticulture'
+        ];
+
         const agriSchemes = schemes.filter(s =>
             agriKeywords.some(k => s.title.toLowerCase().includes(k) || s.description.toLowerCase().includes(k))
         );
 
-        // Also look for specific known schemes if missing
-        if (!agriSchemes.find(s => s.slug === 'Pradhan_Mantri_Kisan_Samman_Nidhi')) {
-            agriSchemes.unshift({
+        // Featured Indian Government Schemes (Manual High-Quality Additions)
+        const featuredSchemes = [
+            {
                 id: 'Pradhan_Mantri_Kisan_Samman_Nidhi',
                 slug: 'Pradhan_Mantri_Kisan_Samman_Nidhi',
-                title: 'Pradhan Mantri Kisan Samman Nidhi',
+                title: 'Pradhan Mantri Kisan Samman Nidhi (PM-KISAN)',
                 link: 'https://en.wikipedia.org/wiki/Pradhan_Mantri_Kisan_Samman_Nidhi',
                 ministry: 'Ministry of Agriculture & Farmers Welfare',
-                description: 'An initiative by the government of India is in which all farmers will get up to ₹6,000 per year as minimum income support.',
-                tags: ['Scheme', 'Agriculture']
-            });
-        }
-        if (!agriSchemes.find(s => s.slug === 'Pradhan_Mantri_Fasal_Bima_Yojana')) {
-            agriSchemes.push({
+                description: 'Direct income support of ₹6,000 per year to all landholding farmer families in three equal installments.',
+                tags: ['Income Support', 'Agriculture']
+            },
+            {
                 id: 'Pradhan_Mantri_Fasal_Bima_Yojana',
                 slug: 'Pradhan_Mantri_Fasal_Bima_Yojana',
-                title: 'Pradhan Mantri Fasal Bima Yojana',
+                title: 'Pradhan Mantri Fasal Bima Yojana (PMFBY)',
                 link: 'https://en.wikipedia.org/wiki/Pradhan_Mantri_Fasal_Bima_Yojana',
                 ministry: 'Ministry of Agriculture & Farmers Welfare',
-                description: 'Government sponsored crop insurance scheme that integrates multiple stakeholders on a single platform.',
-                tags: ['Scheme', 'Insurance']
-            });
-        }
+                description: 'Lowest premium for farmers against all non-preventable natural risks from pre-sowing to post-harvest stage.',
+                tags: ['Insurance', 'Crop Protection']
+            },
+            {
+                id: 'Pradhan_Mantri_Krishi_Sinchayee_Yojana',
+                slug: 'Pradhan_Mantri_Krishi_Sinchayee_Yojana',
+                title: 'Pradhan Mantri Krishi Sinchayee Yojana (PMKSY)',
+                link: 'https://en.wikipedia.org/wiki/Pradhan_Mantri_Krishi_Sinchayee_Yojana',
+                ministry: 'Ministry of Water Resources',
+                description: 'Motto of "Har Khet Ko Pani" - focused on expanding cultivable area under assured irrigation and improving water use efficiency.',
+                tags: ['Irrigation', 'Water Management']
+            },
+            {
+                id: 'National_Mission_for_Sustainable_Agriculture',
+                slug: 'National_Mission_for_Sustainable_Agriculture',
+                title: 'National Mission for Sustainable Agriculture (NMSA)',
+                link: 'https://en.wikipedia.org/wiki/National_Mission_for_Sustainable_Agriculture',
+                ministry: 'Ministry of Agriculture & Farmers Welfare',
+                description: 'Promoting sustainable agriculture through climate change adaptation, soil health management, and integrated farming.',
+                tags: ['Sustainability', 'Soil Health']
+            },
+            {
+                id: 'Soil_Health_Card_Scheme',
+                slug: 'Soil_Health_Card_Scheme',
+                title: 'Soil Health Card Scheme',
+                link: 'https://en.wikipedia.org/wiki/Soil_Health_Card_Scheme',
+                ministry: 'Ministry of Agriculture & Farmers Welfare',
+                description: 'Issuance of soil health cards to farmers which will carry crop-wise recommendations of nutrients and fertilizers.',
+                tags: ['Soil Health', 'Fertilizer']
+            },
+            {
+                id: 'Paramparagat_Krishi_Vikas_Yojana',
+                slug: 'Paramparagat_Krishi_Vikas_Yojana',
+                title: 'Paramparagat Krishi Vikas Yojana (PKVY)',
+                link: 'https://en.wikipedia.org/wiki/Paramparagat_Krishi_Vikas_Yojana',
+                ministry: 'Ministry of Agriculture & Farmers Welfare',
+                description: 'Supporting and promoting organic farming through cluster approach and Participatory Guarantee System (PGS) certification.',
+                tags: ['Organic Farming', 'Sustainability']
+            },
+            {
+                id: 'National_Agriculture_Market',
+                slug: 'National_Agriculture_Market',
+                title: 'eNAM (National Agriculture Market)',
+                link: 'https://en.wikipedia.org/wiki/National_Agriculture_Market',
+                ministry: 'Ministry of Agriculture & Farmers Welfare',
+                description: 'Pan-India electronic trading portal which networks the existing APMC mandis to create a unified national market for agricultural commodities.',
+                tags: ['Marketing', 'Digitization']
+            },
+            {
+                id: 'Pradhan_Mantri_Matsya_Sampada_Yojana',
+                slug: 'Pradhan_Mantri_Matsya_Sampada_Yojana',
+                title: 'Pradhan Mantri Matsya Sampada Yojana (PMMSY)',
+                link: 'https://en.wikipedia.org/wiki/Pradhan_Mantri_Matsya_Sampada_Yojana',
+                ministry: 'Ministry of Fisheries, Animal Husbandry and Dairying',
+                description: 'A flagship scheme for focused and sustainable development of fisheries sector in the country.',
+                tags: ['Fisheries', 'Blue Revolution']
+            },
+            {
+                id: 'National_Livestock_Mission',
+                slug: 'National_Livestock_Mission',
+                title: 'National Livestock Mission (NLM)',
+                link: 'https://dahd.nic.in/schemes',
+                ministry: 'Ministry of Fisheries, Animal Husbandry and Dairying',
+                description: 'Sustainable development of livestock sector, focusing on improving availability of quality feed and fodder and risk management.',
+                tags: ['Livestock', 'Animal Husbandry']
+            },
+            {
+                id: 'Agriculture_Infrastructure_Fund',
+                slug: 'Agriculture_Infrastructure_Fund',
+                title: 'Agriculture Infrastructure Fund (AIF)',
+                link: 'https://agriinfra.dac.gov.in/',
+                ministry: 'Ministry of Agriculture & Farmers Welfare',
+                description: 'Financing facility for investment in viable projects for post-harvest management infrastructure and community farming assets.',
+                tags: ['Infrastructure', 'Agri-Credit']
+            },
+            {
+                id: 'Kisan_Credit_Card_Scheme',
+                slug: 'Kisan_Credit_Card_Scheme',
+                title: 'Kisan Credit Card (KCC) Scheme',
+                link: 'https://en.wikipedia.org/wiki/Kisan_Credit_Card_scheme',
+                ministry: 'RBI / NABARD',
+                description: 'Provides farmers with timely access to credit for cultivation and other needs at reasonable interest rates.',
+                tags: ['Credit', 'Finance']
+            },
+            {
+                id: 'PM_Kisan_SAMPADA_Yojana',
+                slug: 'PM_Kisan_SAMPADA_Yojana',
+                title: 'PM Kisan SAMPADA Yojana',
+                link: 'https://mofpi.gov.in/Schemes/pradhan-mantri-kisan-sampada-yojana',
+                ministry: 'Ministry of Food Processing Industries',
+                description: 'Comprehensive package which will result in creation of modern infrastructure with efficient supply chain management.',
+                tags: ['Food Processing', 'Supply Chain']
+            },
+            {
+                id: 'National_Food_Security_Mission',
+                slug: 'National_Food_Security_Mission',
+                title: 'National Food Security Mission (NFSM)',
+                link: 'https://www.nfsm.gov.in/',
+                ministry: 'Ministry of Agriculture & Farmers Welfare',
+                description: 'Increasing production of rice, wheat, pulses, and coarse cereals through area expansion and productivity enhancement.',
+                tags: ['Production', 'Food Security']
+            },
+            {
+                id: 'PM_AASHA_Scheme',
+                slug: 'PM_AASHA_Scheme',
+                title: 'PM-AASHA (Annadata Aay SanraksHan Abhiyan)',
+                link: 'https://pib.gov.in/PressReleseDetail.aspx?PRID=1545831',
+                ministry: 'Ministry of Agriculture & Farmers Welfare',
+                description: 'An umbrella scheme that ensures Minimum Support Price (MSP) to farmers for pulses, oilseeds and copra.',
+                tags: ['MSP', 'Income Support']
+            },
+            {
+                id: 'Mission_for_Integrated_Development_of_Horticulture',
+                slug: 'Mission_for_Integrated_Development_of_Horticulture',
+                title: 'Mission for Integrated Development of Horticulture (MIDH)',
+                link: 'https://midh.gov.in/',
+                ministry: 'Ministry of Agriculture & Farmers Welfare',
+                description: 'A centrally sponsored scheme for the holistic growth of the horticulture sector covering fruits, vegetables, root and tuber crops.',
+                tags: ['Horticulture', 'Growth']
+            },
+            {
+                id: 'National_Mission_on_Agricultural_Extension_and_Technology',
+                slug: 'National_Mission_on_Agricultural_Extension_and_Technology',
+                title: 'National Mission on Agricultural Extension and Technology (NMAET)',
+                link: 'https://agricoop.nic.in/en/Schemes',
+                ministry: 'Ministry of Agriculture & Farmers Welfare',
+                description: 'Objective to make extension system farmer driven and farmer accountable by disseminating technology and improving farm mechanization.',
+                tags: ['Extension', 'Technology']
+            },
+            {
+                id: 'National_Mission_on_Oilseeds_and_Oil_Palm',
+                slug: 'National_Mission_on_Oilseeds_and_Oil_Palm',
+                title: 'National Mission on Oilseeds and Oil Palm (NMOOP)',
+                link: 'https://nmoop.gov.in/',
+                ministry: 'Ministry of Agriculture & Farmers Welfare',
+                description: 'Aimed at augmenting the availability of vegetable oils and reducing the import of edible oils by increasing production.',
+                tags: ['Oilseeds', 'Production']
+            },
+            {
+                id: 'Integrated_Scheme_for_Agricultural_Marketing',
+                slug: 'Integrated_Scheme_for_Agricultural_Marketing',
+                title: 'Integrated Scheme for Agricultural Marketing (ISAM)',
+                link: 'https://agricoop.nic.in/en/Schemes',
+                ministry: 'Ministry of Agriculture & Farmers Welfare',
+                description: 'Promoting creation of agricultural marketing infrastructure and providing marketing information network.',
+                tags: ['Marketing', 'Infrastructure']
+            },
+            {
+                id: 'National_Bee_and_Honey_Mission',
+                slug: 'National_Bee_and_Honey_Mission',
+                title: 'National Bee and Honey Mission (NBHM)',
+                link: 'https://nbb.gov.in/',
+                ministry: 'Ministry of Agriculture & Farmers Welfare',
+                description: 'Keeping in view the importance of beekeeping as part of the Sweet Revolution, this mission aims to improve the beekeeping sector.',
+                tags: ['Beekeeping', 'Honey']
+            },
+            {
+                id: 'Rashtriya_Krishi_Vikas_Yojana',
+                slug: 'Rashtriya_Krishi_Vikas_Yojana',
+                title: 'Rashtriya Krishi Vikas Yojana (RKVY)',
+                link: 'https://rkvy.nic.in/',
+                ministry: 'Ministry of Agriculture & Farmers Welfare',
+                description: 'Ensuring holistic development of agriculture and allied sectors by allowing states to choose their own agriculture and allied sector development activities.',
+                tags: ['Development', 'States']
+            },
+            {
+                id: 'Price_Support_Scheme',
+                slug: 'Price_Support_Scheme',
+                title: 'Price Support Scheme (PSS)',
+                link: 'https://nafed-india.com/price-support-scheme',
+                ministry: 'Ministry of Agriculture & Farmers Welfare / NAFED',
+                description: 'Procurement of oilseeds, pulses and cotton at MSP when prices fall below the support price.',
+                tags: ['MSP', 'Procurement']
+            }
+        ];
 
-        cachedSchemes = agriSchemes;
+        // Merge and deduplicate
+        const finalSchemes = [...featuredSchemes];
+        agriSchemes.forEach(s => {
+            if (!finalSchemes.find(fs => fs.slug === s.slug)) {
+                finalSchemes.push(s);
+            }
+        });
+
+        cachedSchemes = finalSchemes;
         lastFetchTime = Date.now();
 
         return cachedSchemes;

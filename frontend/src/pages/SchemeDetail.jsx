@@ -170,8 +170,8 @@ export default function SchemeDetail() {
                             Next Steps
                         </h2>
                         <div className="relative space-y-8 pl-6">
-                            {/* Vertical line connector */}
-                            <div className="absolute left-[31px] top-6 bottom-6 w-[2px] bg-primary/20" />
+                            {/* Vertical line connector - centered with circles (pl-6 + 20px radius) */}
+                            <div className="absolute left-[44px] -translate-x-1/2 top-6 bottom-6 w-[2px] bg-primary/20" />
 
                             {scheme.applicationProcess && scheme.applicationProcess.map((step, idx) => (
                                 <div key={idx} className="relative flex items-center gap-6 group">
