@@ -14,6 +14,7 @@ import {
   MapPin,
   ArrowRight,
   Sprout,
+  Beef,
 } from "lucide-react";
 import { MapContainer, TileLayer, Marker, Tooltip } from "react-leaflet";
 import { useTheme } from "@/context/ThemeContext";
