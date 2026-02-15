@@ -31,3 +31,4 @@ export function Layout({ children, loading = false }) {
     </SidebarProvider>
   )
 }
+export default Layout;
