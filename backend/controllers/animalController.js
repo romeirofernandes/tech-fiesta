@@ -1,7 +1,7 @@
 const Animal = require('../models/Animal');
 const VaccinationEvent = require('../models/VaccinationEvent');
+const VaccinationSchedule = require('../models/VaccinationSchedule');
 const cloudinary = require('../config/cloudinary');
-const { generateVaccinationEvents } = require('../services/vaccinationService');
 const { generateEmbedding, cosineSimilarity, detectAndCropAnimals } = require('../services/embeddingService');
 const AnimalEmbedding = require('../models/AnimalEmbedding');
 
@@ -43,24 +43,53 @@ exports.createAnimal = async (req, res) => {
 
         await newAnimal.save();
 
-        // Generate vaccination events using LLM
-        if (questionsAnswers && questionsAnswers.length > 0) {
-            try {
-                const vaccinationData = await generateVaccinationEvents(
-                    { species, breed, gender, age, ageUnit },
-                    JSON.parse(questionsAnswers)
-                );
+        // Generate vaccination events from static schedule data
+        try {
+            const filter = {
+                species: species,
+                $or: [
+                    { genderSpecific: 'all' },
+                    { genderSpecific: gender }
+                ]
+            };
+            const schedules = await VaccinationSchedule.find(filter);
 
-                // Create vaccination events
+            if (schedules.length > 0) {
+                const now = new Date();
                 const vaccinationEvents = await Promise.all(
-                    vaccinationData.map(event => 
-                        VaccinationEvent.create({
+                    schedules.map(schedule => {
+                        // Calculate target date based on animal age and primary vaccination age
+                        let targetDate = new Date(now);
+                        const ageInMonths = ageUnit === 'years' ? age * 12 : ageUnit === 'days' ? age / 30 : Number(age);
+                        const ageMatch = schedule.primaryVaccinationAge.match(/(\d+)\s*(month|day|week|year)/i);
+                        
+                        if (ageMatch) {
+                            const vaccAge = parseInt(ageMatch[1]);
+                            const vaccUnit = ageMatch[2].toLowerCase();
+                            let vaccAgeInMonths = vaccAge;
+                            if (vaccUnit.startsWith('day')) vaccAgeInMonths = vaccAge / 30;
+                            else if (vaccUnit.startsWith('week')) vaccAgeInMonths = vaccAge / 4;
+                            else if (vaccUnit.startsWith('year')) vaccAgeInMonths = vaccAge * 12;
+
+                            const monthsUntilVacc = vaccAgeInMonths - ageInMonths;
+                            if (monthsUntilVacc > 0) {
+                                targetDate.setMonth(targetDate.getMonth() + Math.ceil(monthsUntilVacc));
+                            }
+                        }
+
+                        const notes = [
+                            schedule.doseAndRoute !== '—' ? `Dose: ${schedule.doseAndRoute}` : '',
+                            schedule.boosterSchedule !== '—' ? `Schedule: ${schedule.boosterSchedule}` : '',
+                            schedule.notes || ''
+                        ].filter(Boolean).join('. ');
+
+                        return VaccinationEvent.create({
                             animalId: newAnimal._id,
-                            vaccineName: event.vaccineName,
-                            eventType: event.eventType,
-                            date: new Date(event.date),
-                            notes: event.notes || null,
-                            repeatsEvery: event.repeatsEvery || null
+                            vaccineName: schedule.vaccineName,
+                            eventType: 'scheduled',
+                            date: targetDate,
+                            notes: notes || null,
+                            repeatsEvery: null,
                         })
                     )
                 );
@@ -85,15 +114,15 @@ exports.createAnimal = async (req, res) => {
                     animal: newAnimal,
                     vaccinationEvents 
                 });
-            } catch (llmError) {
-                console.error('LLM Error:', llmError);
-                // Return animal even if vaccination generation fails
-                return res.status(201).json({ 
-                    animal: newAnimal,
-                    vaccinationEvents: [],
-                    warning: 'Animal created but vaccination schedule generation failed'
-                });
             }
+        } catch (scheduleError) {
+            console.error('Schedule Error:', scheduleError);
+            // Return animal even if vaccination generation fails
+            return res.status(201).json({ 
+                animal: newAnimal,
+                vaccinationEvents: [],
+                warning: 'Animal created but vaccination schedule generation failed'
+            });
         }
 
         res.status(201).json({ animal: newAnimal, vaccinationEvents: [] });
@@ -122,8 +151,77 @@ exports.getAnimalById = async (req, res) => {
         }
         
         // Get vaccination events for this animal
-        const vaccinationEvents = await VaccinationEvent.find({ animalId: req.params.id })
+        let vaccinationEvents = await VaccinationEvent.find({ animalId: req.params.id })
             .sort({ date: 1 });
+
+        // If no events exist, try to generate them from schedule (backfill for existing animals)
+        if (vaccinationEvents.length === 0 && animal.species) {
+            try {
+                const speciesName = animal.species.toLowerCase();
+                const gender = animal.gender ? animal.gender.toLowerCase() : 'female'; // default to female if unknown
+                
+                // Allow both 'cow' and 'cattle' to match 'CATTLE & BUFFALO'
+                const searchSpecies = (speciesName === 'cattle') ? 'cow' : speciesName;
+
+                const filter = {
+                    species: searchSpecies,
+                    $or: [
+                        { genderSpecific: 'all' },
+                        { genderSpecific: gender }
+                    ]
+                };
+                
+                const schedules = await VaccinationSchedule.find(filter);
+
+                if (schedules.length > 0) {
+                    const now = new Date();
+                    const newEvents = await Promise.all(
+                        schedules.map(schedule => {
+                            let targetDate = new Date(now);
+                            const age = animal.age || 0;
+                            const ageUnit = animal.ageUnit || 'months';
+                            
+                            const ageInMonths = ageUnit === 'years' ? age * 12 : ageUnit === 'days' ? age / 30 : Number(age);
+                            const ageMatch = schedule.primaryVaccinationAge.match(/(\d+)\s*(month|day|week|year)/i);
+                            
+                            if (ageMatch) {
+                                const vaccAge = parseInt(ageMatch[1]);
+                                const vaccUnit = ageMatch[2].toLowerCase();
+                                let vaccAgeInMonths = vaccAge;
+                                if (vaccUnit.startsWith('day')) vaccAgeInMonths = vaccAge / 30;
+                                else if (vaccUnit.startsWith('week')) vaccAgeInMonths = vaccAge / 4;
+                                else if (vaccUnit.startsWith('year')) vaccAgeInMonths = vaccAge * 12;
+
+                                const monthsUntilVacc = vaccAgeInMonths - ageInMonths;
+                                if (monthsUntilVacc > 0) {
+                                    targetDate.setMonth(targetDate.getMonth() + Math.ceil(monthsUntilVacc));
+                                }
+                            }
+
+                            const notes = [
+                                schedule.doseAndRoute !== '—' ? `Dose: ${schedule.doseAndRoute}` : '',
+                                schedule.boosterSchedule !== '—' ? `Schedule: ${schedule.boosterSchedule}` : '',
+                                schedule.notes || ''
+                            ].filter(Boolean).join('. ');
+
+                            return VaccinationEvent.create({
+                                animalId: animal._id,
+                                vaccineName: schedule.vaccineName !== '—' ? `${schedule.disease} - ${schedule.vaccineName}` : schedule.disease,
+                                eventType: 'scheduled',
+                                date: targetDate, // If overdue, defaults to now()
+                                notes: notes || null,
+                                repeatsEvery: null
+                            });
+                        })
+                    );
+                    
+                    vaccinationEvents = newEvents.sort((a, b) => new Date(a.date) - new Date(b.date));
+                }
+            } catch (err) {
+                console.error("Auto-generation of schedule failed:", err);
+                // Continue with empty events if generation fails
+            }
+        }
         
         res.status(200).json({ animal, vaccinationEvents });
     } catch (error) {

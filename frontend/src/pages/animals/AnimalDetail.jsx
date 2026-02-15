@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/select";
 import { ArrowLeft, Edit2, MapPin, Plus, Thermometer, Droplets, Heart, Activity } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
+import { getSpeciesIcon } from "@/lib/animalIcons";
 import { toast } from "sonner";
 import axios from "axios";
 import {
@@ -58,9 +59,10 @@ export default function AnimalDetail() {
   const [editingEvent, setEditingEvent] = useState(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editDialogMode, setEditDialogMode] = useState("edit"); // "edit" or "add"
+  const [vaccinationSchedules, setVaccinationSchedules] = useState([]);
   const [deleteEvent, setDeleteEvent] = useState(null);
   const [currentMonth, setCurrentMonth] = useState(startOfMonth(TODAY));
-  const [view, setView] = useState("month"); // list, 2col, month, week
+  const [view, setView] = useState("list"); // list, 2col, month, week
   const [timeRange, setTimeRange] = useState("24h");
   const navigate = useNavigate();
   const { id } = useParams();
@@ -119,6 +121,25 @@ export default function AnimalDetail() {
     fetchAnimalDetails();
   }, [id]);
 
+  useEffect(() => {
+    if (animal?.species) {
+      fetchVaccinationSchedules();
+    }
+  }, [animal?.species, animal?.gender]);
+
+  const fetchVaccinationSchedules = async () => {
+    try {
+      const params = new URLSearchParams({ species: animal.species });
+      if (animal.gender) params.append('gender', animal.gender);
+      const response = await axios.get(
+        `${import.meta.env.VITE_API_BASE_URL}/api/vaccination-schedules?${params}`
+      );
+      setVaccinationSchedules(response.data);
+    } catch (error) {
+      console.error('Failed to fetch vaccination schedules');
+    }
+  };
+
   const fetchAnimalDetails = async () => {
     try {
       const token = localStorage.getItem("token");
@@ -166,19 +187,7 @@ export default function AnimalDetail() {
     }
   };
 
-  const getSpeciesEmoji = (species) => {
-    const emojis = {
-      cow: "🐄",
-      buffalo: "🐃",
-      goat: "🐐",
-      sheep: "🐑",
-      chicken: "🐔",
-      pig: "🐷",
-      horse: "🐴",
-      other: "🐾",
-    };
-    return emojis[species] || "🐾";
-  };
+
 
   const getAnimalName = () => animal?.name || "Unknown";
 
@@ -256,8 +265,8 @@ export default function AnimalDetail() {
             <div className="flex flex-col md:flex-row gap-6">
               <Avatar className="h-32 w-32 border-4 border-primary/20">
                 <AvatarImage src={animal.imageUrl} alt={animal.name} className="object-contain" />
-                <AvatarFallback className="text-6xl">
-                  {getSpeciesEmoji(animal.species)}
+                <AvatarFallback className="text-6xl flex items-center justify-center">
+                  {getSpeciesIcon(animal.species, "h-16 w-16 text-muted-foreground")}
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1 space-y-4">
@@ -471,6 +480,7 @@ export default function AnimalDetail() {
           onSuccess={fetchAnimalDetails}
           animalId={animal._id}
           mode={editDialogMode}
+          suggestedVaccines={vaccinationSchedules}
         />
       </div>
     </Layout>

@@ -9,6 +9,7 @@ import { Plus, Search, Filter, Trash2, Edit2, Eye } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import axios from "axios";
+import { getSpeciesIcon, speciesOptions } from "@/lib/animalIcons";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -97,19 +98,6 @@ export default function Animals() {
     }
   };
 
-  const getSpeciesEmoji = (species) => {
-    const emojis = {
-      cow: "🐄",
-      buffalo: "🐃",
-      goat: "🐐",
-      sheep: "🐑",
-      chicken: "🐔",
-      pig: "🐷",
-      horse: "🐴",
-      other: "🐾",
-    };
-    return emojis[species] || "🐾";
-  };
 
   const getAgeDisplay = (age, unit) => {
     return `${age} ${unit}`;
@@ -156,30 +144,11 @@ export default function Animals() {
                   <DropdownMenuItem onClick={() => setSelectedSpecies("all")}>
                     All Species
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setSelectedSpecies("cow")}>
-                    🐄 Cow
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setSelectedSpecies("buffalo")}>
-                    🐃 Buffalo
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setSelectedSpecies("goat")}>
-                    🐐 Goat
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setSelectedSpecies("sheep")}>
-                    🐑 Sheep
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setSelectedSpecies("chicken")}>
-                    🐔 Chicken
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setSelectedSpecies("pig")}>
-                    🐷 Pig
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setSelectedSpecies("horse")}>
-                    🐴 Horse
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setSelectedSpecies("other")}>
-                    🐾 Other
-                  </DropdownMenuItem>
+                  {speciesOptions.map(({ value, label, Icon, color }) => (
+                    <DropdownMenuItem key={value} onClick={() => setSelectedSpecies(value)}>
+                      <Icon className="mr-2 h-4 w-4" style={{ color }} /> {label}
+                    </DropdownMenuItem>
+                  ))}
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
@@ -190,7 +159,7 @@ export default function Animals() {
         {(!Array.isArray(filteredAnimals) || filteredAnimals.length === 0) ? (
           <Card>
             <CardContent className="flex flex-col items-center justify-center py-12">
-              <div className="text-6xl mb-4">🐾</div>
+              <div className="text-6xl mb-4 flex items-center justify-center">{getSpeciesIcon("other", "h-16 w-16 text-muted-foreground")}</div>
               <h3 className="text-lg font-semibold mb-2">No animals found</h3>
               <p className="text-muted-foreground text-center mb-4">
                 {searchQuery || selectedSpecies !== "all"
@@ -217,8 +186,8 @@ export default function Animals() {
                         alt={animal.name}
                         className="object-contain"
                       />
-                      <AvatarFallback className="text-2xl">
-                        {getSpeciesEmoji(animal.species)}
+                      <AvatarFallback className="text-2xl flex items-center justify-center">
+                        {getSpeciesIcon(animal.species, "h-8 w-8 text-muted-foreground")}
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1 min-w-0">
