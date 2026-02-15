@@ -53,7 +53,44 @@ const generateEmbedding = async (imageInput) => {
         input = await bufferToRawImage(imageInput);
     }
     
-    const output = await extractor(input, { pooling: 'mean', normalize: true });
+    const output = await extractor(input);
+    
+    // Check if output is [1, seq_len, hidden_size] (e.g. [1, 197, 768])
+    if (output.dims.length === 3 && output.dims[1] > 1) {
+        const batchSize = output.dims[0];
+        const seqLen = output.dims[1];
+        const hiddenSize = output.dims[2];
+        
+        // We only handle batch size 1 for now
+        const pooled = new Float32Array(hiddenSize);
+        
+        // Sum across sequence dimension
+        for (let i = 0; i < seqLen; i++) {
+            const offset = i * hiddenSize;
+            for (let j = 0; j < hiddenSize; j++) {
+                pooled[j] += output.data[offset + j];
+            }
+        }
+        
+        // Calculate mean and L2 norm
+        let norm = 0;
+        for (let j = 0; j < hiddenSize; j++) {
+            pooled[j] /= seqLen; // Mean
+            norm += pooled[j] * pooled[j];
+        }
+        
+        // Normalize
+        norm = Math.sqrt(norm);
+        if (norm > 1e-12) { // Avoid divide by zero
+            for (let j = 0; j < hiddenSize; j++) {
+                pooled[j] /= norm;
+            }
+        }
+        
+        return Array.from(pooled);
+    }
+    
+    // Fallback if dimensions are unexpected
     return Array.from(output.data);
 };
 
