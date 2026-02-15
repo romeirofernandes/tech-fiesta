@@ -36,6 +36,7 @@ const navGroups = [
         subItems: [
           { title: "All Farms", url: "/farms" },
           { title: "Create Farm", url: "/farms/create" },
+          { title: "Farm Monitor",  url: "/farm-monitoring",}
         ],
       },
       {

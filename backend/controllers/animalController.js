@@ -90,8 +90,8 @@ exports.createAnimal = async (req, res) => {
                             date: targetDate,
                             notes: notes || null,
                             repeatsEvery: null,
-                        })
-                    )
+                        });
+                    })
                 );
 
                 // Generate embedding if image exists
