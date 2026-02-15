@@ -8,7 +8,7 @@ import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import axios from "axios";
 
-export function EditVaccinationEventDialog({ event, open, onOpenChange, onSuccess, animalId, mode = "edit" }) {
+export function EditVaccinationEventDialog({ event, open, onOpenChange, onSuccess, animalId, mode = "edit", suggestedVaccines = [] }) {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     vaccineName: "",
@@ -95,17 +95,55 @@ export function EditVaccinationEventDialog({ event, open, onOpenChange, onSucces
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Edit Vaccination Event</DialogTitle>
+          <DialogTitle>{mode === "add" ? "Add Vaccination Event" : "Edit Vaccination Event"}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="vaccineName">Vaccine Name *</Label>
-            <Input
-              id="vaccineName"
-              value={formData.vaccineName}
-              onChange={(e) => setFormData((prev) => ({ ...prev, vaccineName: e.target.value }))}
-              required
-            />
+            {mode === "add" && suggestedVaccines.length > 0 ? (
+              <>
+                <Select
+                  value={formData.vaccineName}
+                  onValueChange={(value) => {
+                    const schedule = suggestedVaccines.find(s => s.disease === value);
+                    setFormData((prev) => ({
+                      ...prev,
+                      vaccineName: value,
+                      notes: schedule ? [
+                        schedule.doseAndRoute !== '—' ? `Dose: ${schedule.doseAndRoute}` : '',
+                        schedule.boosterSchedule !== '—' ? `Schedule: ${schedule.boosterSchedule}` : '',
+                        schedule.notes || ''
+                      ].filter(Boolean).join('. ') : prev.notes
+                    }));
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select from schedule or type below" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {suggestedVaccines.map((s) => (
+                      <SelectItem key={s._id} value={s.disease}>
+                        {s.disease}{s.vaccineName !== '—' ? ` (${s.vaccineName})` : ''}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Input
+                  id="vaccineName"
+                  value={formData.vaccineName}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, vaccineName: e.target.value }))}
+                  placeholder="Or type custom vaccine name..."
+                  className="mt-1"
+                />
+              </>
+            ) : (
+              <Input
+                id="vaccineName"
+                value={formData.vaccineName}
+                onChange={(e) => setFormData((prev) => ({ ...prev, vaccineName: e.target.value }))}
+                required
+              />
+            )}
           </div>
 
           <div className="space-y-2">
@@ -186,7 +224,7 @@ export function EditVaccinationEventDialog({ event, open, onOpenChange, onSucces
                   Saving...
                 </>
               ) : (
-                "Save Changes"
+                mode === "add" ? "Add Event" : "Save Changes"
               )}
             </Button>
           </DialogFooter>

@@ -9,6 +9,7 @@ const farmRoutes = require('./routes/farmRoutes');
 const farmerRoutes = require('./routes/farmerRoutes');
 const sensorEventRoutes = require('./routes/sensorEventRoutes');
 const vaccinationEventRoutes = require('./routes/vaccinationEventRoutes');
+const vaccinationScheduleRoutes = require('./routes/vaccinationScheduleRoutes');
 const HealthSnapshotRoutes = require('./routes/healthSnapshotRoutes');
 const farmImageRoutes = require('./routes/farmImageRoutes');
 const productionRoutes = require('./routes/productionRoutes');
@@ -35,6 +36,7 @@ app.use('/api/farms', farmRoutes);
 app.use('/api/alerts', alertRoutes);
 app.use('/api/sensor-events', sensorEventRoutes);
 app.use('/api/vaccination-events', vaccinationEventRoutes);
+app.use('/api/vaccination-schedules', vaccinationScheduleRoutes);
 app.use('/api/health-snapshots', HealthSnapshotRoutes);
 app.use('/api/farm-images', farmImageRoutes);
 app.use('/api/production-records', productionRoutes);
@@ -47,6 +49,7 @@ app.use('/api/schemes', require('./routes/schemeRoutes'));
 app.use('/api/marketplace', require('./routes/marketplaceRoutes'));
 app.use('/api/payments', require('./routes/paymentRoutes'));
 app.use('/api/iot', require('./routes/iotRoutes'));
+app.use('/api/vaccination-schedules', require('./routes/vaccinationScheduleRoutes'));
 
 const port = process.env.PORT;
 

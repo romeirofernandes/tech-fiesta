@@ -9,6 +9,7 @@ import { ArrowLeft, Upload, Loader2, ChevronRight, ChevronLeft, Image as ImageIc
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import axios from "axios";
+import { getSpeciesIcon, speciesOptions } from "@/lib/animalIcons";
 import {
   Select,
   SelectContent,
@@ -375,19 +376,6 @@ Return ONLY valid JSON, no markdown formatting or code blocks.`;
     }
   };
 
-  const getSpeciesEmoji = (species) => {
-    const emojis = {
-      cow: "🐄",
-      buffalo: "🐃",
-      goat: "🐐",
-      sheep: "🐑",
-      chicken: "🐔",
-      pig: "🐷",
-      horse: "🐴",
-      other: "🐾",
-    };
-    return emojis[species] || "🐾";
-  };
 
   return (
     <Layout>
@@ -431,7 +419,7 @@ Return ONLY valid JSON, no markdown formatting or code blocks.`;
                   >
                     <AvatarImage src={imagePreview} className="object-cover" />
                     <AvatarFallback className="text-6xl flex items-center justify-center">
-                      <ImageIcon className="w-12 h-12 text-muted-foreground" />
+                      {formData.species ? getSpeciesIcon(formData.species, "h-16 w-16 text-muted-foreground") : <ImageIcon className="w-12 h-12 text-muted-foreground" />}
                     </AvatarFallback>
                   </Avatar>
                   {analyzingImage && (
@@ -505,14 +493,11 @@ Return ONLY valid JSON, no markdown formatting or code blocks.`;
                       <SelectValue placeholder="Select species" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="cow">🐄 Cow</SelectItem>
-                      <SelectItem value="buffalo">🐃 Buffalo</SelectItem>
-                      <SelectItem value="goat">🐐 Goat</SelectItem>
-                      <SelectItem value="sheep">🐑 Sheep</SelectItem>
-                      <SelectItem value="chicken">🐔 Chicken</SelectItem>
-                      <SelectItem value="pig">🐷 Pig</SelectItem>
-                      <SelectItem value="horse">🐴 Horse</SelectItem>
-                      <SelectItem value="other">🐾 Other</SelectItem>
+                      {speciesOptions.map(({ value, label, Icon, color }) => (
+                        <SelectItem key={value} value={value}>
+                          <span className="flex items-center gap-2"><Icon className="h-4 w-4" style={{ color }} /> {label}</span>
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>

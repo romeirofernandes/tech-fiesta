@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import axios from "axios";
+import { getSpeciesIcon } from "@/lib/animalIcons";
 import {
   format,
   startOfMonth,
@@ -157,19 +158,6 @@ export default function VaccinationCalendar() {
     return animal ? animal.name : "Unknown";
   };
 
-  const getSpeciesEmoji = (species) => {
-    const emojis = {
-      cow: "🐄",
-      buffalo: "🐃",
-      goat: "🐐",
-      sheep: "🐑",
-      chicken: "🐔",
-      pig: "🐷",
-      horse: "🐴",
-      other: "🐾",
-    };
-    return emojis[species] || "🐾";
-  };
 
   const MAX_VISIBLE_EVENTS = 3;
 
@@ -243,7 +231,7 @@ export default function VaccinationCalendar() {
                 <SelectItem value="all">All</SelectItem>
                 {animals.map((animal) => (
                   <SelectItem key={animal._id} value={animal._id}>
-                    {getSpeciesEmoji(animal.species)} {animal.name}
+                    <span className="flex items-center gap-1">{getSpeciesIcon(animal.species, "h-4 w-4 inline")} {animal.name}</span>
                   </SelectItem>
                 ))}
               </SelectContent>
