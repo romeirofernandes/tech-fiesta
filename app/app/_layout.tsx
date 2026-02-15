@@ -13,6 +13,7 @@ import { Colors, FontFamily } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { UserProvider } from '@/context/UserContext';
 import { syncService } from '@/services/SyncService';
+import { initDatabase } from '@/lib/db';
 
 export const unstable_settings = {
   anchor: '(tabs)',
@@ -27,6 +28,15 @@ export default function RootLayout() {
   const [loaded, error] = useFonts({
     'InstrumentSerif-Regular': InstrumentSerif_400Regular,
   });
+
+  // Initialize database tables on mount (before sync monitoring)
+  useEffect(() => {
+    initDatabase().then(() => {
+      console.log('[App] Database ready');
+    }).catch((e) => {
+      console.error('[App] Database init error:', e);
+    });
+  }, []);
 
   useEffect(() => {
     if (loaded || error) {
