@@ -29,13 +29,12 @@ import {
   WifiOff,
   RefreshCw,
 } from "lucide-react";
-import { useWebSocket } from "@/hooks/useWebSocket";
+import { useIotPolling } from "@/hooks/useIotPolling";
 import { format } from "date-fns";
 import { toast } from "sonner";
 
-// API Configuration
-const API_BASE = import.meta.env.VITE_API_BASE_PYTHON_URL || "http://127.0.0.1:8080";
-const WS_URL = `ws://${API_BASE.replace(/^https?:\/\//, "").replace(/\/$/, "")}/ws/sensors/`;
+// API Configuration - Now using Node.js backend
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000";
 
 // Time range options (in minutes)
 const TIME_RANGES = {
@@ -133,28 +132,72 @@ export default function LiveVitals() {
   const [animals, setAnimals] = useState([]);
   const [selectedAnimal, setSelectedAnimal] = useState("latest");
   const [timeRange, setTimeRange] = useState("1h");
-  const [historicalData, setHistoricalData] = useState([]);
-  const [latestReading, setLatestReading] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [lastDataReceived, setLastDataReceived] = useState(null); // Timestamp of last WebSocket data
-  const [dataSource, setDataSource] = useState("database"); // "realtime" or "database"
   const [timeSinceData, setTimeSinceData] = useState("");
 
-  // WebSocket connection (optional - gracefully falls back to historical data only)
-  const { message, status } = useWebSocket(WS_URL, {
-    reconnectInterval: 10000, // Try reconnecting every 10 seconds
-    maxRetries: 999, // Keep trying indefinitely but silently
+  // Long polling for IoT sensor data (replaces WebSocket)
+  const { 
+    data: pollingData, 
+    latestReading: polledLatestReading, 
+    status, 
+    lastUpdated,
+    refetch 
+  } = useIotPolling(API_BASE, {
+    pollInterval: 5000, // Poll every 5 seconds
+    rfid: selectedAnimal === "latest" ? null : selectedAnimal,
+    limit: 500,
+    enabled: true,
+    onNewData: (newData) => {
+      // Optional: show toast for new data in real-time mode
+      if (newData.length > 0) {
+        console.log(`Received ${newData.length} new readings`);
+      }
+    }
   });
+
+  // Transform polling data for charts (filter by time range)
+  const historicalData = useMemo(() => {
+    if (!pollingData || pollingData.length === 0) return [];
+    
+    return pollingData
+      .filter((reading) => {
+        if (timeRange === "all") return true;
+        const cutoffTime = Date.now() - TIME_RANGES[timeRange].minutes * 60 * 1000;
+        return new Date(reading.timestamp).getTime() > cutoffTime;
+      })
+      .map((reading) => ({
+        time: format(
+          new Date(reading.timestamp),
+          timeRange === "7d" || timeRange === "all" ? "MM/dd HH:mm" : "HH:mm"
+        ),
+        timestamp: new Date(reading.timestamp).getTime(),
+        temperature: reading.temperature ? parseFloat(reading.temperature) : null,
+        humidity: reading.humidity ? parseFloat(reading.humidity) : null,
+        heart_rate: reading.heartRate || reading.heart_rate,
+        rfid_tag: reading.rfidTag || reading.rfid_tag,
+        animal_name: reading.animalId?.name || reading.animal_name || "Unknown",
+      }));
+  }, [pollingData, timeRange]);
+
+  // Get latest reading with normalized field names
+  const latestReading = useMemo(() => {
+    if (!polledLatestReading) return null;
+    return {
+      ...polledLatestReading,
+      rfid_tag: polledLatestReading.rfidTag || polledLatestReading.rfid_tag,
+      heart_rate: polledLatestReading.heartRate || polledLatestReading.heart_rate,
+      animal_name: polledLatestReading.animalId?.name || polledLatestReading.animal_name || "Unknown",
+    };
+  }, [polledLatestReading]);
 
   // Update "time ago" display every second
   useEffect(() => {
-    if (!lastDataReceived) {
+    if (!lastUpdated) {
       setTimeSinceData("");
       return;
     }
 
     const updateTime = () => {
-      const seconds = Math.floor((Date.now() - lastDataReceived) / 1000);
+      const seconds = Math.floor((Date.now() - lastUpdated) / 1000);
       if (seconds < 60) {
         setTimeSinceData(`${seconds}s ago`);
       } else if (seconds < 3600) {
@@ -167,62 +210,22 @@ export default function LiveVitals() {
     updateTime();
     const interval = setInterval(updateTime, 1000);
     return () => clearInterval(interval);
-  }, [lastDataReceived]);
+  }, [lastUpdated]);
 
-  // Handle WebSocket messages
-  useEffect(() => {
-    if (!message) return;
-
-    if (message.type === "sensor_update") {
-      const data = message.data;
-      
-      // Update latest reading if it matches selected animal or we're showing "latest"
-      if (selectedAnimal === "latest" || data.rfid_tag === selectedAnimal) {
-        setLatestReading(data);
-        setLastDataReceived(Date.now()); // Track when real IoT data was received
-        setDataSource("realtime"); // Mark as real-time data
-        
-        // Add to historical data
-        setHistoricalData((prev) => {
-          const newPoint = {
-            time: format(new Date(data.timestamp), "HH:mm:ss"),
-            timestamp: new Date(data.timestamp).getTime(),
-            temperature: data.temperature ? parseFloat(data.temperature) : null,
-            humidity: data.humidity ? parseFloat(data.humidity) : null,
-            heart_rate: data.heart_rate,
-            rfid_tag: data.rfid_tag,
-            animal_name: data.animal_name,
-          };
-          
-          // Keep data within time range
-          if (timeRange === "all") {
-            return [...prev, newPoint]; // Keep all data for "all time"
-          }
-          const cutoffTime = Date.now() - TIME_RANGES[timeRange].minutes * 60 * 1000;
-          const filtered = [...prev, newPoint].filter(
-            (point) => point.timestamp > cutoffTime
-          );
-          
-          return filtered;
-        });
-      }
-    } else if (message.type === "initial_data" && message.data?.length > 0) {
-      // Handle initial data from WebSocket
-      const data = message.data[0];
-      if (selectedAnimal === "latest") {
-        setLatestReading(data);
-      }
-    }
-  }, [message, selectedAnimal, timeRange]);
-
-  // Fetch animals list
+  // Fetch animals list from main animals API
   useEffect(() => {
     const fetchAnimals = async () => {
       try {
-        const response = await fetch(`${API_BASE}/api/iot/animals/`);
+        const response = await fetch(`${API_BASE}/api/animals`);
         if (response.ok) {
           const data = await response.json();
-          setAnimals(data);
+          // Transform to match expected format
+          const transformed = data.map(animal => ({
+            rfid_tag: animal.rfid,
+            name: animal.name,
+            species: animal.species,
+          }));
+          setAnimals(transformed);
         }
       } catch (error) {
         console.error("Failed to fetch animals:", error);
@@ -233,64 +236,13 @@ export default function LiveVitals() {
     fetchAnimals();
   }, []);
 
-  // Fetch historical data
-  useEffect(() => {
-    const fetchHistoricalData = async () => {
-      setLoading(true);
-      try {
-        let url = `${API_BASE}/api/iot/sensors/latest/?limit=500`;
-        if (selectedAnimal !== "latest") {
-          url += `&rfid=${selectedAnimal}`;
-        }
-
-        const response = await fetch(url);
-        if (response.ok) {
-          const data = await response.json();
-          
-          // Filter by time range and transform data
-          const transformed = data
-            .filter((reading) => {
-              if (timeRange === "all") {
-                return true; // Include all readings for "all time"
-              }
-              const cutoffTime = Date.now() - TIME_RANGES[timeRange].minutes * 60 * 1000;
-              return new Date(reading.timestamp).getTime() > cutoffTime;
-            })
-            .map((reading) => ({
-              time: format(new Date(reading.timestamp), 
-                timeRange === "7d" || timeRange === "all" ? "MM/dd HH:mm" : "HH:mm"),
-              timestamp: new Date(reading.timestamp).getTime(),
-              temperature: reading.temperature ? parseFloat(reading.temperature) : null,
-              humidity: reading.humidity ? parseFloat(reading.humidity) : null,
-              heart_rate: reading.heart_rate,
-              rfid_tag: reading.rfid_tag,
-              animal_name: reading.animal_name,
-            }))
-            .reverse(); // Oldest first for chart
-
-          setHistoricalData(transformed);
-          
-          // Set latest reading from historical data if available
-            setDataSource("database"); // Mark as database data
-          if (data.length > 0 && !latestReading) {
-            setLatestReading(data[0]);
-          }
-        }
-      } catch (error) {
-        console.error("Failed to fetch historical data:", error);
-        toast.error("Failed to load historical data");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchHistoricalData();
-  }, [selectedAnimal, timeRange]);
+  // Loading state derived from polling status
+  const loading = status === 'idle' || (status === 'polling' && historicalData.length === 0);
 
   // Connection status indicator
   const ConnectionStatus = () => (
     <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-      {/* WebSocket Status */}
+      {/* Polling Status */}
       <div className="flex items-center gap-2">
         <span className="text-xs text-muted-foreground font-medium">Backend:</span>
         {status === "connected" ? (
@@ -300,18 +252,25 @@ export default function LiveVitals() {
               Connected
             </Badge>
           </>
-        ) : status === "connecting" ? (
+        ) : status === "polling" ? (
           <>
-            <RefreshCw className="h-4 w-4 text-yellow-500 animate-spin" />
-            <Badge variant="outline" className="bg-yellow-50 text-yellow-700 dark:bg-yellow-950 dark:text-yellow-400">
-              Connecting...
+            <RefreshCw className="h-4 w-4 text-blue-500 animate-spin" />
+            <Badge variant="outline" className="bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-400">
+              Polling...
+            </Badge>
+          </>
+        ) : status === "error" ? (
+          <>
+            <WifiOff className="h-4 w-4 text-red-500" />
+            <Badge variant="outline" className="bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-400">
+              Error
             </Badge>
           </>
         ) : (
           <>
-            <WifiOff className="h-4 w-4 text-red-500" />
-            <Badge variant="outline" className="bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-400">
-              Offline
+            <RefreshCw className="h-4 w-4 text-yellow-500" />
+            <Badge variant="outline" className="bg-yellow-50 text-yellow-700 dark:bg-yellow-950 dark:text-yellow-400">
+              Initializing...
             </Badge>
           </>
         )}
@@ -319,8 +278,8 @@ export default function LiveVitals() {
 
       {/* IoT Data Status */}
       <div className="flex items-center gap-2">
-        <span className="text-xs text-muted-foreground font-medium">IoT Data:</span>
-        {lastDataReceived ? (
+        <span className="text-xs text-muted-foreground font-medium">Last Update:</span>
+        {lastUpdated ? (
           <>
             <Activity className="h-4 w-4 text-green-500" />
             <Badge variant="outline" className="bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-400">
@@ -428,7 +387,7 @@ export default function LiveVitals() {
             unit="°C"
             icon={Thermometer}
             color="text-orange-500"
-            trend={latestReading ? `DHT11 sensor • ${dataSource === "realtime" ? "Live" : "From database"}` : null}
+            trend={latestReading ? `DHT11 sensor • Polling every 5s` : null}
           />
           <StatCard
             title="Humidity"
@@ -436,7 +395,7 @@ export default function LiveVitals() {
             unit="%"
             icon={Droplets}
             color="text-blue-500"
-            trend={latestReading ? `DHT11 sensor • ${dataSource === "realtime" ? "Live" : "From database"}` : null}
+            trend={latestReading ? `DHT11 sensor • Polling every 5s` : null}
           />
           <StatCard
             title="Heart Rate"
@@ -444,7 +403,7 @@ export default function LiveVitals() {
             unit="BPM"
             icon={Heart}
             color="text-red-500"
-            trend={latestReading ? `MAX30102 sensor • ${dataSource === "realtime" ? "Live" : "From database"}` : null}
+            trend={latestReading ? `MAX30102 sensor • Polling every 5s` : null}
           />
         </div>
 

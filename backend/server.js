@@ -1,4 +1,5 @@
-require('dotenv').config();
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '.env') });
 const express = require('express');
 const connectDB = require('./config/db');
 const cors = require('cors');
@@ -45,6 +46,7 @@ app.use('/api/heart-rate-thresholds', heartRateThresholdRoutes);
 app.use('/api/schemes', require('./routes/schemeRoutes'));
 app.use('/api/marketplace', require('./routes/marketplaceRoutes'));
 app.use('/api/payments', require('./routes/paymentRoutes'));
+app.use('/api/iot', require('./routes/iotRoutes'));
 
 const port = process.env.PORT;
 

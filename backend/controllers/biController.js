@@ -4,7 +4,11 @@ const SaleTransaction = require('../models/SaleTransaction');
 const Animal = require('../models/Animal');
 const Groq = require('groq-sdk');
 
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+// Initialize Groq only if API key is configured
+let groq = null;
+if (process.env.GROQ_API_KEY) {
+  groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+}
 
 /**
  * GET /api/bi/farm-summary?farmId=&from=&to=

@@ -1,8 +1,10 @@
 const Groq = require('groq-sdk');
 
-const groq = new Groq({
-  apiKey: process.env.GROQ_API_KEY
-});
+// Initialize Groq only if API key is configured
+let groq = null;
+if (process.env.GROQ_API_KEY) {
+  groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+}
 
 async function generateVaccinationEvents(animalData, questionsAnswers) {
   const nowIsoDate = new Date(Date.now()).toISOString().slice(0, 10);

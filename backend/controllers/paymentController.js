@@ -3,15 +3,21 @@ const crypto = require('crypto');
 const EscrowTransaction = require('../models/EscrowTransaction');
 const MarketplaceItem = require('../models/MarketplaceItem');
 
-// Initialize Razorpay
-const razorpay = new Razorpay({
-    key_id: process.env.RAZORPAY_KEY_ID,
-    key_secret: process.env.RAZORPAY_KEY_SECRET
-});
+// Initialize Razorpay (only if keys are configured)
+let razorpay = null;
+if (process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET) {
+    razorpay = new Razorpay({
+        key_id: process.env.RAZORPAY_KEY_ID,
+        key_secret: process.env.RAZORPAY_KEY_SECRET
+    });
+}
 
 // 1. Create Order (Initialize Escrow)
 exports.createOrder = async (req, res) => {
     try {
+        if (!razorpay) {
+            return res.status(503).json({ message: 'Payment service not configured' });
+        }
         const { itemId, amount, buyerName, destinationFarmId } = req.body;
 
         const item = await MarketplaceItem.findById(itemId);

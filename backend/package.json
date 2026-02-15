@@ -11,7 +11,9 @@
     "dev": "nodemon index.js"
   },
   "dependencies": {
+    "@serialport/parser-readline": "^13.0.0",
     "axios": "^1.13.5",
+    "better-sqlite3": "^12.6.2",
     "cheerio": "^1.2.0",
     "cloudinary": "^2.8.0",
     "cors": "^2.8.5",
@@ -21,6 +23,7 @@
     "mongoose": "^9.0.2",
     "multer": "^2.0.2",
     "nodemon": "^3.1.11",
-    "razorpay": "^2.9.6"
+    "razorpay": "^2.9.6",
+    "serialport": "^13.0.0"
   }
 }
