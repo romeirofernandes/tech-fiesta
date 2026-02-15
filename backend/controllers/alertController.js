@@ -1,4 +1,52 @@
 const Alert = require('../models/Alert');
+const VaccinationEvent = require('../models/VaccinationEvent');
+
+/**
+ * Check for missed vaccinations and auto-create alerts.
+ * Called before fetching alerts to ensure they're up-to-date.
+ */
+async function checkMissedVaccinations() {
+    const now = new Date();
+    // Find all overdue scheduled vaccination events
+    const overdueEvents = await VaccinationEvent.find({
+        eventType: 'scheduled',
+        date: { $lt: now }
+    }).populate('animalId', 'name rfid');
+
+    if (overdueEvents.length === 0) return;
+
+    // Batch update to 'missed'
+    const overdueIds = overdueEvents.map(e => e._id);
+    await VaccinationEvent.updateMany(
+        { _id: { $in: overdueIds } },
+        { $set: { eventType: 'missed' } }
+    );
+
+    // Create alerts for each new missed vaccination
+    for (const event of overdueEvents) {
+        if (!event.animalId) continue;
+        
+        const animalIdVal = event.animalId._id || event.animalId;
+        const message = `Missed vaccination: ${event.vaccineName} was due on ${event.date.toLocaleDateString()}`;
+        
+        const existingAlert = await Alert.findOne({
+            animalId: animalIdVal,
+            type: 'vaccination',
+            message: { $regex: event.vaccineName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), $options: 'i' },
+            isResolved: false
+        });
+
+        if (!existingAlert) {
+            const daysPastDue = Math.floor((now - event.date) / (1000 * 60 * 60 * 24));
+            await Alert.create({
+                animalId: animalIdVal,
+                type: 'vaccination',
+                severity: daysPastDue > 30 ? 'high' : 'medium',
+                message
+            });
+        }
+    }
+}
 
 exports.createAlert = async (req, res) => {
   try {
@@ -19,6 +67,13 @@ exports.createAlert = async (req, res) => {
 
 exports.getAlerts = async (req, res) => {
   try {
+    // Auto-detect missed vaccinations and create alerts before fetching
+    try {
+      await checkMissedVaccinations();
+    } catch (err) {
+      console.error('Missed vaccination check failed:', err);
+    }
+
     const { animalId, type, severity, isResolved, search, startDate, endDate, page, limit } = req.query;
     
     const filter = {};
@@ -86,6 +141,23 @@ exports.resolveAlert = async (req, res) => {
     alert.isResolved = true;
     alert.resolvedAt = new Date();
     await alert.save();
+
+    // If this is a vaccination alert, also mark the corresponding vaccination event as administered
+    if (alert.type === 'vaccination' && alert.animalId) {
+      // Extract vaccine name from alert message like "Missed vaccination: PPR - PPR Vaccine was due on ..."
+      const vaccMatch = alert.message.match(/Missed vaccination:\s*(.+?)\s*was due on/i);
+      if (vaccMatch) {
+        const vaccineName = vaccMatch[1].trim();
+        await VaccinationEvent.updateMany(
+          {
+            animalId: alert.animalId,
+            vaccineName: { $regex: vaccineName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), $options: 'i' },
+            eventType: 'missed'
+          },
+          { $set: { eventType: 'administered', date: new Date() } }
+        );
+      }
+    }
 
     res.status(200).json(alert);
   } catch (error) {

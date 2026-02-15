@@ -24,6 +24,7 @@ import {
   Grid2x2,
   Grid3x3,
   CalendarDays,
+  CheckCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 import axios from "axios";
@@ -104,6 +105,18 @@ export default function VaccinationCalendar() {
       toast.error("Failed to fetch vaccination events");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleResolveEvent = async (event) => {
+    try {
+      await axios.put(
+        `${import.meta.env.VITE_API_BASE_URL}/api/vaccination-events/${event._id}/resolve`
+      );
+      toast.success("Vaccination marked as done!");
+      fetchVaccinationEvents();
+    } catch (error) {
+      toast.error("Failed to resolve vaccination event");
     }
   };
 
@@ -256,6 +269,7 @@ export default function VaccinationCalendar() {
             today={TODAY}
             getAnimalName={getAnimalName}
             maxVisible={MAX_VISIBLE_EVENTS}
+            onResolveEvent={handleResolveEvent}
           />
         ) : view === "week" ? (
           <WeekView
@@ -263,12 +277,14 @@ export default function VaccinationCalendar() {
             currentMonth={currentMonth}
             eventsByDate={eventsByDate}
             getAnimalName={getAnimalName}
+            onResolveEvent={handleResolveEvent}
           />
         ) : view === "list" ? (
           <ListView
             vaccinationEvents={vaccinationEvents}
             getAnimalName={getAnimalName}
             currentMonth={currentMonth}
+            onResolveEvent={handleResolveEvent}
           />
         ) : (
           <TwoColumnView
@@ -287,7 +303,7 @@ export default function VaccinationCalendar() {
 }
 
 /* ======================== MONTH VIEW ======================== */
-function MonthView({ calendarDays, currentMonth, eventsByDate, today, getAnimalName, maxVisible }) {
+function MonthView({ calendarDays, currentMonth, eventsByDate, today, getAnimalName, maxVisible, onResolveEvent }) {
   const weekDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
   return (
@@ -336,7 +352,7 @@ function MonthView({ calendarDays, currentMonth, eventsByDate, today, getAnimalN
                   <Tooltip key={event._id}>
                     <TooltipTrigger asChild>
                       <div
-                        className={`text-[11px] sm:text-xs px-1.5 py-0.5 rounded truncate cursor-default ${
+                        className={`text-[11px] sm:text-xs px-1.5 py-0.5 rounded truncate cursor-default group relative ${
                           EVENT_COLORS[event.eventType] || "bg-muted text-muted-foreground"
                         }`}
                       >
@@ -345,6 +361,16 @@ function MonthView({ calendarDays, currentMonth, eventsByDate, today, getAnimalN
                         <span className="ml-1 opacity-75 hidden lg:inline">
                           {format(new Date(event.date), "h:mm a")}
                         </span>
+                        {onResolveEvent && (event.eventType === 'scheduled' || event.eventType === 'missed') && (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); onResolveEvent(event); }}
+                            className="absolute right-0.5 top-0 bottom-0 flex items-center opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-white/20"
+                            type="button"
+                            title="Mark as Done"
+                          >
+                            <CheckCircle className="h-2.5 w-2.5" />
+                          </button>
+                        )}
                       </div>
                     </TooltipTrigger>
                     <TooltipContent side="top" className="max-w-xs">
@@ -394,7 +420,7 @@ function MonthView({ calendarDays, currentMonth, eventsByDate, today, getAnimalN
 }
 
 /* ======================== WEEK VIEW ======================== */
-function WeekView({ today, eventsByDate, getAnimalName, onEditEvent, onDeleteEvent }) {
+function WeekView({ today, eventsByDate, getAnimalName, onEditEvent, onDeleteEvent, onResolveEvent }) {
   const weekStart = startOfWeek(today, { weekStartsOn: 0 });
   const weekDays = useMemo(
     () => Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)),
@@ -451,11 +477,18 @@ function WeekView({ today, eventsByDate, getAnimalName, onEditEvent, onDeleteEve
                         <div className="opacity-75 text-[10px]">
                           {getAnimalName(event)}
                         </div>
-                        <EventActions
-                          event={event}
-                          onEditEvent={onEditEvent}
-                          onDeleteEvent={onDeleteEvent}
-                        />
+                        {onResolveEvent && (event.eventType === 'scheduled' || event.eventType === 'missed') && (
+                          <div className="absolute right-0.5 top-0 bottom-0 flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button
+                              onClick={(e) => { e.stopPropagation(); onResolveEvent(event); }}
+                              className="p-0.5 rounded hover:bg-white/20"
+                              type="button"
+                              title="Mark as Done"
+                            >
+                              <CheckCircle className="h-2.5 w-2.5" />
+                            </button>
+                          </div>
+                        )}
                       </div>
                     </TooltipTrigger>
                     <TooltipContent>
@@ -485,7 +518,7 @@ function WeekView({ today, eventsByDate, getAnimalName, onEditEvent, onDeleteEve
   );
 }
 /* ======================== LIST VIEW ======================== */
-function ListView({ vaccinationEvents, getAnimalName, currentMonth }) {
+function ListView({ vaccinationEvents, getAnimalName, currentMonth, onResolveEvent }) {
   const monthEvents = vaccinationEvents.filter((e) => isSameMonth(new Date(e.date), currentMonth));
 
   const grouped = monthEvents.reduce((acc, event) => {
@@ -542,6 +575,17 @@ function ListView({ vaccinationEvents, getAnimalName, currentMonth }) {
                 <span className="text-sm text-muted-foreground shrink-0">
                   {format(new Date(event.date), "h:mm a")}
                 </span>
+                {onResolveEvent && (event.eventType === 'scheduled' || event.eventType === 'missed') && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 text-green-600 hover:text-green-700 shrink-0"
+                    onClick={() => onResolveEvent(event)}
+                    title="Mark as Done"
+                  >
+                    <CheckCircle className="h-3.5 w-3.5" />
+                  </Button>
+                )}
               </div>
             ))}
           </CardContent>
