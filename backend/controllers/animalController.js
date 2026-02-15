@@ -45,11 +45,15 @@ exports.createAnimal = async (req, res) => {
 
         // Generate vaccination events from static schedule data
         try {
+            // Ensure species names are handled correctly (case-insensitive or mapped)
+            const speciesLower = species.toLowerCase();
+            const searchSpecies = (speciesLower === 'cattle') ? 'cow' : speciesLower;
+
             const filter = {
-                species: species,
+                species: searchSpecies,
                 $or: [
                     { genderSpecific: 'all' },
-                    { genderSpecific: gender }
+                    { genderSpecific: gender.toLowerCase() }
                 ]
             };
             const schedules = await VaccinationSchedule.find(filter);
@@ -85,7 +89,7 @@ exports.createAnimal = async (req, res) => {
 
                         return VaccinationEvent.create({
                             animalId: newAnimal._id,
-                            vaccineName: schedule.vaccineName,
+                            vaccineName: schedule.vaccineName !== '—' ? `${schedule.disease} - ${schedule.vaccineName}` : schedule.disease,
                             eventType: 'scheduled',
                             date: targetDate,
                             notes: notes || null,
