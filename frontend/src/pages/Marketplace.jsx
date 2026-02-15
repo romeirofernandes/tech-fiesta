@@ -1,18 +1,20 @@
-import React, { useState, useEffect } from "react";
 import { Layout } from "@/components/Layout";
+import { useUser } from "@/context/UserContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Search, Tractor, Calendar, MapPin, Zap, Filter, Star, CheckCircle2, Store, ArrowRight } from "lucide-react";
+import { Search, Tractor, Calendar, MapPin, Zap, Filter, Star, CheckCircle2, Store, ArrowRight, Lock } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import AddEquipmentModal from "@/components/AddEquipmentModal";
 import SellCattleModal from "@/components/SellCattleModal";
 import axios from "axios";
+import { useState, useEffect } from 'react'
 
 export default function Marketplace() {
+    const { mongoUser } = useUser();
     const [items, setItems] = useState([]);
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState("all");
@@ -101,7 +103,7 @@ export default function Marketplace() {
             const orderRes = await axios.post(`${base}/api/payments/create-order`, {
                 itemId: item._id,
                 amount: item.price,
-                buyerName: "Demo Farmer",
+                buyerName: mongoUser?.fullName || "Guest Farmer",
                 destinationFarmId: destinationFarmId
             });
 
@@ -133,9 +135,9 @@ export default function Marketplace() {
                     }
                 },
                 prefill: {
-                    name: "Demo Farmer",
-                    email: "farmer@example.com",
-                    contact: "9999999999"
+                    name: mongoUser?.fullName || "Farmer",
+                    email: mongoUser?.email || "farmer@example.com",
+                    contact: mongoUser?.phoneNumber || "9999999999"
                 },
                 theme: {
                     color: "#16a34a"

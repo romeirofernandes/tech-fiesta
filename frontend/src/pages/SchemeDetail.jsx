@@ -58,7 +58,7 @@ export default function SchemeDetail() {
 
     return (
         <Layout>
-            <div className="max-w-4xl mx-auto p-4 md:p-8 space-y-10">
+            <div className="max-w-7xl mx-auto p-4 md:p-8 space-y-12 pb-20">
                 <Button
                     variant="ghost"
                     onClick={() => navigate("/schemes")}
@@ -68,138 +68,142 @@ export default function SchemeDetail() {
                     Back to Listings
                 </Button>
 
-                {/* Title Section */}
-                <div className="space-y-4">
-                    <Badge className="bg-primary/10 text-primary border-none text-[10px] uppercase tracking-[0.2em] font-bold px-3 py-1">
-                        Official Scheme
-                    </Badge>
-                    <h1 className="text-4xl md:text-6xl font-bold tracking-tight text-foreground/90 leading-[1.1]">
-                        {scheme.title}
-                    </h1>
-                    <p className="text-lg md:text-xl text-muted-foreground font-medium leading-relaxed max-w-2xl">
-                        {scheme.description}
-                    </p>
+                {/* Hero Header Section */}
+                <div className="flex flex-col lg:flex-row justify-between items-start gap-10">
+                    <div className="flex-1 space-y-6">
+                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary border border-primary/20 text-[10px] uppercase tracking-[0.2em] font-bold">
+                            <CheckCircle2 className="h-3 w-3" /> Official Government Scheme
+                        </div>
+                        <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight text-foreground leading-[1.1] font-serif">
+                            {scheme.title}
+                        </h1>
+                        <p className="text-xl text-muted-foreground font-medium leading-relaxed max-w-3xl">
+                            {scheme.description}
+                        </p>
+                    </div>
+
+                    {scheme.official_link && (
+                        <div className="pt-2">
+                            <Button
+                                size="xl"
+                                onClick={() => window.open(scheme.official_link, '_blank')}
+                                className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold rounded-2xl px-10 py-8 text-lg shadow-xl shadow-primary/20 hover:shadow-primary/30 active:scale-95 transition-all h-auto"
+                            >
+                                Apply Officially <ExternalLink className="ml-3 h-5 w-5" />
+                            </Button>
+                        </div>
+                    )}
                 </div>
 
-                {/* Essential Highlights Boxes */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-stretch">
-                    {/* Box 1: Benefit & Time Period */}
-                    <Card className="bg-secondary/20 border-border/40 overflow-hidden hover:border-primary/20 transition-all duration-300">
-                        <CardContent className="p-5 space-y-4">
-                            <div className="flex items-center gap-3">
-                                <div className="bg-primary/10 p-2.5 rounded-xl text-primary">
-                                    <Wallet className="h-5 w-5" />
-                                </div>
-                                <h3 className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground font-bold">
-                                    Scheme Details
-                                </h3>
+                {/* Horizontal Quick Stats Bar */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6">
+                    <Card className="bg-gradient-to-br from-secondary/40 to-muted/20 border-border/40 hover:border-primary/20 transition-all shadow-sm">
+                        <CardContent className="p-6 space-y-3">
+                            <div className="flex items-center gap-2 text-muted-foreground text-[10px] font-black uppercase tracking-widest bg-muted/30 w-fit px-2 py-1 rounded-md">
+                                <Wallet className="h-3.5 w-3.5" /> Financial Aid
                             </div>
-
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-0.5">
-                                    <p className="text-[9px] uppercase tracking-widest text-muted-foreground/50 font-medium">Financial Aid</p>
-                                    <p className="text-lg font-bold text-foreground/90 leading-tight">
-                                        {scheme.financial_aid || "Check locally"}
-                                    </p>
-                                </div>
-                                <div className="space-y-0.5">
-                                    <p className="text-[9px] uppercase tracking-widest text-muted-foreground/50 font-medium">Duration</p>
-                                    <p className="text-lg font-bold text-foreground/90 leading-tight">
-                                        {scheme.duration || "Ongoing"}
-                                    </p>
-                                </div>
-                            </div>
+                            <p className="text-3xl font-black text-foreground drop-shadow-sm">
+                                {scheme.financial_aid || "Check locally"}
+                            </p>
                         </CardContent>
                     </Card>
 
-                    {/* Box 2: Where to Apply & Official Link */}
-                    <Card className="bg-secondary/20 border-border/40 overflow-hidden hover:border-primary/20 transition-all duration-300">
-                        <CardContent className="p-5 space-y-4 flex flex-col justify-between h-full">
-                            <div className="space-y-3">
-                                <div className="flex items-center gap-3">
-                                    <div className="bg-primary/10 p-2.5 rounded-xl text-primary">
-                                        <MapPin className="h-5 w-5" />
-                                    </div>
-                                    <h3 className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground font-bold">
-                                        Where to Apply
-                                    </h3>
-                                </div>
-
-                                <p className="text-base font-semibold text-foreground/80 leading-snug">
-                                    {scheme.how_to_apply || "Contact Panchayat office"}
-                                </p>
+                    <Card className="bg-gradient-to-br from-secondary/40 to-muted/20 border-border/40 hover:border-primary/20 transition-all shadow-sm">
+                        <CardContent className="p-6 space-y-3">
+                            <div className="flex items-center gap-2 text-muted-foreground text-[10px] font-black uppercase tracking-widest bg-muted/30 w-fit px-2 py-1 rounded-md">
+                                <Calendar className="h-3.5 w-3.5" /> Scheme Duration
                             </div>
+                            <p className="text-3xl font-black text-foreground drop-shadow-sm">
+                                {scheme.duration || "Ongoing"}
+                            </p>
+                        </CardContent>
+                    </Card>
 
-                            {scheme.official_link && (
-                                <Button
-                                    size="sm"
-                                    onClick={() => window.open(scheme.official_link, '_blank')}
-                                    className="w-full mt-2 bg-primary/20 hover:bg-primary text-primary hover:text-primary-foreground border-none font-bold rounded-xl transition-all"
-                                >
-                                    Official Website <ExternalLink className="ml-2 h-3.5 w-3.5" />
-                                </Button>
-                            )}
+                    <Card className="bg-gradient-to-br from-secondary/40 to-muted/20 border-border/40 hover:border-primary/20 transition-all shadow-sm">
+                        <CardContent className="p-6 space-y-3">
+                            <div className="flex items-center gap-2 text-muted-foreground text-[10px] font-black uppercase tracking-widest bg-muted/30 w-fit px-2 py-1 rounded-md">
+                                <MapPin className="h-3.5 w-3.5" /> Where to Apply
+                            </div>
+                            <p className="text-xl font-bold text-foreground/90 leading-snug">
+                                {scheme.how_to_apply || "Local Panchayat Office"}
+                            </p>
                         </CardContent>
                     </Card>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-5 gap-10 pt-4">
-                    {/* Key Benefits - Main Area */}
-                    <div className="lg:col-span-3 space-y-6">
-                        <h2 className="text-3xl font-bold flex items-center gap-3">
-                            <CheckCircle2 className="h-8 w-8 text-primary" />
-                            What you will get
-                        </h2>
-                        <div className="space-y-4">
+                {/* Main Content Sections - Using Full Width */}
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
+                    {/* Benefits Section - Grid of Cards */}
+                    <div className="lg:col-span-12 space-y-8">
+                        <div className="flex items-center gap-4">
+                            <h2 className="text-3xl font-black tracking-tight text-foreground flex items-center gap-3">
+                                <div className="h-10 w-10 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
+                                    <CheckCircle2 className="h-6 w-6" />
+                                </div>
+                                Key Benefits
+                            </h2>
+                            <div className="h-[2px] flex-1 bg-gradient-to-r from-border/50 to-transparent" />
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                             {scheme.benefits && scheme.benefits.map((benefit, idx) => (
                                 <div
                                     key={idx}
-                                    className="flex items-center gap-4 bg-primary/5 p-5 rounded-3xl border border-primary/10 hover:border-primary/30 transition-colors"
+                                    className="group relative flex flex-col gap-4 bg-muted/10 p-6 rounded-3xl border border-border/40 hover:border-primary/20 hover:bg-card transition-all duration-300 shadow-sm hover:shadow-md"
                                 >
-                                    <div className="h-3 w-3 rounded-full bg-primary shrink-0 shadow-[0_0_10px_rgba(var(--primary),0.3)]" />
-                                    <p className="text-lg font-bold text-foreground/80 leading-snug">{benefit}</p>
+                                    <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs">
+                                        {idx + 1}
+                                    </div>
+                                    <p className="text-base font-semibold text-foreground/80 leading-relaxed group-hover:text-foreground transition-colors">
+                                        {benefit}
+                                    </p>
                                 </div>
                             ))}
                         </div>
                     </div>
 
-                    {/* Simple Steps - Sidebar style */}
-                    <div className="lg:col-span-2 space-y-6">
-                        <h2 className="text-3xl font-bold flex items-center gap-3">
-                            <Info className="h-8 w-8 text-primary" />
-                            Next Steps
-                        </h2>
-                        <div className="relative space-y-8 pl-6">
-                            {/* Vertical line connector - centered with circles (pl-6 + 20px radius) */}
-                            <div className="absolute left-[44px] -translate-x-1/2 top-6 bottom-6 w-[2px] bg-primary/20" />
+                    {/* Full Width Application Process */}
+                    <div className="lg:col-span-12 pt-8 space-y-8">
+                        <div className="flex items-center gap-4">
+                            <h2 className="text-3xl font-black tracking-tight text-foreground flex items-center gap-3">
+                                <div className="h-10 w-10 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
+                                    <Info className="h-6 w-6" />
+                                </div>
+                                Application Process
+                            </h2>
+                            <div className="h-[2px] flex-1 bg-gradient-to-r from-border/50 to-transparent" />
+                        </div>
 
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 relative">
                             {scheme.applicationProcess && scheme.applicationProcess.map((step, idx) => (
-                                <div key={idx} className="relative flex items-center gap-6 group">
-                                    <div className="h-10 w-10 rounded-full bg-background border-4 border-primary/20 flex items-center justify-center text-primary font-black shadow-sm group-hover:border-primary transition-colors z-10 shrink-0">
+                                <div key={idx} className="relative p-6 rounded-3xl border border-border/30 bg-secondary/5 group hover:bg-primary/[0.02] hover:border-primary/20 transition-all overflow-hidden">
+                                    <div className="absolute -top-4 -right-4 text-8xl font-black text-primary/5 select-none pointer-events-none group-hover:text-primary/[0.08] transition-colors">
                                         {idx + 1}
                                     </div>
-                                    <div className="bg-secondary/20 p-4 rounded-2xl border border-secondary/40 w-full group-hover:border-primary/20 transition-colors">
-                                        <p className="font-bold text-foreground/80 leading-relaxed">{step}</p>
+                                    <div className="h-10 w-10 rounded-2xl bg-background border-2 border-primary flex items-center justify-center text-primary font-black shadow-sm mb-4">
+                                        {idx + 1}
                                     </div>
+                                    <p className="text-sm font-bold text-foreground/80 leading-relaxed font-sans">{step}</p>
                                 </div>
                             ))}
                         </div>
                     </div>
                 </div>
 
-                <div className="pt-8 border-t flex items-center justify-between text-[10px] text-muted-foreground uppercase tracking-widest font-bold">
-                    <div className="flex items-center gap-2">
-                        <div className="h-1.5 w-1.5 rounded-full bg-primary/40" />
-                        <p>Public Information Service</p>
+                {/* Footer Meta */}
+                <div className="pt-12 mt-12 border-t border-border/40 flex flex-col md:flex-row items-center justify-between gap-6">
+                    <div className="flex items-center gap-3 text-muted-foreground text-xs font-bold uppercase tracking-[0.2em]">
+                        <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+                        Official Data Verified Service
                     </div>
                     {scheme.source && !scheme.official_link && (
                         <a
                             href={scheme.source}
                             target="_blank"
                             rel="noreferrer"
-                            className="hover:text-primary transition-colors flex items-center gap-1"
+                            className="bg-muted/30 px-6 py-2.5 rounded-full border border-border/50 text-[10px] uppercase font-bold tracking-widest text-muted-foreground hover:text-primary hover:border-primary/20 transition-all flex items-center gap-2"
                         >
-                            Wiki Source <ExternalLink className="h-2.5 w-2.5" />
+                            Review on Wikipedia <ExternalLink className="h-3 w-3" />
                         </a>
                     )}
                 </div>

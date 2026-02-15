@@ -1,25 +1,27 @@
-
-import React, { useState, useEffect } from "react";
 import { Layout } from "@/components/Layout";
+import { useUser } from "@/context/UserContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Copy, Package, Loader2, Lock, Truck, AlertCircle, CheckCircle2 } from "lucide-react";
 import axios from "axios";
+import { useState,useEffect } from "react";
 
 export default function MyOrders() {
+    const { mongoUser } = useUser();
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        fetchOrders();
-    }, []);
+        if (mongoUser) {
+            fetchOrders();
+        }
+    }, [mongoUser]);
 
     const fetchOrders = async () => {
         try {
             const base = import.meta.env.VITE_API_BASE_URL;
-            // Hardcoded buyer for demo since we haven't implemented full auth context yet
-            const res = await axios.get(`${base}/api/payments/my-orders?buyerName=Demo Farmer`);
+            const res = await axios.get(`${base}/api/payments/my-orders?buyerName=${mongoUser.fullName}`);
             setOrders(res.data);
             setLoading(false);
         } catch (err) {

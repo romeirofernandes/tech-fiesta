@@ -10,7 +10,7 @@ export default function OperationalInsights() {
     loading: true,
     error: null
   });
-  
+
   const [sortBy, setSortBy] = useState('name');
   const [sortOrder, setSortOrder] = useState('asc');
   const [searchTerm, setSearchTerm] = useState('');
@@ -22,8 +22,8 @@ export default function OperationalInsights() {
 
   const fetchData = async () => {
     try {
-      const baseURL = 'http://localhost:8000';
-      
+      const baseURL = import.meta.env.VITE_API_BASE_URL;
+
       const [farmsRes, animalsRes] = await Promise.all([
         fetch(`${baseURL}/api/farms`).then(r => r.json()),
         fetch(`${baseURL}/api/animals`).then(r => r.json())
@@ -37,10 +37,10 @@ export default function OperationalInsights() {
       });
     } catch (error) {
       console.error('Error fetching data:', error);
-      setData(prev => ({ 
-        ...prev, 
+      setData(prev => ({
+        ...prev,
         loading: false,
-        error: error.message 
+        error: error.message
       }));
     }
   };
@@ -60,7 +60,7 @@ export default function OperationalInsights() {
     return (
       <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
         <p className="text-sm text-destructive">Error: {data.error}</p>
-        <button 
+        <button
           onClick={fetchData}
           className="mt-2 text-sm text-destructive hover:text-destructive/80 font-medium"
         >
@@ -76,7 +76,7 @@ export default function OperationalInsights() {
       acc[animal.species] = (acc[animal.species] || 0) + 1;
       return acc;
     }, {});
-    
+
     const healthyCount = farmAnimals.filter(a => a.healthStatus === 'healthy').length;
 
     return {
@@ -90,15 +90,15 @@ export default function OperationalInsights() {
   const filteredFarms = farmMetrics
     .filter(farm => {
       const matchesSearch = farm.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           farm.location.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesHealth = filterHealth === 'all' || 
-                           (filterHealth === 'good' && farm.healthRate >= 80) ||
-                           (filterHealth === 'attention' && farm.healthRate < 80);
+        farm.location.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesHealth = filterHealth === 'all' ||
+        (filterHealth === 'good' && farm.healthRate >= 80) ||
+        (filterHealth === 'attention' && farm.healthRate < 80);
       return matchesSearch && matchesHealth;
     })
     .sort((a, b) => {
       let aVal, bVal;
-      switch(sortBy) {
+      switch (sortBy) {
         case 'name':
           aVal = a.name.toLowerCase();
           bVal = b.name.toLowerCase();
@@ -118,7 +118,7 @@ export default function OperationalInsights() {
         default:
           return 0;
       }
-      
+
       if (typeof aVal === 'string') {
         return sortOrder === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
       }
@@ -226,7 +226,7 @@ export default function OperationalInsights() {
               className="w-full pl-9 pr-3 py-2 text-sm border border-border rounded-lg bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
             />
           </div>
-          
+
           <select
             value={filterHealth}
             onChange={(e) => setFilterHealth(e.target.value)}
@@ -239,33 +239,30 @@ export default function OperationalInsights() {
 
           <button
             onClick={() => toggleSort('animals')}
-            className={`px-3 py-2 text-sm rounded-lg font-medium transition-colors ${
-              sortBy === 'animals' 
-                ? 'bg-primary text-primary-foreground' 
+            className={`px-3 py-2 text-sm rounded-lg font-medium transition-colors ${sortBy === 'animals'
+                ? 'bg-primary text-primary-foreground'
                 : 'bg-background border border-border text-foreground hover:bg-accent'
-            }`}
+              }`}
           >
             Animals {sortBy === 'animals' && (sortOrder === 'asc' ? '↑' : '↓')}
           </button>
 
           <button
             onClick={() => toggleSort('health')}
-            className={`px-3 py-2 text-sm rounded-lg font-medium transition-colors ${
-              sortBy === 'health' 
-                ? 'bg-primary text-primary-foreground' 
+            className={`px-3 py-2 text-sm rounded-lg font-medium transition-colors ${sortBy === 'health'
+                ? 'bg-primary text-primary-foreground'
                 : 'bg-background border border-border text-foreground hover:bg-accent'
-            }`}
+              }`}
           >
             Health {sortBy === 'health' && (sortOrder === 'asc' ? '↑' : '↓')}
           </button>
 
           <button
             onClick={() => toggleSort('species')}
-            className={`px-3 py-2 text-sm rounded-lg font-medium transition-colors ${
-              sortBy === 'species' 
-                ? 'bg-primary text-primary-foreground' 
+            className={`px-3 py-2 text-sm rounded-lg font-medium transition-colors ${sortBy === 'species'
+                ? 'bg-primary text-primary-foreground'
                 : 'bg-background border border-border text-foreground hover:bg-accent'
-            }`}
+              }`}
           >
             Diversity {sortBy === 'species' && (sortOrder === 'asc' ? '↑' : '↓')}
           </button>
@@ -277,7 +274,7 @@ export default function OperationalInsights() {
         <div className="px-4 py-3 bg-muted border-b border-border">
           <h3 className="text-sm font-semibold text-foreground">Farm Operations ({filteredFarms.length})</h3>
         </div>
-        
+
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-muted border-b border-border">
@@ -313,11 +310,10 @@ export default function OperationalInsights() {
                       <span className="text-sm font-semibold text-foreground">{Object.keys(farm.speciesBreakdown).length}</span>
                     </td>
                     <td className="px-4 py-3 text-center">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        farm.healthRate >= 80 
-                          ? 'bg-primary/10 text-primary' 
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${farm.healthRate >= 80
+                          ? 'bg-primary/10 text-primary'
                           : 'bg-destructive/10 text-destructive'
-                      }`}>
+                        }`}>
                         {farm.healthRate}%
                       </span>
                     </td>
@@ -355,7 +351,7 @@ export default function OperationalInsights() {
                     <span className="text-xs font-medium text-foreground">{count} ({percentage}%)</span>
                   </div>
                   <div className="w-full bg-muted rounded-full h-2">
-                    <div 
+                    <div
                       className="h-2 rounded-full bg-primary"
                       style={{ width: `${percentage}%` }}
                     />

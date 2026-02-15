@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from "react";
+import {useState,useEffect} from 'react';
 import { Layout } from "@/components/Layout";
+import { useUser } from "@/context/UserContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -8,19 +9,22 @@ import { Coins, Loader2, CheckCircle2, TrendingUp, Wallet } from "lucide-react";
 import axios from "axios";
 
 export default function MySales() {
+    const { mongoUser } = useUser();
     const [sales, setSales] = useState([]);
     const [loading, setLoading] = useState(true);
     const [redeemCode, setRedeemCode] = useState({}); // Map of transactionId -> code input
     const [redeeming, setRedeeming] = useState(null); // ID of currently redeeming
 
     useEffect(() => {
-        fetchSales();
-    }, []);
+        if (mongoUser) {
+            fetchSales();
+        }
+    }, [mongoUser]);
 
     const fetchSales = async () => {
         try {
             const base = import.meta.env.VITE_API_BASE_URL;
-            const res = await axios.get(`${base}/api/payments/my-sales?sellerName=Demo Farmer`);
+            const res = await axios.get(`${base}/api/payments/my-sales?sellerName=${mongoUser.fullName}`);
             setSales(res.data);
             setLoading(false);
         } catch (err) {
