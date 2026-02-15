@@ -36,7 +36,7 @@ const navGroups = [
         subItems: [
           { title: "All Farms", url: "/farms" },
           { title: "Create Farm", url: "/farms/create" },
-          { title: "Farm Monitor",  url: "/farm-monitoring",}
+          { title: "Farm Monitor", url: "/farm-monitoring", }
         ],
       },
       {
@@ -111,7 +111,7 @@ export function AppSidebar() {
   };
 
   return (
-    <Sidebar collapsible="icon">
+    <Sidebar collapsible="icon" className="[&_[data-sidebar=sidebar]]:scrollbar-thin [&_[data-sidebar=sidebar]]:scrollbar-track-transparent [&_[data-sidebar=sidebar]]:scrollbar-thumb-border/40 hover:[&_[data-sidebar=sidebar]]:scrollbar-thumb-border/60 [&_[data-sidebar=sidebar]]:scrollbar-thumb-rounded-full">
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupLabel className="text-lg font-bold text-primary py-4 mb-2">पशु पहचान</SidebarGroupLabel>
