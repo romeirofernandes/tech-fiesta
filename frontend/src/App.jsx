@@ -31,6 +31,7 @@ import MyOrders from './pages/MyOrders';
 import MySales from './pages/MySales';
 import AnimalIdentification from './pages/AnimalIdentification';
 import FarmMonitoring from './pages/FarmMonitoring';
+import Emergency from './pages/Emergency';
 
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useUser();
@@ -163,6 +164,11 @@ function App() {
           <Route path="/alerts" element={
             <ProtectedRoute>
               <Alerts />
+            </ProtectedRoute>
+          } />
+          <Route path="/emergency" element={
+            <ProtectedRoute>
+              <Emergency />
             </ProtectedRoute>
           } />
           <Route path="/schemes" element={

@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
+import { useUser } from '@/context/UserContext';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -58,7 +59,8 @@ export default function AnimalsScreen() {
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
   const themeColors = Colors[colorScheme ?? 'light'];
-
+  
+  const { mongoUser, loading: userLoading } = useUser();
   const [animals, setAnimals] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -80,18 +82,22 @@ export default function AnimalsScreen() {
 
   const syncAndReload = useCallback(async () => {
     try {
-      await syncService.pullAnimals();
-      const rows = db.getAllSync('SELECT * FROM animals ORDER BY name ASC');
-      setAnimals(rows as any[]);
+      if (mongoUser?._id) {
+        await syncService.pullAnimals({ farmerId: mongoUser._id });
+        const rows = db.getAllSync('SELECT * FROM animals ORDER BY name ASC');
+        setAnimals(rows as any[]);
+      }
     } catch (error) {
       console.error('Error syncing animals:', error);
     }
-  }, []);
+  }, [mongoUser?._id]);
 
   useFocusEffect(
     useCallback(() => {
-      loadAnimals().then(() => syncAndReload());
-    }, [])
+      if (!userLoading) {
+        loadAnimals().then(() => syncAndReload());
+      }
+    }, [userLoading, mongoUser?._id])
   );
 
   const onRefresh = useCallback(() => {
@@ -144,7 +150,7 @@ export default function AnimalsScreen() {
     return acc;
   }, {});
 
-  if (loading) {
+  if (loading || userLoading) {
     return (
       <SafeAreaView className="flex-1 bg-background items-center justify-center" edges={['top']}>
         <ActivityIndicator size="large" color={themeColors.primary} />

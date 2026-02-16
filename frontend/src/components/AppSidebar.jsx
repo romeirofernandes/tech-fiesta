@@ -1,4 +1,4 @@
-import { Calendar, Home, Tractor, Beef, Syringe, LogOut, User, Activity, Moon, Sun, Globe, BarChart3, Bell, Sprout, Store, Package, Coins, ChevronRight, TrendingUp, DollarSign, LineChart } from "lucide-react"
+import { Calendar, Home, Tractor, Beef, Syringe, LogOut, User, Activity, Moon, Sun, Globe, BarChart3, Bell, Sprout, Store, Package, Coins, ChevronRight, TrendingUp, DollarSign, LineChart, AlertCircle } from "lucide-react"
 import { useUser } from "../context/UserContext"
 import { useTheme } from "../context/ThemeContext"
 import { Button } from "@/components/ui/button"
@@ -56,6 +56,7 @@ const navGroups = [
       { title: "Vaccination Calendar", url: "/calendar", icon: Calendar },
       { title: "Live Vitals", url: "/live-vitals", icon: Activity },
       { title: "Alerts", url: "/alerts", icon: Bell },
+      { title: "Emergency", url: "/emergency", icon: AlertCircle },
     ],
   },
   {
