@@ -14,11 +14,13 @@ export interface DashboardData {
   sensorEvents: any[];
 }
 
-export const fetchAndSyncDashboardData = async (): Promise<void> => {
+export const fetchAndSyncDashboardData = async (farmerId?: string): Promise<void> => {
   try {
     console.log('Starting dashboard sync...');
     
     // Fetch all data in parallel
+    const config = farmerId ? { params: { farmerId } } : {};
+
     const [
       animalsRes,
       farmsRes,
@@ -27,12 +29,12 @@ export const fetchAndSyncDashboardData = async (): Promise<void> => {
       healthRes,
       sensorRes,
     ] = await Promise.all([
-      axios.get(`${API_BASE_URL}/api/animals`).catch(() => ({ data: [] })),
-      axios.get(`${API_BASE_URL}/api/farms`).catch(() => ({ data: [] })),
-      axios.get(`${API_BASE_URL}/api/alerts`).catch(() => ({ data: [] })),
-      axios.get(`${API_BASE_URL}/api/vaccination-events`).catch(() => ({ data: [] })),
-      axios.get(`${API_BASE_URL}/api/health-snapshots`).catch(() => ({ data: [] })),
-      axios.get(`${API_BASE_URL}/api/sensor-events?type=heartRate`).catch(() => ({ data: [] })),
+      axios.get(`${API_BASE_URL}/api/animals`, config).catch(() => ({ data: [] })),
+      axios.get(`${API_BASE_URL}/api/farms`, config).catch(() => ({ data: [] })),
+      axios.get(`${API_BASE_URL}/api/alerts`, config).catch(() => ({ data: [] })),
+      axios.get(`${API_BASE_URL}/api/vaccination-events`, config).catch(() => ({ data: [] })),
+      axios.get(`${API_BASE_URL}/api/health-snapshots`, config).catch(() => ({ data: [] })),
+      axios.get(`${API_BASE_URL}/api/sensor-events?type=heartRate`, config).catch(() => ({ data: [] })),
     ]);
 
     const animals = Array.isArray(animalsRes.data) ? animalsRes.data : [];
@@ -70,10 +72,14 @@ export const fetchAndSyncDashboardData = async (): Promise<void> => {
     }
 
     // Sync Farms
+    db.runSync('DELETE FROM farms WHERE syncStatus = ?;', ['synced']);
     for (const f of farms) {
+      const local = db.getFirstSync<{syncStatus: string}>('SELECT syncStatus FROM farms WHERE id = ?', [f._id]);
+      if (local && local.syncStatus === 'pending') continue;
+
       db.runSync(
-        'INSERT OR REPLACE INTO farms (id, name, location, imageUrl, coordinates, farmerId) VALUES (?, ?, ?, ?, ?, ?);',
-        [f._id ?? null, f.name ?? null, f.location ?? null, f.imageUrl ?? null, JSON.stringify(f.coordinates ?? {}), f.farmerId ?? null]
+        'INSERT OR REPLACE INTO farms (id, name, location, imageUrl, coordinates, farmerId, syncStatus) VALUES (?, ?, ?, ?, ?, ?, ?);',
+        [f._id ?? null, f.name ?? null, f.location ?? null, f.imageUrl ?? null, JSON.stringify(f.coordinates ?? {}), f.farmerId ?? null, 'synced']
       );
     }
 

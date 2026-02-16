@@ -26,6 +26,7 @@ import {
 import { Colors } from '@/constants/theme';
 import { fetchAndSyncDashboardData, getLocalDashboardData, type DashboardData } from '@/lib/sync-dashboard';
 import { initDatabase } from '@/lib/db';
+import { useUser } from '@/context/UserContext';
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = width * 0.45; // 45% of screen width
@@ -57,6 +58,7 @@ export default function DashboardScreen() {
   const isDark = colorScheme === 'dark';
   const themeColors = Colors[colorScheme ?? 'light'];
 
+  const { mongoUser, loading: userLoading } = useUser();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [data, setData] = useState<DashboardData>({
@@ -74,7 +76,11 @@ export default function DashboardScreen() {
       const localData = getLocalDashboardData();
       setData(localData);
       
-      await fetchAndSyncDashboardData();
+      if (mongoUser?._id) {
+        await fetchAndSyncDashboardData(mongoUser._id);
+      } else {
+        await fetchAndSyncDashboardData();
+      }
       const updatedData = getLocalDashboardData();
       setData(updatedData);
     } catch (error) {
@@ -86,13 +92,15 @@ export default function DashboardScreen() {
   };
 
   useEffect(() => {
-    loadData();
-  }, []);
+    if (!userLoading) {
+      loadData();
+    }
+  }, [userLoading, mongoUser?._id]);
 
   const onRefresh = React.useCallback(() => {
     setRefreshing(true);
     loadData();
-  }, []);
+  }, [mongoUser]);
 
   // Stats Logic
   const activeAlerts = data.alerts.filter((a) => !a.isResolved);
