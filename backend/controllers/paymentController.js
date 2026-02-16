@@ -40,9 +40,10 @@ exports.createOrder = async (req, res) => {
             amount,
             buyerName,
             destinationFarmId, // Store where the animal should go
+            sellerId: item.seller, // Store seller ID for easier querying
             razorpayOrderId: order.id,
             status: 'pending_payment',
-            // Generate a simple 4-digit release code for the buyer
+            // Generate a simple 4-digit release code (internal use mostly now)
             releaseCode: Math.floor(1000 + Math.random() * 9000).toString()
         });
 
@@ -102,15 +103,17 @@ exports.verifyPayment = async (req, res) => {
 };
 
 // 3. Release Funds & Transfer Asset
+// 3. Admin Release Funds (No Release Code Needed)
 exports.releaseFunds = async (req, res) => {
     try {
-        const { transactionId, releaseCode } = req.body;
+        const { transactionId } = req.body;
+        // In a real app, verify req.user.role === 'admin' here
 
         const transaction = await EscrowTransaction.findById(transactionId).populate('itemId');
         if (!transaction) return res.status(404).json({ message: 'Transaction not found' });
 
-        if (transaction.releaseCode !== releaseCode) {
-            return res.status(400).json({ message: 'Invalid Release Code' });
+        if (transaction.status !== 'held_in_escrow') {
+            return res.status(400).json({ message: 'Funds are not in escrow state' });
         }
 
         // Mark as released
@@ -156,20 +159,38 @@ exports.getMyOrders = async (req, res) => {
 // 5. Get My Sales (Seller View)
 exports.getMySales = async (req, res) => {
     try {
-        const { sellerName } = req.query;
-        // Find items belonging to this seller first
-        const myItems = await MarketplaceItem.find({ seller: sellerName }).select('_id');
-        const myItemIds = myItems.map(i => i._id);
+        const { sellerId } = req.query;
 
-        const sales = await EscrowTransaction.find({
-            itemId: { $in: myItemIds },
+        // Strategy 1: Find transactions where sellerId matches (Newer transactions)
+        const directSales = await EscrowTransaction.find({
+            sellerId: sellerId,
             status: { $in: ['held_in_escrow', 'released_to_seller'] }
         })
-            .select('-releaseCode') // CRITICAL: Never send release code to seller
+            .select('-releaseCode')
             .populate('itemId')
             .sort({ createdAt: -1 });
 
-        res.json(sales);
+        // Strategy 2: Find items belonging to this seller (Legacy transactions support)
+        // Only if we want to be exhaustive, but Strategy 1 is preferred going forward.
+        // For now, let's merge or just return Strategy 1 as we are fixing the flow.
+        // If we strictly need legacy support:
+        const myItems = await MarketplaceItem.find({ seller: sellerId }).select('_id');
+        const myItemIds = myItems.map(i => i._id);
+
+        const indirectSales = await EscrowTransaction.find({
+            itemId: { $in: myItemIds },
+            sellerId: { $exists: false }, // Only get ones that didn't have sellerId saved
+            status: { $in: ['held_in_escrow', 'released_to_seller'] }
+        })
+            .select('-releaseCode')
+            .populate('itemId')
+            .sort({ createdAt: -1 });
+
+        const allSales = [...directSales, ...indirectSales];
+        // Sort combined
+        allSales.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+        res.json(allSales);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

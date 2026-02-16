@@ -23,6 +23,19 @@ export default function AddEquipmentModal({ onSuccess }) {
         imageUrl: ''
     });
 
+    // Auto-fill details when modal opens and user exists
+    React.useEffect(() => {
+        if (open && mongoUser) {
+            console.log("MongoUser for Equipment:", mongoUser);
+            setFormData(prev => ({
+                ...prev,
+                contact: mongoUser.phoneNumber || '',
+                // Use first farm location if available
+                location: mongoUser.farms?.[0]?.location || ''
+            }));
+        }
+    }, [open, mongoUser]);
+
     const handleImageChange = async (e) => {
         const file = e.target.files?.[0];
         if (!file) return;
@@ -60,7 +73,7 @@ export default function AddEquipmentModal({ onSuccess }) {
             const base = import.meta.env.VITE_API_BASE_URL;
             await axios.post(`${base}/api/marketplace`, {
                 type: 'equipment',
-                seller: mongoUser?.fullName || 'Unknown Seller',
+                seller: mongoUser._id, // Send ID, backend expects ObjectId
                 ...formData
             });
             setOpen(false);
@@ -87,16 +100,16 @@ export default function AddEquipmentModal({ onSuccess }) {
                 <form onSubmit={handleSubmit} className="space-y-4 pt-4">
                     <div className="space-y-2">
                         <Label htmlFor="name">Equipment Name</Label>
-                        <Input id="name" name="name" placeholder="e.g., John Deere Tractor" required onChange={handleChange} />
+                        <Input id="name" name="name" placeholder="e.g., John Deere Tractor" required value={formData.name} onChange={handleChange} />
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="description">Description</Label>
-                        <Textarea id="description" name="description" placeholder="Condition, horsepower, etc." onChange={handleChange} />
+                        <Textarea id="description" name="description" placeholder="Condition, horsepower, etc." value={formData.description} onChange={handleChange} />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <Label htmlFor="price">Price (₹)</Label>
-                            <Input id="price" name="price" type="number" required onChange={handleChange} />
+                            <Input id="price" name="price" type="number" required value={formData.price} onChange={handleChange} />
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="priceUnit">Unit</Label>
@@ -113,11 +126,11 @@ export default function AddEquipmentModal({ onSuccess }) {
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="location">Location</Label>
-                        <Input id="location" name="location" placeholder="Village, District" required onChange={handleChange} />
+                        <Input id="location" name="location" placeholder="Village, District" required value={formData.location} onChange={handleChange} />
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="contact">Contact Number</Label>
-                        <Input id="contact" name="contact" placeholder="+91 XXXXX XXXXX" required onChange={handleChange} />
+                        <Input id="contact" name="contact" placeholder="+91 XXXXX XXXXX" required value={formData.contact} onChange={handleChange} />
                     </div>
                     <div className="space-y-2">
                         <Label>Equipment Image</Label>

@@ -30,6 +30,20 @@ export default function TransactionMonitor() {
         }
     };
 
+    const handleReleaseFunds = async (transactionId) => {
+        if (!confirm("Are you sure you want to release funds to the seller? This action cannot be undone.")) return;
+
+        try {
+            const base = import.meta.env.VITE_API_BASE_URL;
+            await axios.post(`${base}/api/payments/admin/release`, { transactionId });
+            alert("Funds released successfully!");
+            fetchTransactions();
+        } catch (error) {
+            console.error("Error releasing funds:", error);
+            alert("Failed to release funds: " + (error.response?.data?.message || error.message));
+        }
+    };
+
     const filteredTransactions = transactions.filter(t =>
         t.razorpayOrderId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         t.buyerName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -98,23 +112,42 @@ export default function TransactionMonitor() {
                                 </TableRow>
                             ) : (
                                 filteredTransactions.map((t) => (
-                                    <TableRow key={t._id}>
-                                        <TableCell className="font-medium text-xs text-muted-foreground">
-                                            {new Date(t.createdAt).toLocaleDateString()}
-                                            <br />
-                                            {new Date(t.createdAt).toLocaleTimeString()}
-                                        </TableCell>
-                                        <TableCell className="font-mono text-xs">{t.razorpayOrderId}</TableCell>
-                                        <TableCell>{t.itemId?.name || 'Deleted Item'}</TableCell>
-                                        <TableCell>{t.buyerName}</TableCell>
-                                        <TableCell className="font-bold">₹{t.amount.toLocaleString()}</TableCell>
-                                        <TableCell>
-                                            <Badge variant={getStatusColor(t.status)} className="capitalize">
-                                                {t.status.replace(/_/g, ' ')}
-                                            </Badge>
-                                        </TableCell>
-                                    </TableRow>
-                                ))
+                                        <TableRow key={t._id}>
+                                            <TableCell className="font-medium text-xs text-muted-foreground">
+                                                {new Date(t.createdAt).toLocaleDateString()}
+                                                <br />
+                                                {new Date(t.createdAt).toLocaleTimeString()}
+                                            </TableCell>
+                                            <TableCell className="font-mono text-xs">{t.razorpayOrderId}</TableCell>
+                                            <TableCell>
+                                                <div className="flex flex-col">
+                                                    <span className="font-medium">{t.itemId?.name || 'Deleted Item'}</span>
+                                                    <span className="text-xs text-muted-foreground">Seller: {t.itemId?.seller?.fullName || 'Unknown'}</span>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell>{t.buyerName}</TableCell>
+                                            <TableCell className="font-bold">₹{t.amount?.toLocaleString()}</TableCell>
+                                            <TableCell>
+                                                <Badge className={`capitalize ${t.status === 'held_in_escrow' ? 'bg-yellow-500 hover:bg-yellow-600' :
+                                                    t.status === 'released_to_seller' ? 'bg-green-500 hover:bg-green-600' :
+                                                        'bg-secondary text-secondary-foreground hover:bg-secondary/80'
+                                                    }`}>
+                                                    {t.status?.replace(/_/g, ' ')}
+                                                </Badge>
+                                            </TableCell>
+                                            <TableCell>
+                                                {t.status === 'held_in_escrow' && (
+                                                    <Button
+                                                        size="sm"
+                                                        className="h-7 text-xs bg-green-600 hover:bg-green-700 text-white"
+                                                        onClick={() => handleReleaseFunds(t._id)}
+                                                    >
+                                                        Release Funds
+                                                    </Button>
+                                                )}
+                                            </TableCell>
+                                        </TableRow>
+                                    ))
                             )}
                         </TableBody>
                     </Table>

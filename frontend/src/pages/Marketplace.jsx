@@ -158,6 +158,16 @@ export default function Marketplace() {
         }
     };
 
+    const [selectedItemForView, setSelectedItemForView] = useState(null);
+
+    const openItemDetails = (item) => {
+        setSelectedItemForView(item);
+    };
+
+    const isOwner = (item) => {
+        return mongoUser && item.seller && (item.seller._id === mongoUser._id || item.seller === mongoUser._id);
+    };
+
     return (
         <Layout>
             <div className="max-w-7xl mx-auto p-6 md:p-10 space-y-10 font-sans">
@@ -239,8 +249,8 @@ export default function Marketplace() {
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                         {items.map(item => (
-                            <Card key={item._id} className="group overflow-hidden border-none shadow-lg hover:shadow-2xl transition-all duration-300 bg-card rounded-3xl ring-1 ring-border/50">
-                                <div className="aspect-[4/3] relative overflow-hidden">
+                            <Card key={item._id} className="group overflow-hidden border-none shadow-lg hover:shadow-2xl transition-all duration-300 bg-card rounded-3xl ring-1 ring-border/50 flex flex-col">
+                                <div className="aspect-[4/3] relative overflow-hidden cursor-pointer" onClick={() => openItemDetails(item)}>
                                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent z-10" />
 
                                     {item.imageUrl ? (
@@ -256,14 +266,38 @@ export default function Marketplace() {
                                     </Badge>
 
                                     <div className="absolute bottom-4 left-4 right-4 z-20 flex justify-between items-end">
-                                        <div className="flex items-center gap-1.5 text-white/90 text-xs font-bold bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-full">
-                                            <MapPin className="h-3.5 w-3.5" /> {item.location}
+                                        <div className="flex items-center gap-2">
+                                            <div className="flex items-center gap-1.5 text-white/90 text-xs font-bold bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-full">
+                                                <MapPin className="h-3.5 w-3.5" /> {item.location}
+                                            </div>
+                                        </div>
+                                        {/* Seller Info Badge */}
+                                        <div className="flex items-center gap-2 bg-black/40 backdrop-blur-md pl-1 pr-3 py-1 rounded-full">
+                                            <div className="h-6 w-6 rounded-full overflow-hidden bg-white/20 border border-white/30">
+                                                {item.seller?.imageUrl ? (
+                                                    <img src={item.seller.imageUrl} alt={item.seller.fullName} className="h-full w-full object-cover" />
+                                                ) : (
+                                                    <div className="h-full w-full flex items-center justify-center text-[10px] font-bold text-white bg-primary">
+                                                        {item.seller?.fullName?.charAt(0) || "U"}
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <div className="flex flex-col">
+                                                <span className="text-[10px] font-bold text-white leading-none">
+                                                    {item.seller?.fullName || "Verified Seller"}
+                                                </span>
+                                                {item.seller?.isVerified && (
+                                                    <span className="text-[8px] text-green-300 flex items-center gap-0.5 leading-none mt-0.5">
+                                                        <CheckCircle2 className="h-2 w-2" /> Verified
+                                                    </span>
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
 
-                                <CardContent className="p-6 space-y-6">
-                                    <div className="space-y-2">
+                                <CardContent className="p-6 space-y-6 flex-1 flex flex-col">
+                                    <div className="space-y-2 flex-1 cursor-pointer" onClick={() => openItemDetails(item)}>
                                         <h3 className="font-bold text-2xl leading-tight group-hover:text-primary transition-colors line-clamp-1">{item.name}</h3>
                                         <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed h-10">{item.description}</p>
                                     </div>
@@ -283,6 +317,10 @@ export default function Marketplace() {
                                             <Button disabled size="lg" className="rounded-2xl px-6 bg-muted text-muted-foreground font-bold">
                                                 Sold Out
                                             </Button>
+                                        ) : isOwner(item) ? (
+                                            <Button disabled size="lg" className="rounded-2xl px-6 bg-secondary text-secondary-foreground font-bold opacity-80">
+                                                Your Listing
+                                            </Button>
                                         ) : (
                                             <Button
                                                 size="lg"
@@ -299,6 +337,91 @@ export default function Marketplace() {
                         ))}
                     </div>
                 )}
+
+                {/* Item Details Dialog */}
+                <Dialog open={!!selectedItemForView} onOpenChange={(open) => !open && setSelectedItemForView(null)}>
+                    <DialogContent className="sm:max-w-2xl bg-background border-none shadow-2xl rounded-3xl p-0 overflow-hidden">
+                        {selectedItemForView && (
+                            <div className="flex flex-col">
+                                <div className="h-[300px] w-full relative">
+                                    {selectedItemForView.imageUrl ? (
+                                        <img src={selectedItemForView.imageUrl} alt={selectedItemForView.name} className="w-full h-full object-cover" />
+                                    ) : (
+                                        <div className="w-full h-full bg-secondary/30 flex items-center justify-center">
+                                            {selectedItemForView.type === 'equipment' ? <Tractor className="h-24 w-24 text-muted-foreground/30" /> : <div className="text-8xl opacity-30">🐮</div>}
+                                        </div>
+                                    )}
+                                    <div className="absolute top-4 left-4">
+                                        <Badge className={`backdrop-blur-md border-none px-3 py-1.5 ${selectedItemForView.type === 'cattle' ? 'bg-orange-500/90' : 'bg-blue-500/90'} text-white shadow-sm`}>
+                                            {selectedItemForView.type === 'cattle' ? 'Livestock' : 'Equipment'}
+                                        </Badge>
+                                    </div>
+                                    <Button variant="ghost" className="absolute top-4 right-4 bg-black/20 hover:bg-black/40 text-white rounded-full p-2 h-auto" onClick={() => setSelectedItemForView(null)}>X</Button>
+                                </div>
+                                <div className="p-8 space-y-8">
+                                    <div className="flex justify-between items-start">
+                                        <div>
+                                            <h2 className="text-3xl font-bold font-serif">{selectedItemForView.name}</h2>
+                                            <div className="flex items-center gap-2 mt-2 text-muted-foreground">
+                                                <MapPin className="h-4 w-4" /> {selectedItemForView.location}
+                                            </div>
+                                        </div>
+                                        <div className="text-right">
+                                            <p className="text-3xl font-black text-primary">₹{selectedItemForView.price.toLocaleString()}</p>
+                                            <p className="text-sm text-muted-foreground">{selectedItemForView.priceUnit !== 'fixed' ? selectedItemForView.priceUnit : 'Fixed Price'}</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="bg-muted/30 p-4 rounded-xl space-y-2">
+                                        <h3 className="font-bold text-sm uppercase tracking-widest text-muted-foreground">Description</h3>
+                                        <p className="text-foreground leading-relaxed whitespace-pre-line">{selectedItemForView.description}</p>
+                                    </div>
+
+                                    {/* Seller Card */}
+                                    <div className="border border-border rounded-xl p-4 flex items-center gap-4 bg-card">
+                                        <div className="h-12 w-12 rounded-full overflow-hidden bg-secondary">
+                                            {selectedItemForView.seller?.imageUrl ? (
+                                                <img src={selectedItemForView.seller.imageUrl} alt="Seller" className="h-full w-full object-cover" />
+                                            ) : (
+                                                <div className="h-full w-full flex items-center justify-center text-xs font-bold text-background bg-primary">
+                                                    {selectedItemForView.seller?.fullName?.charAt(0)}
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div className="flex-1">
+                                            <p className="font-bold text-lg">{selectedItemForView.seller?.fullName}</p>
+                                            <p className="text-xs text-muted-foreground flex items-center gap-1">
+                                                {selectedItemForView.seller?.isVerified ? (
+                                                    <span className="text-green-600 flex items-center gap-0.5"><CheckCircle2 className="h-3 w-3" /> Verified Seller</span>
+                                                ) : "Seller"}
+                                            </p>
+                                        </div>
+                                        {/* Contact - Only show if available and maybe restrict call logic */}
+                                        {/* For now, just showing a button */}
+                                        <Button variant="outline" size="sm" onClick={() => alert("Please use the Buy Now feature to securely contact/transact via Escrow.")}>
+                                            Contact Seller
+                                        </Button>
+                                    </div>
+
+                                    <div className="pt-4">
+                                        {selectedItemForView.status === 'sold' ? (
+                                            <Button disabled className="w-full h-12 text-lg rounded-xl">Sold Out</Button>
+                                        ) : isOwner(selectedItemForView) ? (
+                                            <Button disabled className="w-full h-12 text-lg rounded-xl bg-secondary text-secondary-foreground">This is your listing</Button>
+                                        ) : (
+                                            <Button className="w-full h-12 text-lg rounded-xl font-bold shadow-xl shadow-primary/20" onClick={() => {
+                                                setSelectedItemForView(null);
+                                                initiatePurchase(selectedItemForView);
+                                            }}>
+                                                {selectedItemForView.type === 'cattle' ? 'Proceed to Buy' : 'Rent Equipment'}
+                                            </Button>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </DialogContent>
+                </Dialog>
 
                 {/* Farm Selection Dialog */}
                 <Dialog open={showFarmSelectDialog} onOpenChange={setShowFarmSelectDialog}>
@@ -363,14 +486,14 @@ export default function Marketplace() {
 
                         <div className="p-8 space-y-6 text-center">
                             <p className="text-muted-foreground">
-                                Please verify the item upon delivery/rental start. Once satisfied, share this code with the seller to release the funds.
+                                Your payment has been securely held in Escrow.
+                                <br /><br />
+                                The Admin will now verify the transaction and release the funds to the seller once you confirm receipt of the item.
                             </p>
 
-                            <div className="bg-green-50 border-2 border-dashed border-green-200 p-6 rounded-2xl relative group cursor-pointer hover:bg-green-100 transition-colors"
-                                onClick={() => { navigator.clipboard.writeText(successData?.releaseCode); alert("Code Copied!") }}>
-                                <p className="text-[10px] font-bold text-green-600 uppercase tracking-[0.2em] mb-2">Your Secure Release Code</p>
-                                <p className="text-5xl font-black text-green-700 tracking-[0.2em] font-mono">{successData?.releaseCode}</p>
-                                <p className="text-xs text-green-600/60 mt-2 opacity-0 group-hover:opacity-100 transition-opacity">Click to Copy</p>
+                            <div className="bg-yellow-50 border-2 border-dashed border-yellow-200 p-6 rounded-2xl">
+                                <p className="text-[10px] font-bold text-yellow-700 uppercase tracking-[0.2em] mb-2">Status</p>
+                                <p className="text-xl font-bold text-yellow-800 font-serif">Pending Admin Approval</p>
                             </div>
 
                             <Button className="w-full rounded-xl h-12 text-base font-bold bg-green-600 hover:bg-green-700 shadow-lg shadow-green-600/20" onClick={() => setSuccessData(null)}>
