@@ -48,6 +48,7 @@ const fetchSchemes = async () => {
                     if (slug) {
                         schemes.push({
                             id: slug,
+                            _id: slug,
                             slug: slug,
                             title: title.replace(/\[\d+\]/g, ''),
                             link: `https://en.wikipedia.org${link}`,
@@ -267,7 +268,7 @@ const fetchSchemes = async () => {
         ];
 
         // Merge and deduplicate
-        const finalSchemes = [...featuredSchemes];
+        const finalSchemes = featuredSchemes.map(s => ({ ...s, _id: s.id }));
         agriSchemes.forEach(s => {
             if (!finalSchemes.find(fs => fs.slug === s.slug)) {
                 finalSchemes.push(s);
@@ -298,6 +299,8 @@ try {
 }
 
 const fetchSchemeDetails = async (slug) => {
+    if (!slug || slug === 'undefined' || slug === 'null') return null;
+
     // Check Cache
     if (detailCache[slug] && (Date.now() - detailCache[slug].timestamp < DETAIL_CACHE_DURATION)) {
         return detailCache[slug].data;

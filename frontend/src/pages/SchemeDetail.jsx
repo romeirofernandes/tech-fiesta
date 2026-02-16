@@ -65,14 +65,7 @@ export default function SchemeDetail() {
         <Layout>
             <div className="max-w-7xl mx-auto p-6 md:p-10 space-y-8">
                 {/* Back Button */}
-                <Button
-                    variant="ghost"
-                    onClick={() => navigate("/schemes")}
-                    className="group hover:bg-transparent p-0 h-auto text-muted-foreground hover:text-primary transition-colors"
-                >
-                    <ArrowLeft className="mr-2 h-4 w-4 transition-transform group-hover:-translate-x-1" />
-                    Back to All Schemes
-                </Button>
+               
 
                 {/* Main Content Grid */}
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
