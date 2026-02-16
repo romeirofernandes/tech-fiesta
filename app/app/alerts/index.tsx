@@ -10,6 +10,7 @@ import { ArrowLeft, Bell, BellOff, CheckCircle2, AlertTriangle, Info } from 'luc
 import { Colors } from '@/constants/theme';
 import { getLocalDashboardData, fetchAndSyncDashboardData, type DashboardData } from '@/lib/sync-dashboard';
 import { initDatabase } from '@/lib/db';
+import { useUser } from '@/context/UserContext';
 
 type Alert = DashboardData['alerts'][0];
 
@@ -18,6 +19,7 @@ export default function NotificationsScreen() {
   const { colorScheme } = useColorScheme();
   const themeColors = Colors[colorScheme ?? 'light'];
   
+  const { mongoUser, loading: userLoading } = useUser();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [alerts, setAlerts] = useState<Alert[]>([]);
@@ -29,10 +31,13 @@ export default function NotificationsScreen() {
       setAlerts(normalizeAlerts(localData.alerts));
       
       // Background sync
-      fetchAndSyncDashboardData().then(() => {
-        const updatedData = getLocalDashboardData();
-        setAlerts(normalizeAlerts(updatedData.alerts));
-      });
+      const userId = mongoUser?._id;
+      if (userId) {
+        fetchAndSyncDashboardData(userId).then(() => {
+          const updatedData = getLocalDashboardData();
+          setAlerts(normalizeAlerts(updatedData.alerts));
+        });
+      }
     } catch (error) {
       console.error('Error loading alerts:', error);
     } finally {
@@ -47,12 +52,15 @@ export default function NotificationsScreen() {
   };
 
   useEffect(() => {
-    loadData();
-  }, []);
+    if (!userLoading) {
+      loadData();
+    }
+  }, [userLoading, mongoUser?._id]);
 
   const onRefresh = () => {
     setRefreshing(true);
-    fetchAndSyncDashboardData().then(() => {
+    const userId = mongoUser?._id;
+    fetchAndSyncDashboardData(userId).then(() => {
       const updatedData = getLocalDashboardData();
       setAlerts(normalizeAlerts(updatedData.alerts));
       setRefreshing(false);

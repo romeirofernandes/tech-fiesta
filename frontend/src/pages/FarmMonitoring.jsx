@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Layout } from "@/components/Layout";
+import { useUser } from "@/context/UserContext";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -11,6 +12,7 @@ import axios from "axios";
 import { cn } from "@/lib/utils";
 
 export default function FarmMonitoring() {
+    const { mongoUser } = useUser();
     const [farms, setFarms] = useState([]);
     const [selectedFarm, setSelectedFarm] = useState("");
     const [isMonitoring, setIsMonitoring] = useState(false);
@@ -25,11 +27,13 @@ export default function FarmMonitoring() {
     const countdownRef = useRef(null);
 
     useEffect(() => {
-        fetchFarms();
+        if (mongoUser) {
+            fetchFarms();
+        }
         return () => {
             stopMonitoring();
         };
-    }, []);
+    }, [mongoUser]);
 
     useEffect(() => {
         if (isMonitoring) {
@@ -46,7 +50,7 @@ export default function FarmMonitoring() {
     const fetchFarms = async () => {
         try {
             const base = import.meta.env.VITE_API_BASE_URL;
-            const res = await axios.get(`${base}/api/farms`);
+            const res = await axios.get(`${base}/api/farms`, { params: { farmerId: mongoUser._id } });
             const farmData = Array.isArray(res.data) ? res.data : [];
             setFarms(farmData);
             if (farmData.length > 0) {

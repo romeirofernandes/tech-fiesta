@@ -1,5 +1,7 @@
 const Animal = require('../models/Animal');
 const Farmer = require('../models/Farmer');
+const DeadAnimal = require('../models/DeadAnimal');
+const MarketplaceItem = require('../models/MarketplaceItem');
 const VaccinationEvent = require('../models/VaccinationEvent');
 const VaccinationSchedule = require('../models/VaccinationSchedule');
 const Alert = require('../models/Alert');
@@ -11,7 +13,87 @@ const RFIDEvent = require('../models/RFIDEvent');
 const cloudinary = require('../config/cloudinary');
 const { generateEmbedding, cosineSimilarity, detectAndCropAnimals } = require('../services/embeddingService');
 const AnimalEmbedding = require('../models/AnimalEmbedding');
-const { parseVaccinationAgeToMonths, computeVaccinationTarget } = require('../utils/ageUtils');
+const { parseVaccinationAgeToMonths, computeVaccinationTarget, getCurrentAgeInMonths } = require('../utils/ageUtils');
+
+/**
+ * Report the death of an animal.
+ * Moves the animal data to DeadAnimals collection and cleans up associated records.
+ */
+exports.reportDeath = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { causeOfDeath, deathDate, notes } = req.body;
+
+        const animal = await Animal.findById(id);
+        if (!animal) {
+            return res.status(404).json({ message: 'Animal not found' });
+        }
+
+        const dateOfDeath = deathDate ? new Date(deathDate) : new Date();
+
+        // Calculate age at death in months
+        // Start with initial age converted to months
+        let initialAgeMonths = 0;
+        if (animal.ageUnit === 'years') initialAgeMonths = animal.age * 12;
+        else if (animal.ageUnit === 'days') initialAgeMonths = animal.age / 30.44;
+        else initialAgeMonths = animal.age; // default months
+
+        // Add time since creation to death date
+        const timeSinceCreation = dateOfDeath - new Date(animal.createdAt);
+        const monthsSinceCreation = timeSinceCreation / (1000 * 60 * 60 * 24 * 30.44);
+        const finalAgeMonths = Math.max(0, initialAgeMonths + monthsSinceCreation);
+
+        // Create DeadAnimal record
+        await DeadAnimal.create({
+            originalId: animal._id,
+            name: animal.name,
+            rfid: animal.rfid,
+            species: animal.species,
+            breed: animal.breed,
+            gender: animal.gender,
+            ageAtDeath: parseFloat(finalAgeMonths.toFixed(1)),
+            ageUnit: 'months',
+            farmId: animal.farmId,
+            imageUrl: animal.imageUrl,
+            deathDate: dateOfDeath,
+            causeOfDeath: causeOfDeath || 'Unknown',
+            notes: notes
+        });
+
+        // Delete associated records 
+        // (Similar to deleteAnimal but we keep historical records if needed? 
+        // User said "remove from vaccination schedule... and all my models... cascade"
+        // Usually, removing `VaccinationEvent` (future), `Alert` (active), `MarketplaceItem` (active) is key.
+        // Historical data like `ProductionRecord` or `HealthSnapshot` is obscure. User said "remove from vaccination schedule okay and like everywhere else its needed".
+        // I will follow `deleteAnimal` logic for cleanup to be safe and clean, but maybe keep HealthSnapshot?
+        // Actually, user said "delete the animal from the schema and liek go through all my models... cascade needs to be done like remove from vaccination schedule".
+        // To be safe and thorough as requested ("everywhere else its needed"), I will remove everything linked to this ID to avoid orphans,
+        // EXCEPT I already saved the important info in `DeadAnimal`. 
+        
+        await Promise.all([
+            // Use ID directly
+            VaccinationEvent.deleteMany({ animalId: id }),
+            Alert.deleteMany({ animalId: id }),
+            SensorEvent.deleteMany({ animalId: id }),
+            IotSensorReading.deleteMany({ animalId: id }),
+            HeartRateThreshold.deleteMany({ animalId: id }),
+            HealthSnapshot.deleteMany({ animalId: id }),
+            AnimalEmbedding.deleteMany({ animalId: id }),
+            RFIDEvent.deleteMany({ animalId: id }),
+            // Also remove from Marketplace
+            MarketplaceItem.deleteMany({ linkedAnimalId: id })
+        ]);
+
+        // Finally delete the animal
+        await Animal.findByIdAndDelete(id);
+
+        res.status(200).json({ message: 'Animal death reported and records cleaned up successfully' });
+    } catch (error) {
+        console.error('Report Death Error:', error);
+        res.status(500).json({ message: 'Server Error', error: error.message });
+    }
+};
+
 
 /**
  * Generate vaccination events for an animal based on static vaccination schedules.
@@ -318,6 +400,32 @@ exports.updateAnimal = async (req, res) => {
 
         await animal.save();
         res.status(200).json(animal);
+    } catch (error) {
+        res.status(500).json({ message: 'Server Error', error: error.message });
+    }
+};
+
+exports.getDeadAnimals = async (req, res) => {
+    try {
+        const { farmId, farmerId } = req.query;
+        let filter = {};
+        if (farmId) filter.farmId = farmId;
+        
+        if (farmerId) {
+            const farmer = await Farmer.findById(farmerId);
+            // If farmer not found or has no farms, return empty or error
+            if (!farmer) return res.status(404).json({ message: 'Farmer not found' });
+            
+            if (!farmId && farmer.farms && farmer.farms.length > 0) {
+                filter.farmId = { $in: farmer.farms };
+            } else if (!farmId) {
+                // Farmer has no farms
+                return res.status(200).json([]);
+            }
+        }
+
+        const deadAnimals = await DeadAnimal.find(filter).sort({ deathDate: -1 }).populate('farmId', 'name location');
+        res.status(200).json(deadAnimals);
     } catch (error) {
         res.status(500).json({ message: 'Server Error', error: error.message });
     }

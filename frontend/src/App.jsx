@@ -10,6 +10,7 @@ import Animals from './pages/animals/Animals';
 import AnimalDetail from './pages/animals/AnimalDetail';
 import CreateAnimal from './pages/animals/CreateAnimal';
 import EditAnimal from './pages/animals/EditAnimal';
+import DeadAnimals from './pages/animals/DeadAnimals';
 import Farms from './pages/farms/Farms';
 import FarmDetail from './pages/farms/FarmDetail';
 import CreateFarm from './pages/farms/CreateFarm';
@@ -92,6 +93,11 @@ function App() {
           <Route path="/animals/create" element={
             <ProtectedRoute>
               <CreateAnimal />
+            </ProtectedRoute>
+          } />
+          <Route path="/animals/dead" element={
+            <ProtectedRoute>
+              <DeadAnimals />
             </ProtectedRoute>
           } />
           <Route path="/animals/:id" element={
