@@ -233,7 +233,7 @@ export default function Emergency() {
 
   return (
     <Layout loading={pageLoading}>
-      <div className="space-y-6 max-w-full px-2 md:px-6 mx-auto">
+      <div className="space-y-6 max-w-full px-6 mx-auto p-4 md:p-6 lg:p-8">
         {/* Header */}
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-destructive flex items-center gap-2">
@@ -360,7 +360,7 @@ export default function Emergency() {
 
           {/* ── Right Panel: Map ── */}
           <Card className="lg:col-span-2 overflow-hidden border-2 border-muted">
-            <div className="h-[600px] w-full relative">
+            <div className="h-150 w-full relative">
               <MapContainer
                 center={[20.5937, 78.9629]}
                 zoom={5}
@@ -419,7 +419,7 @@ export default function Emergency() {
               </MapContainer>
 
               {/* Legend */}
-              <div className="absolute bottom-4 left-4 bg-background/90 backdrop-blur-md p-3 rounded-lg shadow-md z-[400] text-xs space-y-1.5 border">
+              <div className="absolute bottom-4 left-4 bg-background/90 backdrop-blur-md p-3 rounded-lg shadow-md z-400 text-xs space-y-1.5 border">
                 <div className="flex items-center gap-2">
                   <span className="w-3 h-3 rounded-full bg-green-500 inline-block" />
                   <span>Your Farm</span>
