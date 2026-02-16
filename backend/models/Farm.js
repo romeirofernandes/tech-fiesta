@@ -20,7 +20,13 @@ const farmSchema = new mongoose.Schema({
   updatedAt: {
     type: Date,
     default: Date.now
-  }
+  },
+  flaggedForReview: {
+    type: Boolean,
+    default: false
+},
+lastReviewedAt: Date,
+reviewedBy: String
 });
 
 farmSchema.pre('save', function() {

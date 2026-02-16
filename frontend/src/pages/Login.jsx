@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { useUser } from '../context/UserContext';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp"
+import { Shield } from 'lucide-react';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -204,10 +205,17 @@ const Login = () => {
             </Tabs>
           </div>
         </CardContent>
-        <CardFooter className="flex justify-center">
+        <CardFooter className="flex flex-col gap-2">
           <p className="text-sm text-muted-foreground">
             Don't have an account? <Link to="/register" className="text-primary hover:underline">Sign Up</Link>
           </p>
+          <Link 
+            to="/admin/login" 
+            className="text-xs text-muted-foreground hover:text-primary flex items-center gap-1 transition-colors"
+          >
+            <Shield className="h-4 w-4 text-primary" />
+            <span className="  text-sm text-primary">Admin Login</span>
+          </Link>
         </CardFooter>
       </Card>
     </div>

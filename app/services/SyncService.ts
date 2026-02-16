@@ -439,22 +439,24 @@ class SyncService {
     }
   }
 
-  async pullAnimals(farmId?: string) {
+  async pullAnimals(props?: { farmId?: string; farmerId?: string }) {
     if (this.isSyncing || !(await this.isOnline())) return;
     this.isSyncing = true;
 
     try {
-      const url = farmId 
-        ? `${API_BASE_URL}/api/animals?farmId=${farmId}` 
-        : `${API_BASE_URL}/api/animals`;
+      const params = new URLSearchParams();
+      if (props?.farmId) params.append('farmId', props.farmId);
+      if (props?.farmerId) params.append('farmerId', props.farmerId);
+
+      const url = `${API_BASE_URL}/api/animals?${params.toString()}`;
       const response = await fetch(url);
       
       if (response.ok) {
         const animals = await response.json();
         
         // Only delete synced records to preserve pending local changes
-        if (farmId) {
-          db.runSync('DELETE FROM animals WHERE syncStatus = ? AND farmId = ?', ['synced', farmId]);
+        if (props?.farmId) {
+          db.runSync('DELETE FROM animals WHERE syncStatus = ? AND farmId = ?', ['synced', props.farmId]);
         } else {
           db.runSync('DELETE FROM animals WHERE syncStatus = ?', ['synced']);
         }

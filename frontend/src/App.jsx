@@ -18,6 +18,7 @@ import EditFarm from './pages/farms/EditFarm';
 import LiveVitals from './pages/LiveVitals';
 import VaccinationCalendar from './pages/VaccinationCalendar';
 import AdminDashboard from './pages/admin/AdminDashboard';
+import AdminLogin from './pages/AdminLogin';
 import BiOverview from './pages/bi/BiOverview';
 import ProductionTracking from './pages/bi/ProductionTracking';
 import FinanceTracking from './pages/bi/FinanceTracking';
@@ -31,6 +32,8 @@ import MyOrders from './pages/MyOrders';
 import MySales from './pages/MySales';
 import AnimalIdentification from './pages/AnimalIdentification';
 import FarmMonitoring from './pages/FarmMonitoring';
+import Emergency from './pages/Emergency';
+import AdminProtectedRoute from './components/AdminProtectedRoute';
 
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useUser();
@@ -72,6 +75,17 @@ function App() {
               <Register />
             </PublicRoute>
           } />
+          
+          {/* Admin Login Route */}
+          <Route path="/admin/login" element={<AdminLogin />} />
+          
+          {/* Admin Protected Route */}
+          <Route path="/admin" element={
+            <AdminProtectedRoute>
+              <AdminDashboard />
+            </AdminProtectedRoute>
+          } />
+          
           <Route
             path="/dashboard"
             element={
@@ -165,6 +179,11 @@ function App() {
               <Alerts />
             </ProtectedRoute>
           } />
+          <Route path="/emergency" element={
+            <ProtectedRoute>
+              <Emergency />
+            </ProtectedRoute>
+          } />
           <Route path="/schemes" element={
             <ProtectedRoute>
               <Schemes />
@@ -198,11 +217,6 @@ function App() {
           <Route path="/my-sales" element={
             <ProtectedRoute>
               <MySales />
-            </ProtectedRoute>
-          } />
-          <Route path="/admin" element={
-            <ProtectedRoute>
-              <AdminDashboard></AdminDashboard>
             </ProtectedRoute>
           } />
           <Route path="*" element={<NotFound />} />
