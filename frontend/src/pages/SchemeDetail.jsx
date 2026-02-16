@@ -86,14 +86,20 @@ export default function SchemeDetail() {
                             </div>
 
                             <h1 className="text-4xl md:text-5xl font-black tracking-tight text-foreground leading-tight">
-                                {scheme.title}
+                                {(() => {
+                                    const title = scheme?.title || scheme?.name;
+                                    return (title && title !== "Undefined" && title !== "undefined") ? title : "Scheme Details";
+                                })()}
                             </h1>
 
                             <p className="text-lg text-muted-foreground leading-relaxed">
-                                {scheme.description}
+                                {(() => {
+                                    const desc = scheme?.description;
+                                    return (desc && desc !== "Undefined" && desc !== "undefined") ? desc : "Government scheme to help farmers with financial aid and support.";
+                                })()}
                             </p>
 
-                            {scheme.official_link && (
+                            {scheme?.official_link && (
                                 <Button
                                     size="lg"
                                     onClick={() => window.open(scheme.official_link, '_blank')}
@@ -114,19 +120,23 @@ export default function SchemeDetail() {
                             </div>
 
                             <div className="grid grid-cols-1 gap-3">
-                                {scheme.benefits && scheme.benefits.map((benefit, idx) => (
-                                    <div
-                                        key={idx}
-                                        className="flex items-start gap-3 p-4 rounded-xl bg-secondary/20 border border-border/40 hover:border-primary/30 hover:bg-secondary/30 transition-all"
-                                    >
-                                        <div className="h-7 w-7 rounded-full bg-primary/20 text-primary flex items-center justify-center shrink-0 font-bold text-sm">
-                                            {idx + 1}
+                                {scheme?.benefits && Array.isArray(scheme.benefits) && scheme.benefits.length > 0 ? (
+                                    scheme.benefits.map((benefit, idx) => (
+                                        <div
+                                            key={idx}
+                                            className="flex items-start gap-3 p-4 rounded-xl bg-secondary/20 border border-border/40 hover:border-primary/30 hover:bg-secondary/30 transition-all"
+                                        >
+                                            <div className="h-7 w-7 rounded-full bg-primary/20 text-primary flex items-center justify-center shrink-0 font-bold text-sm">
+                                                {idx + 1}
+                                            </div>
+                                            <p className="text-sm font-medium text-foreground/90 leading-relaxed">
+                                                {benefit}
+                                            </p>
                                         </div>
-                                        <p className="text-sm font-medium text-foreground/90 leading-relaxed">
-                                            {benefit}
-                                        </p>
-                                    </div>
-                                ))}
+                                    ))
+                                ) : (
+                                    <p className="text-sm text-muted-foreground p-4 bg-muted/20 rounded-xl">Benefits information will be updated soon.</p>
+                                )}
                             </div>
                         </div>
 
@@ -143,21 +153,27 @@ export default function SchemeDetail() {
                                 {/* Vertical Timeline Line - centered through the circles */}
                                 <div className="absolute left-[15px] top-[20px] bottom-[20px] w-0.5 bg-gradient-to-b from-primary via-primary/50 to-transparent" />
 
-                                {scheme.applicationProcess && scheme.applicationProcess.map((step, idx) => (
-                                    <div key={idx} className="relative flex items-start gap-4 group">
-                                        {/* Timeline Circle */}
-                                        <div className="relative h-8 w-8 rounded-full bg-background border-2 border-primary flex items-center justify-center text-primary font-bold text-sm shadow-sm z-10 shrink-0">
-                                            {idx + 1}
-                                        </div>
+                                {scheme?.applicationProcess && Array.isArray(scheme.applicationProcess) && scheme.applicationProcess.length > 0 ? (
+                                    scheme.applicationProcess.map((step, idx) => (
+                                        <div key={idx} className="relative flex items-start gap-4 group">
+                                            {/* Timeline Circle */}
+                                            <div className="relative h-8 w-8 rounded-full bg-background border-2 border-primary flex items-center justify-center text-primary font-bold text-sm shadow-sm z-10 shrink-0">
+                                                {idx + 1}
+                                            </div>
 
-                                        {/* Step Content */}
-                                        <div className="flex-1 bg-secondary/10 p-4 rounded-xl border border-border/40 group-hover:bg-secondary/20 group-hover:border-primary/30 transition-all">
-                                            <p className="text-sm font-semibold text-foreground/90 leading-relaxed">
-                                                {step}
-                                            </p>
+                                            {/* Step Content */}
+                                            <div className="flex-1 bg-secondary/10 p-4 rounded-xl border border-border/40 group-hover:bg-secondary/20 group-hover:border-primary/30 transition-all">
+                                                <p className="text-sm font-semibold text-foreground/90 leading-relaxed">
+                                                    {step}
+                                                </p>
+                                            </div>
                                         </div>
+                                    ))
+                                ) : (
+                                    <div className="p-4 bg-muted/20 rounded-xl">
+                                        <p className="text-sm text-muted-foreground">Application process details will be updated soon. Please contact your local Panchayat office for guidance.</p>
                                     </div>
-                                ))}
+                                )}
                             </div>
                         </div>
                     </div>
@@ -176,7 +192,7 @@ export default function SchemeDetail() {
                                         </div>
                                         <div>
                                             <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Financial Aid</p>
-                                            <p className="text-lg font-bold text-foreground">{scheme.financial_aid || "Check Locally"}</p>
+                                            <p className="text-lg font-bold text-foreground">{scheme?.financial_aid || "Benefits vary"}</p>
                                         </div>
                                     </div>
                                 </CardContent>
@@ -190,7 +206,7 @@ export default function SchemeDetail() {
                                         </div>
                                         <div>
                                             <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Duration</p>
-                                            <p className="text-lg font-bold text-foreground">{scheme.duration || "Ongoing"}</p>
+                                            <p className="text-lg font-bold text-foreground">{scheme?.duration || "Ongoing"}</p>
                                         </div>
                                     </div>
                                 </CardContent>
@@ -204,7 +220,7 @@ export default function SchemeDetail() {
                                         </div>
                                         <div>
                                             <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Apply At</p>
-                                            <p className="text-sm font-bold text-foreground leading-tight">{scheme.how_to_apply || "Panchayat Office"}</p>
+                                            <p className="text-sm font-bold text-foreground leading-tight">{scheme?.how_to_apply || "Contact your local Panchayat officer"}</p>
                                         </div>
                                     </div>
                                 </CardContent>

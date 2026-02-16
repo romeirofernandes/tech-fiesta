@@ -306,7 +306,9 @@ const fetchSchemeDetails = async (slug) => {
     try {
         const url = `https://en.wikipedia.org/wiki/${slug}`;
         const { data } = await axios.get(url, {
-            headers: { 'User-Agent': 'Mozilla/5.0' }
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+            }
         });
         const $ = cheerio.load(data);
 
@@ -320,6 +322,18 @@ const fetchSchemeDetails = async (slug) => {
                 content.push(text);
             }
         });
+
+        // Validation - if content is empty, try alternative selectors or log warning
+        if (content.length === 0) {
+            console.warn(`Warning: No content extracted for ${slug}. Page might be different stricture or blocked.`);
+            // Try getting first paragraph without class constraints as fallback
+            $('p').each((i, el) => {
+                const text = $(el).text().trim();
+                if (text.length > 100 && content.length < 3) {
+                    content.push(text);
+                }
+            });
+        }
 
         // Use AI to simplify content
         const rawText = content.join('\n\n');
