@@ -42,12 +42,30 @@ export const fetchAndSyncDashboardData = async (): Promise<void> => {
     const healthSnapshots = Array.isArray(healthRes.data) ? healthRes.data : [];
     const sensorEvents = Array.isArray(sensorRes.data) ? sensorRes.data : [];
 
-    // Sync Animals
-    db.runSync('DELETE FROM animals;'); 
+    // Sync Animals - only overwrite synced records
+    db.runSync('DELETE FROM animals WHERE syncStatus = ?;', ['synced']);
     for (const a of animals) {
+      const local = db.getFirstSync<{syncStatus: string}>('SELECT syncStatus FROM animals WHERE id = ?', [a._id]);
+      if (local && local.syncStatus === 'pending') continue;
       db.runSync(
-        'INSERT OR REPLACE INTO animals (id, name, species, farmId, imageUrl, status) VALUES (?, ?, ?, ?, ?, ?);',
-        [a._id ?? null, a.name ?? null, a.species ?? null, (a.farmId?._id || a.farmId) ?? null, a.imageUrl ?? null, a.status ?? null]
+        'INSERT OR REPLACE INTO animals (id, name, rfid, species, breed, gender, age, ageUnit, farmId, farmName, farmLocation, imageUrl, createdAt, updatedAt, syncStatus) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);',
+        [
+          a._id ?? null,
+          a.name ?? null,
+          a.rfid ?? null,
+          a.species ?? null,
+          a.breed ?? null,
+          a.gender ?? null,
+          a.age ?? 0,
+          a.ageUnit ?? 'months',
+          (a.farmId?._id || a.farmId) ?? null,
+          a.farmId?.name ?? null,
+          a.farmId?.location ?? null,
+          a.imageUrl ?? null,
+          a.createdAt ?? null,
+          a.updatedAt ?? null,
+          'synced'
+        ]
       );
     }
 

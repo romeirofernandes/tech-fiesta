@@ -41,16 +41,37 @@ export async function initDatabase() {
     );
   `);
 
-  // Create Animals table
+  // Migration: Check if animals table has the new schema (rfid column)
+  try {
+    const tableInfo = db.getAllSync('PRAGMA table_info(animals)');
+    const hasRfid = tableInfo.some((col: any) => col.name === 'rfid');
+    if (!hasRfid && tableInfo.length > 0) {
+      console.log('Migrating animals table schema...');
+      db.execSync('DROP TABLE animals');
+    }
+  } catch (e) {
+    console.log('Error checking schema, proceeding...', e);
+  }
+
+  // Create Animals table (matches backend Animal model) (matches backend Animal model)
   db.execSync(`
     CREATE TABLE IF NOT EXISTS animals (
       id TEXT PRIMARY KEY,
-      name TEXT,
+      name TEXT NOT NULL,
+      rfid TEXT,
       species TEXT,
+      breed TEXT,
+      gender TEXT,
+      age REAL,
+      ageUnit TEXT DEFAULT 'months',
       farmId TEXT,
+      farmName TEXT,
+      farmLocation TEXT,
       imageUrl TEXT,
-      status TEXT,
-      syncStatus TEXT DEFAULT 'synced'
+      createdAt TEXT,
+      updatedAt TEXT,
+      syncStatus TEXT DEFAULT 'synced',
+      tempId TEXT
     );
   `);
 
