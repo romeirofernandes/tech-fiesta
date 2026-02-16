@@ -27,6 +27,14 @@ export default function SellCattleModal({ onSuccess }) {
     useEffect(() => {
         if (open && mongoUser) {
             fetchAnimals();
+            console.log("MongoUser for Auto-fill:", mongoUser);
+            // Auto-fill contact details
+            setFormData(prev => ({
+                ...prev,
+                contact: mongoUser.phoneNumber || '',
+                // Check if user has farms and use the first farm's location as default
+                location: mongoUser.farms?.[0]?.location || ''
+            }));
         }
     }, [open, mongoUser]);
 
@@ -42,6 +50,10 @@ export default function SellCattleModal({ onSuccess }) {
 
     const handleSelectAnimal = (animal) => {
         setSelectedAnimal(animal);
+        // If animal has a farm with location, use it. Otherwise keep existing (default)
+        if (animal.farmId?.location) {
+            setFormData(prev => ({ ...prev, location: animal.farmId.location }));
+        }
         setStep(2);
     };
 
@@ -56,7 +68,7 @@ export default function SellCattleModal({ onSuccess }) {
             const base = import.meta.env.VITE_API_BASE_URL;
             await axios.post(`${base}/api/marketplace`, {
                 type: 'cattle',
-                seller: mongoUser?.fullName || 'Unknown Farmer',
+                seller: mongoUser._id, // Send ID
                 name: selectedAnimal.name + ` (${selectedAnimal.breed})`, // Construct display name
                 description: `${selectedAnimal.breed} - ${selectedAnimal.age} ${selectedAnimal.ageUnit} old.\n${formData.description}`,
                 price: formData.price,
@@ -143,20 +155,20 @@ export default function SellCattleModal({ onSuccess }) {
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <Label htmlFor="price">Selling Price (₹)</Label>
-                                <Input id="price" name="price" type="number" required onChange={handleChange} />
+                                <Input id="price" name="price" type="number" required value={formData.price} onChange={handleChange} />
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="contact">Contact Number</Label>
-                                <Input id="contact" name="contact" required onChange={handleChange} />
+                                <Input id="contact" name="contact" required value={formData.contact} onChange={handleChange} />
                             </div>
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="location">Location</Label>
-                            <Input id="location" name="location" placeholder="Village, District" required onChange={handleChange} />
+                            <Input id="location" name="location" placeholder="Village, District" required value={formData.location} onChange={handleChange} />
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="description">Additional Details</Label>
-                            <Textarea id="description" name="description" placeholder="Health status, milk yield, reason for sale..." onChange={handleChange} />
+                            <Textarea id="description" name="description" placeholder="Health status, milk yield, reason for sale..." value={formData.description} onChange={handleChange} />
                         </div>
                         <Button type="submit" className="w-full" disabled={loading}>
                             {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}

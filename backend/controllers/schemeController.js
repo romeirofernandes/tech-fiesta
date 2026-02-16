@@ -12,7 +12,13 @@ exports.getAllSchemes = async (req, res) => {
 exports.getSchemeDetails = async (req, res) => {
     try {
         const { slug } = req.params;
+        console.log(`[Controller] Fetching details for slug: ${slug}`);
         const scheme = await schemeService.fetchSchemeDetails(slug);
+        console.log(`[Controller] Result for ${slug}:`, scheme ? 'Found' : 'NULL');
+
+        if (!scheme) {
+            return res.status(404).json({ message: 'Scheme not found', slug });
+        }
         res.status(200).json(scheme);
     } catch (error) {
         res.status(404).json({ message: 'Scheme not found or failed to fetch', error: error.message });

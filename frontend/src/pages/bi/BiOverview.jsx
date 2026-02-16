@@ -113,7 +113,6 @@ export default function BiOverview() {
       const res = await axios.get(`${API_BASE}/api/farms`, { params: { farmerId: mongoUser._id } });
       setFarms(res.data);
       if (res.data.length > 0) {
-        // Pick first farm from user's farms or just first
         const userFarmIds = mongoUser?.farms?.map(f => f._id || f) || [];
         const defaultFarm = userFarmIds.length > 0 ? userFarmIds[0] : res.data[0]._id;
         setSelectedFarm(defaultFarm);

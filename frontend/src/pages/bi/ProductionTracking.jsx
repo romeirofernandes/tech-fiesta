@@ -110,14 +110,17 @@ export default function ProductionTracking() {
 
   const fetchFarms = async () => {
     try {
-      const res = await axios.get(`${API_BASE}/api/farms`);
+      const res = await axios.get(`${API_BASE}/api/farms`, { params: { farmerId: mongoUser._id } });
       setFarms(res.data);
-      const userFarmIds = mongoUser?.farms?.map(f => f._id || f) || [];
-      const defaultFarm = userFarmIds[0] || res.data[0]?._id;
-      if (defaultFarm) setSelectedFarm(defaultFarm);
-      else setLoading(false);
+      if (res.data.length > 0) {
+        const userFarmIds = mongoUser?.farms?.map(f => f._id || f) || [];
+        const defaultFarm = userFarmIds.length > 0 ? userFarmIds[0] : res.data[0]._id;
+        setSelectedFarm(defaultFarm);
+      } else {
+        setLoading(false);
+      }
     } catch (err) {
-      console.error(err);
+      console.error("Failed to fetch farms:", err);
       setLoading(false);
     }
   };

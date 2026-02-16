@@ -16,7 +16,9 @@ exports.getItems = async (req, res) => {
             query.location = { $regex: location, $options: 'i' };
         }
 
-        const items = await MarketplaceItem.find(query).sort({ createdAt: -1 });
+        const items = await MarketplaceItem.find(query)
+            .populate('seller', 'fullName imageUrl isVerified')
+            .sort({ createdAt: -1 });
         res.json(items);
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -26,7 +28,9 @@ exports.getItems = async (req, res) => {
 // Get single item
 exports.getItemById = async (req, res) => {
     try {
-        const item = await MarketplaceItem.findById(req.params.id).populate('linkedAnimalId');
+        const item = await MarketplaceItem.findById(req.params.id)
+            .populate('linkedAnimalId')
+            .populate('seller', 'fullName imageUrl isVerified');
         if (!item) return res.status(404).json({ message: 'Item not found' });
         res.json(item);
     } catch (error) {

@@ -11,8 +11,9 @@ const marketplaceItemSchema = new mongoose.Schema({
         required: true
     },
     seller: {
-        type: String, // Storing seller name for demo purposes
-        default: 'Demo Farmer'
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Farmer',
+        required: true
     },
     description: {
         type: String

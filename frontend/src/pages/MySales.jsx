@@ -24,32 +24,12 @@ export default function MySales() {
     const fetchSales = async () => {
         try {
             const base = import.meta.env.VITE_API_BASE_URL;
-            const res = await axios.get(`${base}/api/payments/my-sales?sellerName=${mongoUser.fullName}`);
+            const res = await axios.get(`${base}/api/payments/my-sales?sellerId=${mongoUser._id}`);
             setSales(res.data);
             setLoading(false);
         } catch (err) {
             console.error("Error fetching sales:", err);
             setLoading(false);
-        }
-    };
-
-    const handleRedeem = async (transactionId) => {
-        const code = redeemCode[transactionId];
-        if (!code || code.length !== 4) return alert("Please enter a valid 4-digit code.");
-
-        setRedeeming(transactionId);
-        try {
-            const base = import.meta.env.VITE_API_BASE_URL;
-            await axios.post(`${base}/api/payments/release`, {
-                transactionId,
-                releaseCode: code
-            });
-            alert("Success! Funds released to your account.");
-            fetchSales();
-        } catch (err) {
-            alert("Error: " + (err.response?.data?.message || err.message));
-        } finally {
-            setRedeeming(null);
         }
     };
 
@@ -80,8 +60,8 @@ export default function MySales() {
                             <Coins className="h-5 w-5 text-blue-700" />
                         </div>
                         <div>
-                            <p className="font-bold text-blue-900 leading-tight">Instant Payouts</p>
-                            <p className="text-xs text-blue-700 font-medium">Upon Buyer Confirmation</p>
+                            <p className="font-bold text-blue-900 leading-tight">Secure Payouts</p>
+                            <p className="text-xs text-blue-700 font-medium">Verified by Admin</p>
                         </div>
                     </div>
                 </div>
@@ -177,37 +157,15 @@ export default function MySales() {
                                         {/* Right: Action Area - 7 cols */}
                                         <div className="lg:col-span-7 p-6 md:p-8 bg-muted/10">
                                             {sale.status === 'held_in_escrow' ? (
-                                                <div className="h-full flex flex-col justify-center space-y-6">
-                                                    <div className="flex items-start gap-4">
-                                                        <div className="bg-blue-500/10 p-3 rounded-xl shrink-0">
-                                                            <Loader2 className="h-6 w-6 text-blue-600 animate-spin" />
-                                                        </div>
-                                                        <div className="flex-1">
-                                                            <h4 className="text-xl font-bold text-foreground mb-2">Payment Held in Escrow</h4>
-                                                            <p className="text-sm text-muted-foreground leading-relaxed">
-                                                                Ask the buyer for the 4-digit release code upon delivery to claim your funds.
-                                                            </p>
-                                                        </div>
+                                                <div className="h-full flex flex-col justify-center items-center text-center space-y-4">
+                                                    <div className="bg-blue-500/10 p-4 rounded-full">
+                                                        <Loader2 className="h-8 w-8 text-blue-600 animate-spin" />
                                                     </div>
-
-                                                    <div className="bg-background border-2 border-dashed border-blue-200 rounded-2xl p-6 space-y-4">
-                                                        <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground text-center">Enter Release Code</p>
-                                                        <div className="flex gap-3">
-                                                            <Input
-                                                                placeholder="0000"
-                                                                maxLength={4}
-                                                                className="font-mono text-center text-2xl tracking-widest font-bold bg-white border-blue-200 h-14 flex-1"
-                                                                value={redeemCode[sale._id] || ''}
-                                                                onChange={(e) => setRedeemCode({ ...redeemCode, [sale._id]: e.target.value })}
-                                                            />
-                                                            <Button
-                                                                onClick={() => handleRedeem(sale._id)}
-                                                                disabled={redeeming === sale._id}
-                                                                className="bg-blue-600 hover:bg-blue-700 h-14 px-8 font-bold shadow-lg shadow-blue-500/20"
-                                                            >
-                                                                {redeeming === sale._id ? <Loader2 className="animate-spin h-5 w-5" /> : "Claim Funds"}
-                                                            </Button>
-                                                        </div>
+                                                    <div>
+                                                        <h4 className="text-xl font-bold text-foreground mb-2">Awaiting Admin Verification</h4>
+                                                        <p className="text-sm text-muted-foreground max-w-md">
+                                                            Funds are securely held in escrow. The admin will release the payment to your wallet once the buyer confirms receipt.
+                                                        </p>
                                                     </div>
                                                 </div>
                                             ) : (

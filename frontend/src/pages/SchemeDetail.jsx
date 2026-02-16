@@ -16,20 +16,21 @@ import {
 import axios from "axios";
 
 export default function SchemeDetail() {
-    const { id } = useParams();
+    const { slug } = useParams();
     const navigate = useNavigate();
     const [scheme, setScheme] = useState(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         fetchScheme();
-    }, [id]);
+    }, [slug]);
 
     const fetchScheme = async () => {
         try {
             const res = await axios.get(
-                `${import.meta.env.VITE_API_BASE_URL}/api/schemes/${id}`
+                `${import.meta.env.VITE_API_BASE_URL}/api/schemes/${slug}`
             );
+            console.log("Frontend received scheme data:", res.data);
             setScheme(res.data);
             setLoading(false);
         } catch (error) {
@@ -65,7 +66,7 @@ export default function SchemeDetail() {
         <Layout>
             <div className="max-w-7xl mx-auto p-6 md:p-10 space-y-8">
                 {/* Back Button */}
-               
+
 
                 {/* Main Content Grid */}
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
