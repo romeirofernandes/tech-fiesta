@@ -2,6 +2,28 @@ const IotSensorReading = require('../models/IotSensorReading');
 const RFIDEvent = require('../models/RFIDEvent');
 const Animal = require('../models/Animal');
 
+// IoT Device Connection Tracker
+const iotDeviceStatus = {
+  lastHeartbeat: null,
+  isConnected: false,
+  deviceId: null,
+  connectionTimeout: 15000 // Consider disconnected if no heartbeat for 15 seconds
+};
+
+// Helper: Check if IoT device is connected
+const isIotConnected = () => {
+  if (!iotDeviceStatus.lastHeartbeat) return false;
+  const timeSinceLastBeat = Date.now() - iotDeviceStatus.lastHeartbeat;
+  return timeSinceLastBeat < iotDeviceStatus.connectionTimeout;
+};
+
+// Helper: Update IoT heartbeat
+const updateIotHeartbeat = (deviceId = 'esp32_serial') => {
+  iotDeviceStatus.lastHeartbeat = Date.now();
+  iotDeviceStatus.isConnected = true;
+  iotDeviceStatus.deviceId = deviceId;
+};
+
 // Helper: Find animal by RFID tag
 const findAnimalByRfid = async (rfidTag) => {
   if (!rfidTag) return null;
@@ -16,6 +38,30 @@ const findAnimalByRfid = async (rfidTag) => {
 // GET /api/iot/health/
 exports.healthCheck = async (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
+};
+
+// GET /api/iot/status - Check IoT device connection status
+exports.getIotStatus = async (req, res) => {
+  const connected = isIotConnected();
+  res.json({
+    connected,
+    lastHeartbeat: iotDeviceStatus.lastHeartbeat,
+    deviceId: iotDeviceStatus.deviceId,
+    timeSinceLastBeat: iotDeviceStatus.lastHeartbeat 
+      ? Date.now() - iotDeviceStatus.lastHeartbeat 
+      : null
+  });
+};
+
+// POST /api/iot/heartbeat - IoT device sends heartbeat
+exports.heartbeat = async (req, res) => {
+  const { deviceId } = req.body;
+  updateIotHeartbeat(deviceId);
+  res.json({ 
+    status: 'ok', 
+    message: 'Heartbeat received',
+    timestamp: new Date().toISOString() 
+  });
 };
 
 // GET /api/iot/animals/by_rfid/?rfid=XXXX
@@ -60,6 +106,9 @@ exports.getSensorReadings = async (req, res) => {
 exports.createSensorReading = async (req, res) => {
   try {
     const { rfidTag, rfid_tag, temperature, humidity, heartRate, heart_rate, sensorType, sensor_type, deviceId, device_id } = req.body;
+    
+    // Update heartbeat when sensor data is received
+    updateIotHeartbeat(deviceId || device_id);
     
     // Support both camelCase and snake_case
     const normalizedRfid = (rfidTag || rfid_tag || '').toLowerCase().replace(/\s+/g, '');
@@ -218,6 +267,9 @@ exports.getRfidEvents = async (req, res) => {
 exports.createRfidEvent = async (req, res) => {
   try {
     const { rfidTag, rfid_tag, readerId, reader_id } = req.body;
+    
+    // Update heartbeat when RFID event is received
+    updateIotHeartbeat(readerId || reader_id);
     
     const normalizedRfid = (rfidTag || rfid_tag || '').toLowerCase().replace(/\s+/g, '');
     

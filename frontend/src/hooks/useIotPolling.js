@@ -2,11 +2,11 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 
 /**
  * Custom hook for long polling IoT sensor data
- * Polls /api/iot/sensors/latest/ every N seconds
+ * Polls /api/iot/sensors/latest/ only when IoT device is connected
  * 
  * @param {string} apiBase - API base URL
  * @param {object} options - Configuration options
- * @returns {object} - { data, latestReading, status, lastUpdated, refetch }
+ * @returns {object} - { data, latestReading, status, iotStatus, lastUpdated, refetch }
  */
 export function useIotPolling(apiBase, options = {}) {
   const {
@@ -20,6 +20,7 @@ export function useIotPolling(apiBase, options = {}) {
   const [data, setData] = useState([]);
   const [latestReading, setLatestReading] = useState(null);
   const [status, setStatus] = useState('idle'); // 'idle' | 'polling' | 'connected' | 'error'
+  const [iotStatus, setIotStatus] = useState('disconnected'); // 'connected' | 'disconnected' | 'unknown'
   const [lastUpdated, setLastUpdated] = useState(null);
   const [error, setError] = useState(null);
   
@@ -38,9 +39,39 @@ export function useIotPolling(apiBase, options = {}) {
     return () => { mountedRef.current = false; };
   }, []);
 
+  // Check IoT device connection status
+  const checkIotStatus = useCallback(async () => {
+    if (!enabled || !mountedRef.current) return false;
+
+    try {
+      const response = await fetch(`${apiBase}/api/iot/status`);
+      
+      if (!response.ok) {
+        if (mountedRef.current) setIotStatus('unknown');
+        return false;
+      }
+
+      const statusData = await response.json();
+      const isConnected = statusData.connected;
+
+      if (mountedRef.current) {
+        setIotStatus(isConnected ? 'connected' : 'disconnected');
+      }
+
+      return isConnected;
+    } catch (err) {
+      console.error('IoT status check error:', err);
+      if (mountedRef.current) setIotStatus('unknown');
+      return false;
+    }
+  }, [apiBase, enabled]);
+
   // Fetch latest sensor data — only stable deps (no onNewData)
-  const fetchData = useCallback(async (useSince = true) => {
+  const fetchData = useCallback(async (useSince = true, skipIotCheck = false) => {
     if (!enabled || !mountedRef.current) return;
+
+    // Check IoT connection status first (unless explicitly skipped for initial load)
+    const iotConnected = await checkIotStatus();
 
     try {
       setStatus('polling');
@@ -102,7 +133,7 @@ export function useIotPolling(apiBase, options = {}) {
         setError(err.message);
       }
     }
-  }, [apiBase, rfid, limit, enabled]);
+  }, [apiBase, rfid, limit, enabled, checkIotStatus]);
 
   // Manual refetch (resets and fetches all data)
   const refetch = useCallback(() => {
@@ -119,20 +150,46 @@ export function useIotPolling(apiBase, options = {}) {
       return;
     }
 
-    // Initial fetch
+    let statusCheckInterval;
+
+    // Initial fetch (always fetch once to show historical data)
     fetchData(false);
 
-    // Set up polling interval
-    pollTimer.current = setInterval(() => {
-      fetchData(true);
-    }, pollInterval);
+    // Set up IoT status checker and conditional polling
+    const startPollingIfConnected = async () => {
+      const iotConnected = await checkIotStatus();
+      
+      if (iotConnected) {
+        // IoT is connected - start continuous polling
+        if (!pollTimer.current) {
+          pollTimer.current = setInterval(() => {
+            fetchData(true);
+          }, pollInterval);
+        }
+      } else {
+        // IoT is disconnected - stop polling
+        if (pollTimer.current) {
+          clearInterval(pollTimer.current);
+          pollTimer.current = null;
+        }
+      }
+    };
+
+    // Check IoT status every 10 seconds to start/stop polling
+    statusCheckInterval = setInterval(startPollingIfConnected, 10000);
+    
+    // Initial check
+    startPollingIfConnected();
 
     return () => {
       if (pollTimer.current) {
         clearInterval(pollTimer.current);
       }
+      if (statusCheckInterval) {
+        clearInterval(statusCheckInterval);
+      }
     };
-  }, [enabled, pollInterval, fetchData]);
+  }, [enabled, pollInterval, fetchData, checkIotStatus]);
 
   // Reset when rfid changes
   useEffect(() => {
@@ -146,6 +203,7 @@ export function useIotPolling(apiBase, options = {}) {
     data,           // Array of readings (oldest first)
     latestReading,  // Most recent reading
     status,         // 'idle' | 'polling' | 'connected' | 'error'
+    iotStatus,      // 'connected' | 'disconnected' | 'unknown'
     lastUpdated,    // Timestamp of last successful fetch
     error,          // Error message if any
     refetch,        // Manual refetch function

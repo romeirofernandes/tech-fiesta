@@ -5,6 +5,10 @@ const iotController = require('../controllers/iotController');
 // Health check
 router.get('/health', iotController.healthCheck);
 
+// IoT device status
+router.get('/status', iotController.getIotStatus);
+router.post('/heartbeat', iotController.heartbeat);
+
 // Animal by RFID
 router.get('/animals/by_rfid', iotController.getAnimalByRfid);
 

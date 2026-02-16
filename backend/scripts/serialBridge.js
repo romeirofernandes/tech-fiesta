@@ -15,6 +15,7 @@ const { ReadlineParser } = require('@serialport/parser-readline');
 const API_BASE_URL = process.env.API_URL || 'http://127.0.0.1:5000';
 const BAUD_RATE = 115200;
 const POST_INTERVAL_MS = 5000; // Post sensor data every 5 seconds
+const HEARTBEAT_INTERVAL_MS = 10000; // Send heartbeat every 10 seconds
 
 // State management
 let currentRfid = null;
@@ -217,6 +218,12 @@ async function postSensorData() {
   await postData('/api/iot/sensors', data);
 }
 
+// Send heartbeat to API to indicate device is connected
+async function sendHeartbeat() {
+  await postData('/api/iot/heartbeat', { deviceId: 'esp32_serial' });
+  console.log('💓 Heartbeat sent');
+}
+
 // Main entry point
 async function main() {
   console.log('═══════════════════════════════════════════');
@@ -251,7 +258,11 @@ async function main() {
     console.log('✅ Serial port opened successfully');
     console.log(`📡 Posting to: ${API_BASE_URL}`);
     console.log(`⏱️  Post interval: ${POST_INTERVAL_MS / 1000}s`);
+    console.log(`💓 Heartbeat interval: ${HEARTBEAT_INTERVAL_MS / 1000}s`);
     console.log('\n--- Listening for data ---\n');
+    
+    // Send initial heartbeat
+    sendHeartbeat();
   });
 
   // Handle incoming data
@@ -273,6 +284,11 @@ async function main() {
     console.log('\n\n👋 Shutting down...');
     port.close();
   });
+
+  // Periodic heartbeat to maintain connection status
+  setInterval(async () => {
+    await sendHeartbeat();
+  }, HEARTBEAT_INTERVAL_MS);
 
   // Periodic sensor posting (backup in case no new data triggers it)
   setInterval(async () => {

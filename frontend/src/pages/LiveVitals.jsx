@@ -29,6 +29,7 @@ import {
   Wifi,
   WifiOff,
   RefreshCw,
+  Radio,
 } from "lucide-react";
 import { useIotPolling } from "@/hooks/useIotPolling";
 import { format } from "date-fns";
@@ -140,6 +141,7 @@ export default function LiveVitals() {
     data: pollingData, 
     latestReading: polledLatestReading, 
     status, 
+    iotStatus,
     lastUpdated,
     refetch 
   } = useIotPolling(API_BASE, {
@@ -272,6 +274,33 @@ export default function LiveVitals() {
             <RefreshCw className="h-4 w-4 text-yellow-500" />
             <Badge variant="outline" className="bg-yellow-50 text-yellow-700 dark:bg-yellow-950 dark:text-yellow-400">
               Initializing...
+            </Badge>
+          </>
+        )}
+      </div>
+
+      {/* IoT Device Status */}
+      <div className="flex items-center gap-2">
+        <span className="text-xs text-muted-foreground font-medium">IoT:</span>
+        {iotStatus === "connected" ? (
+          <>
+            <Radio className="h-4 w-4 text-green-500" />
+            <Badge variant="outline" className="bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-400">
+              Connected
+            </Badge>
+          </>
+        ) : iotStatus === "disconnected" ? (
+          <>
+            <Radio className="h-4 w-4 text-red-500" />
+            <Badge variant="outline" className="bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-400">
+              Disconnected
+            </Badge>
+          </>
+        ) : (
+          <>
+            <Radio className="h-4 w-4 text-gray-400" />
+            <Badge variant="outline" className="bg-gray-50 text-gray-700 dark:bg-gray-950 dark:text-gray-400">
+              Unknown
             </Badge>
           </>
         )}
