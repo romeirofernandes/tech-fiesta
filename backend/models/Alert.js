@@ -31,7 +31,10 @@ const alertSchema = new mongoose.Schema({
   resolvedAt: {
     type: Date,
     default: null
-  }
+  },
+  resolvedBy: String,
+resolutionNotes: String
+
 });
 
 module.exports = mongoose.model('Alert', alertSchema);

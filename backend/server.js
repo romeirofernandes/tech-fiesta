@@ -18,6 +18,8 @@ const saleRoutes = require('./routes/saleRoutes');
 const marketPriceRoutes = require('./routes/marketPriceRoutes');
 const biRoutes = require('./routes/biRoutes');
 const heartRateThresholdRoutes = require('./routes/heartRateThresholdRoutes');
+const adminRoutes = require('./routes/adminRoutes');
+
 
 const app = express();
 
@@ -50,6 +52,7 @@ app.use('/api/marketplace', require('./routes/marketplaceRoutes'));
 app.use('/api/payments', require('./routes/paymentRoutes'));
 app.use('/api/iot', require('./routes/iotRoutes'));
 app.use('/api/emergency', require('./routes/emergencyRoutes'));
+app.use('/api/admin', adminRoutes);
 
 const port = process.env.PORT;
 

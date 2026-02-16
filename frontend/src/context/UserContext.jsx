@@ -13,7 +13,12 @@ export const UserProvider = ({ children }) => {
     const saved = localStorage.getItem('mongoUser');
     return saved ? JSON.parse(saved) : null;
   });
+  const [isAdmin, setIsAdmin] = useState(() => {
+    const saved = localStorage.getItem('isAdmin');
+    return saved === 'true';
+  });
 
+  // Save mongoUser to localStorage whenever it changes
   useEffect(() => {
     if (mongoUser) {
       localStorage.setItem('mongoUser', JSON.stringify(mongoUser));
@@ -22,6 +27,15 @@ export const UserProvider = ({ children }) => {
     }
   }, [mongoUser]);
 
+  // Save isAdmin to localStorage whenever it changes
+  useEffect(() => {
+    if (isAdmin) {
+      localStorage.setItem('isAdmin', 'true');
+    } else {
+      localStorage.removeItem('isAdmin');
+    }
+  }, [isAdmin]);
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       console.log("Auth State Changed. Firebase User:", firebaseUser ? "Yes" : "No");
@@ -29,9 +43,17 @@ export const UserProvider = ({ children }) => {
       if (firebaseUser) {
         setUser(firebaseUser);
 
+        // Check if this user is admin
+        const adminEmail = import.meta.env.VITE_ADMIN_EMAIL;
+        if (firebaseUser.email === adminEmail) {
+          setIsAdmin(true);
+        } else {
+          setIsAdmin(false);
+        }
+
         // If we have a firebase user but no mongoUser, try to fetch it from backend
         // This handles page refreshes where localStorage might be cleared or sync was incomplete
-        if (!mongoUser) {
+        if (!mongoUser && !isAdmin) {
           const savedMongoUser = localStorage.getItem('mongoUser');
           if (savedMongoUser) {
             setMongoUser(JSON.parse(savedMongoUser));
@@ -60,30 +82,33 @@ export const UserProvider = ({ children }) => {
       } else {
         setUser(null);
         setMongoUser(null);
+        setIsAdmin(false);
         localStorage.removeItem('mongoUser');
+        localStorage.removeItem('isAdmin');
       }
       setLoading(false);
     });
 
     return () => unsubscribe();
-  }, [mongoUser]);
+  }, [mongoUser, isAdmin]);
 
   useEffect(() => {
-    console.log("User Context State Changed:", { user, mongoUser });
-  }, [user, mongoUser]);
+    console.log("User Context State Changed:", { user, mongoUser, isAdmin });
+  }, [user, mongoUser, isAdmin]);
 
   const logout = async () => {
     try {
       await signOut(auth);
       setUser(null);
       setMongoUser(null);
+      setIsAdmin(false);
     } catch (error) {
       console.error("Logout Error:", error);
     }
   };
 
   return (
-    <UserContext.Provider value={{ user, mongoUser, setMongoUser, loading, logout }}>
+    <UserContext.Provider value={{ user, mongoUser, setMongoUser, isAdmin, setIsAdmin, loading, logout }}>
       {children}
     </UserContext.Provider>
   );

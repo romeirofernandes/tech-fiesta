@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { Tabs, TabsContent } from "@/components/ui/tabs";
 import {
   LayoutDashboard,
   Users,
@@ -10,9 +9,21 @@ import {
   LogOut,
   Moon,
   Sun,
-  IndianRupee
+  IndianRupee,
+  ChevronRight,
+  PanelLeft
 } from "lucide-react";
 import { useTheme } from "@/context/ThemeContext";
+import { useUser } from "@/context/UserContext";
+import { Button } from "@/components/ui/button";
+import {
+  Breadcrumb,
+  BreadcrumbList,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 
 // Import admin sidebar components
 import {
@@ -29,6 +40,7 @@ import {
   AdminSidebarFooter,
   AdminSidebarInset,
   AdminSidebarSeparator,
+  AdminSidebarTrigger,
 } from "@/components/admin/AdminSidebar";
 
 // Import your tab components
@@ -44,27 +56,69 @@ import TransactionMonitor from "./tabs/TransactionMonitor";
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState("insights");
   const { theme, setTheme } = useTheme();
+  const { user, logout } = useUser();
 
-  // Consistent navigation items matching your Sidebar structure
+  const toggleTheme = () => {
+    setTheme(theme === "dark" ? "light" : "dark");
+  };
+
+  // Navigation items matching your sidebar structure
   const navItems = [
-    { id: "insights", label: "Dashboard", icon: LayoutDashboard },
-    { id: "transactions", label: "Transactions", icon: IndianRupee },
-    { id: "farmers", label: "Farmers", icon: Users },
-    { id: "health", label: "Animals", icon: HeartPulse },
-    { id: "vaccinations", label: "Vaccination Schedules", icon: Syringe },
-    { id: "alerts", label: "Alerts", icon: Bell },
-    { id: "market-prices", label: "Market Prices", icon: IndianRupee },
+    { id: "insights", label: "Dashboard", icon: LayoutDashboard, breadcrumb: "Dashboard" },
+    { id: "transactions", label: "Transactions", icon: IndianRupee, breadcrumb: "Transactions" },
+    { id: "farmers", label: "Farmers", icon: Users, breadcrumb: "Farmer Management" },
+    { id: "health", label: "Animals", icon: HeartPulse, breadcrumb: "Animal Health" },
+    { id: "vaccinations", label: "Vaccination Schedules", icon: Syringe, breadcrumb: "Vaccinations" },
+    { id: "alerts", label: "Alerts", icon: Bell, breadcrumb: "System Alerts" },
+    { id: "market-prices", label: "Market Prices", icon: IndianRupee, breadcrumb: "Market Prices" },
   ];
+
+  const currentNav = navItems.find(item => item.id === activeTab);
+
+  // Render content based on active tab
+  const renderContent = () => {
+    switch (activeTab) {
+      case "insights":
+        return (
+          <div className="space-y-8">
+            <OverviewStats />
+            <OperationalInsights />
+          </div>
+        );
+      case "farmers":
+        return <FarmerManagement />;
+      case "health":
+        return <HealthAnalytics />;
+      case "vaccinations":
+        return <VaccinationTracking />;
+      case "alerts":
+        return <AlertsManagement />;
+      case "transactions":
+        return <TransactionMonitor />;
+      case "market-prices":
+        return <MarketPricesAdmin />;
+      default:
+        return null;
+    }
+  };
 
   return (
     <AdminSidebarProvider defaultOpen={true}>
       <div className="flex h-screen w-full overflow-hidden">
 
         {/* Admin Sidebar */}
-        <AdminSidebar>
+        <AdminSidebar collapsible="icon">
           <AdminSidebarHeader>
-            <div className="px-4 py-2">
-              <h2 className="text-primary font-bold text-xl tracking-tight font-serif">पशु पहचान</h2>
+            <div className="px-4 py-2 group-data-[collapsible=icon]:px-2">
+              <h2 className="text-primary font-bold text-xl tracking-tight font-serif group-data-[collapsible=icon]:hidden">
+                पशु पहचान
+              </h2>
+              <p className="text-xs text-muted-foreground mt-1 group-data-[collapsible=icon]:hidden">
+                Admin Panel
+              </p>
+              <div className="hidden group-data-[collapsible=icon]:flex items-center justify-center">
+                
+              </div>
             </div>
           </AdminSidebarHeader>
 
@@ -78,6 +132,7 @@ export default function AdminDashboard() {
                       <AdminSidebarMenuButton
                         isActive={activeTab === item.id}
                         onClick={() => setActiveTab(item.id)}
+                        className="cursor-pointer"
                       >
                         <item.icon />
                         <span>{item.label}</span>
@@ -92,13 +147,16 @@ export default function AdminDashboard() {
           <AdminSidebarFooter>
             <AdminSidebarMenu>
               <AdminSidebarMenuItem>
-                <AdminSidebarMenuButton>
+                <AdminSidebarMenuButton className="cursor-pointer">
                   <UserCircle />
                   <span>Profile</span>
                 </AdminSidebarMenuButton>
               </AdminSidebarMenuItem>
               <AdminSidebarMenuItem>
-                <AdminSidebarMenuButton onClick={() => setTheme(theme === "dark" ? "light" : "dark")}>
+                <AdminSidebarMenuButton 
+                  onClick={toggleTheme}
+                  className="cursor-pointer"
+                >
                   {theme === "dark" ? <Sun /> : <Moon />}
                   <span>Theme</span>
                 </AdminSidebarMenuButton>
@@ -107,7 +165,10 @@ export default function AdminDashboard() {
             <AdminSidebarSeparator />
             <AdminSidebarMenu>
               <AdminSidebarMenuItem>
-                <AdminSidebarMenuButton className="text-destructive hover:text-destructive">
+                <AdminSidebarMenuButton 
+                  onClick={logout}
+                  className="text-destructive hover:text-destructive cursor-pointer"
+                >
                   <LogOut />
                   <span>Logout</span>
                 </AdminSidebarMenuButton>
@@ -119,67 +180,37 @@ export default function AdminDashboard() {
         {/* Main Content Area */}
         <AdminSidebarInset>
           <div className="flex-1 h-full overflow-y-auto">
-            <Tabs value={activeTab} className="w-full">
-              <div className="p-4 md:p-8 max-w-7xl mx-auto w-full">
-
-                <TabsContent value="insights" className="mt-0 outline-none space-y-8 border-none">
-                  <header className="flex justify-between items-end">
-                    <div>
-                      <h1 className="text-3xl font-bold tracking-tight text-foreground font-serif">Dashboard</h1>
-                      <p className="text-muted-foreground text-sm mt-1">Operational Overview</p>
-                    </div>
-                  </header>
-                  <OverviewStats />
-                  <OperationalInsights />
-                </TabsContent>
-
-                <TabsContent value="farmers" className="mt-0 outline-none space-y-8 border-none">
-                  <header>
-                    <h1 className="text-3xl font-bold tracking-tight text-foreground font-serif">Farmer Management</h1>
-                    <p className="text-muted-foreground text-sm mt-1">Manage registered farmers and their holdings</p>
-                  </header>
-                  <FarmerManagement />
-                </TabsContent>
-
-                <TabsContent value="health" className="mt-0 outline-none space-y-8 border-none">
-                  <header>
-                    <h1 className="text-3xl font-bold tracking-tight text-foreground font-serif">Animal Health Analytics</h1>
-                  </header>
-                  <HealthAnalytics />
-                </TabsContent>
-
-                <TabsContent value="vaccinations" className="mt-0 outline-none space-y-8 border-none">
-                  <header>
-                    <h1 className="text-3xl font-bold tracking-tight text-foreground font-serif">Vaccination Tracking</h1>
-                  </header>
-                  <VaccinationTracking />
-                </TabsContent>
-
-                <TabsContent value="alerts" className="mt-0 outline-none space-y-8 border-none">
-                  <header>
-                    <h1 className="text-3xl font-bold tracking-tight text-foreground font-serif">System Alerts</h1>
-                  </header>
-                  <AlertsManagement />
-                </TabsContent>
-
-                <TabsContent value="transactions" className="mt-0 outline-none space-y-8 border-none">
-                  <header>
-                    <h1 className="text-3xl font-bold tracking-tight text-foreground font-serif">Transactions</h1>
-                    <p className="text-muted-foreground text-sm mt-1">Escrow and payment monitoring</p>
-                  </header>
-                  <TransactionMonitor />
-                </TabsContent>
-
-                <TabsContent value="market-prices" className="mt-0 outline-none space-y-8 border-none">
-                  <header>
-                    <h1 className="text-3xl font-bold tracking-tight text-foreground font-serif">Market Prices</h1>
-                    <p className="text-muted-foreground text-sm mt-1">Manage India commodity prices (AGMARKNET + manual)</p>
-                  </header>
-                  <MarketPricesAdmin />
-                </TabsContent>
-
+            <div className="p-4 md:p-8 max-w-7xl mx-auto w-full">
+              {/* Breadcrumb with Sidebar Toggle */}
+              <div className="mb-6 flex items-center gap-4">
+                <AdminSidebarTrigger />
+                <Breadcrumb>
+                  <BreadcrumbList>
+                    <BreadcrumbItem>
+                      <BreadcrumbLink 
+                        className="cursor-pointer hover:text-foreground"
+                        onClick={() => setActiveTab("insights")}
+                      >
+                        Admin
+                      </BreadcrumbLink>
+                    </BreadcrumbItem>
+                    {activeTab !== "insights" && (
+                      <>
+                        <BreadcrumbSeparator>
+                          <ChevronRight className="h-4 w-4" />
+                        </BreadcrumbSeparator>
+                        <BreadcrumbItem>
+                          <BreadcrumbPage>{currentNav?.breadcrumb}</BreadcrumbPage>
+                        </BreadcrumbItem>
+                      </>
+                    )}
+                  </BreadcrumbList>
+                </Breadcrumb>
               </div>
-            </Tabs>
+
+              {/* Content */}
+              {renderContent()}
+            </div>
           </div>
         </AdminSidebarInset>
       </div>
