@@ -39,18 +39,28 @@ export default function MyOrders() {
         <Layout>
             <div className="max-w-7xl mx-auto p-6 md:p-10 space-y-8">
                 {/* Header */}
-                <div className="flex items-center justify-between border-b border-border/40 pb-6">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 border-b border-border/40 pb-8">
                     <div className="space-y-2">
-                        <h1 className="text-4xl md:text-5xl font-black tracking-tight text-foreground">My Purchases</h1>
-                        <p className="text-muted-foreground max-w-2xl">
-                            Track your orders and manage secure release codes for escrow transactions.
+                        <div className="flex items-center gap-2">
+                            <Badge className="bg-primary/10 text-primary hover:bg-primary/20 border-none px-3 py-1 text-xs uppercase tracking-widest font-bold">
+                                Transactions
+                            </Badge>
+                        </div>
+                        <h1 className="text-4xl md:text-5xl font-black tracking-tight text-foreground font-serif">
+                            My <span className="text-primary">Orders</span>
+                        </h1>
+                        <p className="text-lg text-muted-foreground max-w-xl leading-relaxed">
+                            Track your purchases and manage secure release codes for escrow transactions.
                         </p>
                     </div>
-                    <div className="hidden md:flex items-center gap-3 px-6 py-3 bg-primary/5 rounded-2xl border border-primary/20">
-                        <Lock className="h-5 w-5 text-primary" />
-                        <div className="text-sm">
-                            <p className="font-bold text-foreground">Escrow Protected</p>
-                            <p className="text-xs text-muted-foreground">All transactions secured</p>
+
+                    <div className="flex items-center gap-3 px-6 py-4 bg-green-50/50 rounded-2xl border border-green-100 shadow-sm">
+                        <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center">
+                            <Lock className="h-5 w-5 text-green-700" />
+                        </div>
+                        <div>
+                            <p className="font-bold text-green-900 leading-tight">100% Secure</p>
+                            <p className="text-xs text-green-700 font-medium">Escrow Protection Active</p>
                         </div>
                     </div>
                 </div>

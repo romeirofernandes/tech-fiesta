@@ -97,8 +97,10 @@ export default function BiOverview() {
   const toStr = now.toISOString().split("T")[0];
 
   useEffect(() => {
-    fetchFarms();
-  }, []);
+    if (mongoUser) {
+      fetchFarms();
+    }
+  }, [mongoUser]);
 
   useEffect(() => {
     if (selectedFarm) {
@@ -108,7 +110,7 @@ export default function BiOverview() {
 
   const fetchFarms = async () => {
     try {
-      const res = await axios.get(`${API_BASE}/api/farms`);
+      const res = await axios.get(`${API_BASE}/api/farms`, { params: { farmerId: mongoUser._id } });
       setFarms(res.data);
       if (res.data.length > 0) {
         // Pick first farm from user's farms or just first

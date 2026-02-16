@@ -60,10 +60,29 @@ export default function MySales() {
         <Layout>
             <div className="max-w-7xl mx-auto p-6 md:p-10 space-y-8">
                 {/* Header with Stats */}
-                <div className="flex items-center justify-between border-b border-border/40 pb-6">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 border-b border-border/40 pb-8">
                     <div className="space-y-2">
-                        <h1 className="text-4xl md:text-5xl font-black tracking-tight text-foreground">Sales & Earnings</h1>
-                        <p className="text-muted-foreground">Manage your sold items and claim funds securely.</p>
+                        <div className="flex items-center gap-2">
+                            <Badge className="bg-primary/10 text-primary hover:bg-primary/20 border-none px-3 py-1 text-xs uppercase tracking-widest font-bold">
+                                Earnings
+                            </Badge>
+                        </div>
+                        <h1 className="text-4xl md:text-5xl font-black tracking-tight text-foreground font-serif">
+                            Sales & <span className="text-primary">Revenue</span>
+                        </h1>
+                        <p className="text-lg text-muted-foreground max-w-xl leading-relaxed">
+                            Manage your sold items and claim funds securely.
+                        </p>
+                    </div>
+
+                    <div className="flex items-center gap-3 px-6 py-4 bg-blue-50/50 rounded-2xl border border-blue-100 shadow-sm">
+                        <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
+                            <Coins className="h-5 w-5 text-blue-700" />
+                        </div>
+                        <div>
+                            <p className="font-bold text-blue-900 leading-tight">Instant Payouts</p>
+                            <p className="text-xs text-blue-700 font-medium">Upon Buyer Confirmation</p>
+                        </div>
                     </div>
                 </div>
 
