@@ -49,6 +49,7 @@ app.use('/api/schemes', require('./routes/schemeRoutes'));
 app.use('/api/marketplace', require('./routes/marketplaceRoutes'));
 app.use('/api/payments', require('./routes/paymentRoutes'));
 app.use('/api/iot', require('./routes/iotRoutes'));
+app.use('/api/emergency', require('./routes/emergencyRoutes'));
 
 const port = process.env.PORT;
 

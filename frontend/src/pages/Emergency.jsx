@@ -38,7 +38,7 @@ const vetIcon = new L.Icon({
   shadowSize: [41, 41],
 });
 
-const TOMTOM_API_KEY = "NDAgTxKlPbNfDlvH3DCQcc3WdUc1MssA";
+
 
 // Helper: fit map bounds to show both farm & vet
 function FitBounds({ bounds }) {
@@ -120,12 +120,13 @@ export default function Emergency() {
       }
     }
 
-    // 3. Geocode the location string via TomTom
+    // 3. Geocode the location string via Backend
     if (farm.location) {
       try {
-        const url = `https://api.tomtom.com/search/2/geocode/${encodeURIComponent(
+        const base = import.meta.env.VITE_API_BASE_URL;
+        const url = `${base}/api/emergency/geocode?query=${encodeURIComponent(
           farm.location
-        )}.json?key=${TOMTOM_API_KEY}&limit=1`;
+        )}`;
         const res = await axios.get(url);
         if (res.data?.results?.length > 0) {
           const pos = res.data.results[0].position;
@@ -174,17 +175,11 @@ export default function Emergency() {
 
       setFarmLatLng(coords);
 
-      // Step 2 — Search for nearest vet using Category Search (more reliable)
-      const searchUrl = `https://api.tomtom.com/search/2/categorySearch/Veterinarian.json?key=${TOMTOM_API_KEY}&lat=${coords.lat}&lon=${coords.lon}&radius=100000&limit=5`;
+      // Step 2 — Search for nearest vet using Backend
+      const base = import.meta.env.VITE_API_BASE_URL;
+      const searchUrl = `${base}/api/emergency/find-vet?lat=${coords.lat}&lon=${coords.lon}&radius=100000&limit=5`;
       const searchRes = await axios.get(searchUrl);
       let results = searchRes.data?.results;
-
-      // Fallback: General search if category search yields nothing
-      if (!results || results.length === 0) {
-        const fallbackUrl = `https://api.tomtom.com/search/2/search/Veterinarian.json?key=${TOMTOM_API_KEY}&lat=${coords.lat}&lon=${coords.lon}&radius=100000&limit=5`;
-        const fallbackRes = await axios.get(fallbackUrl);
-        results = fallbackRes.data?.results;
-      }
 
       if (!results || results.length === 0) {
         setError("No veterinarians found within 100 km of this farm.");
@@ -204,7 +199,7 @@ export default function Emergency() {
       });
 
       // Step 3 — Calculate route
-      const routeUrl = `https://api.tomtom.com/routing/1/calculateRoute/${coords.lat},${coords.lon}:${vetLoc.lat},${vetLoc.lon}/json?key=${TOMTOM_API_KEY}&travelMode=car`;
+      const routeUrl = `${base}/api/emergency/route?start=${coords.lat},${coords.lon}&end=${vetLoc.lat},${vetLoc.lon}`;
       const routeRes = await axios.get(routeUrl);
       const route = routeRes.data?.routes?.[0];
 
