@@ -1,0 +1,16 @@
+Debugging URL: https://en.wikipedia.org/wiki/Pradhan_Mantri_Kisan_Samman_Nidhi
+HTML Length: 122804
+Title: Pradhan Mantri Kisan Samman Nidhi
+Found 5 paragraphs using primarily selector.
+Extracted 4 valid paragraphs.
+--- Content Sample ---
+Pradhan Mantri Kisan Samman Nidhi (PMKISAN, translation: Prime Minister's Farmer's Tribute Fund) is an initiative by the government of India that give farmers up to ₹6,000 (US$71) per year as minimum 
+
+--- Testing Groq AI ---
+Groq Response Sample:
+The Pradhan Mantri Kisan Samman Nidhi (PMKISAN) is a government initiative in India that provides financial support to farmers. The benefits of this scheme can be extracted as follows:
+
+**Key Benefits:**
+
+1. **Minimum Income Support**: Farmers receive up to ₹6,000 (US$71) per year as minimum income support.
+2. **Direct Benefit Transfer**: The amount is given directly to eligible farmers, ensuring that the benefits reach the intended recipients.
