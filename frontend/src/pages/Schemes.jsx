@@ -33,6 +33,7 @@ export default function Schemes() {
         try {
             const base = import.meta.env.VITE_API_BASE_URL;
             const res = await axios.get(`${base}/api/schemes`);
+            console.log("Fetched Schemes Data:", res.data);
             setSchemes(res.data);
         } catch (err) {
             console.error("Error fetching schemes:", err);
@@ -42,11 +43,13 @@ export default function Schemes() {
         }
     };
 
-    const filteredSchemes = schemes.filter(scheme =>
-        scheme.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        scheme.ministry.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        scheme.description.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const filteredSchemes = schemes
+        .filter(scheme => scheme.slug && scheme.slug !== 'undefined' && scheme.slug !== 'null') // STRICT VALIDATION
+        .filter(scheme =>
+            scheme.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            scheme.ministry.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            scheme.description.toLowerCase().includes(searchTerm.toLowerCase())
+        );
 
     return (
         <Layout>
