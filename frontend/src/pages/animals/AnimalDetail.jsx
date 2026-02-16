@@ -61,6 +61,7 @@ export default function AnimalDetail() {
   const [editDialogMode, setEditDialogMode] = useState("edit"); // "edit" or "add"
   const [vaccinationSchedules, setVaccinationSchedules] = useState([]);
   const [deleteEvent, setDeleteEvent] = useState(null);
+  const [reportDeathOpen, setReportDeathOpen] = useState(false);
   const [currentMonth, setCurrentMonth] = useState(startOfMonth(TODAY));
   const [view, setView] = useState("list"); // list, 2col, month, week
   const [timeRange, setTimeRange] = useState("24h");
@@ -257,19 +258,64 @@ export default function AnimalDetail() {
       <div className="space-y-6 max-w-full px-6 mx-auto p-4 md:p-6 lg:p-8">
         {/* Header */}
         <div className="flex items-center justify-between">
-          <Button
-            variant="ghost"
-            onClick={() => navigate("/animals")}
-            className="gap-2"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Back
-          </Button>
-          <Button onClick={() => navigate(`/animals/${id}/edit`)}>
-            <Edit2 className="mr-2 h-4 w-4" />
-            Edit Animal
-          </Button>
+          <div />
+          <div className="flex gap-2">
+            <Button 
+                variant="destructive"
+                onClick={() => setReportDeathOpen(true)}
+            >
+                Report Death
+            </Button>
+            <Button onClick={() => navigate(`/animals/${id}/edit`)}>
+                <Edit2 className="mr-2 h-4 w-4" />
+                Edit Animal
+            </Button>
+          </div>
         </div>
+
+        <AlertDialog open={reportDeathOpen} onOpenChange={setReportDeathOpen}>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Passage of a Life</AlertDialogTitle>
+                    <CardDescription className="text-base mt-2">
+                        It is with a heavy heart that we process this request. 
+                        Are you sure you want to report the passing of <strong>{animal?.name}</strong>?
+                    </CardDescription>
+                    <CardDescription className="mt-2">
+                        This action acknowledges the loss and will:
+                        <ul className="list-disc ml-5 mt-1 space-y-1">
+                            <li>Move {animal?.name} to your memorial records</li>
+                            <li>Cancel all upcoming vaccination schedules</li>
+                            <li>Remove any active marketplace listings</li>
+                            <li>Close all active alerts</li>
+                        </ul>
+                    </CardDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction 
+                        onClick={async () => {
+                            try {
+                                const token = localStorage.getItem("token"); // Assuming auth
+                                await axios.post(
+                                    `${import.meta.env.VITE_API_BASE_URL}/api/animals/${id}/death`,
+                                    { causeOfDeath: "Reported by user" },
+                                    { headers: { Authorization: `Bearer ${token}` } } // Add auth header if needed for consistency, relying on axios interceptors mostly? Code used explicit header in fetchAnimalDetails.
+                                );
+                                toast.success("Death reported. May they rest in peace.");
+                                navigate("/animals");
+                            } catch (error) {
+                                toast.error("Failed to report death");
+                                console.error(error);
+                            }
+                        }}
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    >
+                        Confirm Passage
+                    </AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
 
         {/* Animal Info Card */}
         <Card>

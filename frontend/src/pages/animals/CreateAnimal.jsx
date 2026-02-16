@@ -382,14 +382,16 @@ Return ONLY valid JSON, no markdown formatting or code blocks.`;
       <div className="space-y-6 max-w-full px-6 mx-auto p-4 md:p-6 lg:p-8">
         {/* Header */}
         <div className="flex items-center justify-between">
-          <Button
-            variant="ghost"
-            onClick={() => step === 1 ? navigate("/animals") : setStep(1)}
-            className="gap-2"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            {step === 1 ? "Back to Animals" : "Previous"}
-          </Button>
+          {step > 1 ? (
+             <Button
+                variant="ghost"
+                onClick={() => setStep(step - 1)}
+                className="gap-2"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Previous
+              </Button>
+          ) : <div />} 
           <div className="text-sm text-muted-foreground">
             Step {step} of 2
           </div>

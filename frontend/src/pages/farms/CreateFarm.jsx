@@ -121,16 +121,6 @@ export default function CreateFarm() {
   return (
     <Layout>
       <div className="max-w-6xl mx-auto space-y-6">
-        <div className="flex items-center justify-between">
-          <Button
-            variant="ghost"
-            onClick={() => navigate("/farms")}
-            className="gap-2"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Back to Farms
-          </Button>
-        </div>
 
         <Card>
           <CardHeader>

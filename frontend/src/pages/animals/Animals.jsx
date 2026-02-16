@@ -67,7 +67,6 @@ export default function Animals() {
       setLoading(false);
     }
   };
-
   const filterAnimals = () => {
     let filtered = Array.isArray(animals) ? animals : [];
 
@@ -121,10 +120,15 @@ export default function Animals() {
               Manage your livestock inventory
             </p>
           </div>
-          <Button onClick={() => navigate("/animals/create")} size="lg">
-            <Plus className="mr-2 h-4 w-4" />
-            Add Animal
-          </Button>
+          <div className="flex gap-3">
+             <Button variant="outline" onClick={() => navigate("/animals/dead")}>
+               Memorial Records
+             </Button>
+             <Button onClick={() => navigate("/animals/create")} size="lg">
+                <Plus className="mr-2 h-4 w-4" />
+                Add Animal
+             </Button>
+          </div>
         </div>
 
         {/* Filters */}
