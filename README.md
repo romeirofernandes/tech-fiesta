@@ -32,6 +32,7 @@
 This solution empowers farmers with real-time insights into their cattle's health via IoT sensors, manages vaccination schedules to prevent disease outbreaks, and offers a transparent marketplace for buying and selling livestock.
 
 **Links:**
+
 - 🌐 [Website](#) (Link placeholder - Add deployed URL)
 - 📱 [Mobile App](#) (Link placeholder - Add store/download URL)
 
@@ -76,6 +77,7 @@ npm install
 ```
 
 Create a `.env` file in `backend/` consistent with `server.js` requirements:
+
 ```env
 PORT=5000
 MONGO_URI=your_mongodb_connection_string
@@ -83,6 +85,7 @@ MONGO_URI=your_mongodb_connection_string
 ```
 
 Start the server:
+
 ```bash
 npm run dev
 ```
@@ -94,6 +97,7 @@ cd frontend
 npm install
 npm run dev
 ```
+
 The web dashboard will be available at `http://localhost:5173`.
 
 ### 3. REST Backend (Django - IoT Data)
@@ -111,6 +115,7 @@ cd app
 npm install
 npx expo start
 ```
+
 Scan the QR code with the Expo Go app on your phone.
 
 ## Project Details
@@ -124,17 +129,20 @@ Scan the QR code with the Expo Go app on your phone.
 ## API Endpoints (Snapshot)
 
 **Authentication:**
+
 - `POST /api/auth/register` - Register a new farmer
 - `POST /api/auth/login` - Login
 
 **Livestock:**
+
 - `GET /api/animals/:id` - Get animal details
 - `POST /api/animals` - Register a new animal
 
 **Marketplace:**
+
 - `GET /api/marketplace/listings` - View cattle for sale
 
-*(Check `backend/routes/` and `rest_backend/urls.py` for full API documentation)*
+_(Check `backend/routes/` and `rest_backend/urls.py` for full API documentation)_
 
 ## Support
 
@@ -142,21 +150,24 @@ For questions, issues, or contributions, please open an issue in this repository
 
 ---
 
-## 👥 Team Mirror Family
+## 👥 Team Pony
 
-**Built with ❤️ by Team Mirror Family**
+**Built with ❤️ by Team Pony**
 
 **Team Members:**
+
+- **Arshdeep Kaur** - [GitHub](https://github.com/arshdeepkaur22)
 - **Russel Daniel Paul** - [GitHub](https://github.com/wrestle-R)
 - **Romeiro Fernandes** - [GitHub](https://github.com/romeirofernandes)
-- **Aliqyaan Mahimwala** - [GitHub](https://github.com/Hike-12)
-- **Gavin Soares** - [GitHub](https://github.com/gavin100305) 
+- **Rohan Benegal** - [GitHub](https://github.com/rohanbagel)
+- **Gavin Soares** - [GitHub](https://github.com/gavin100305)
+- **Reniyas Nadar** - [GitHub](https://github.com/Reniyas717)
 
 <div align="center">
 
 ---
 
-[![GitHub Stars](https://img.shields.io/github/stars/wrestle-R/Mirror_Family?style=social&cacheSeconds=60)](https://github.com/wrestle-R/Mirror_Family/stargazers)
-[![GitHub Forks](https://img.shields.io/github/forks/wrestle-R/Mirror_Family?style=social)](https://github.com/wrestle-R/Mirror_Family/network/members)
+[![GitHub Stars](https://img.shields.io/github/stars/wrestle-R/Mirror_Family?style=social&cacheSeconds=60)](https://github.com/romeirofernandes/tech-fiesta/stargazers)
+[![GitHub Forks](https://img.shields.io/github/forks/wrestle-R/Mirror_Family?style=social)](https://github.com/romeirofernandes/tech-fiesta/network/members)
 
 </div>
