@@ -222,7 +222,7 @@ export default function Dashboard() {
         </div>
 
         {/* Primary Stats */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
           <Card
             className="cursor-pointer hover:shadow-md transition-shadow"
             onClick={() => navigate("/animals")}
@@ -263,9 +263,7 @@ export default function Dashboard() {
                   <p className="text-2xl font-semibold tracking-tight text-foreground">
                     {farms.length}
                   </p>
-                  <p className="text-[10px] text-muted-foreground font-medium">
-                    {farmMarkers.length} mapped
-                  </p>
+          
                 </div>
               </div>
             </CardContent>
@@ -318,7 +316,7 @@ export default function Dashboard() {
         </Card>
 
         <Card
-          className="cursor-pointer hover:shadow-md transition-shadow bg-primary/5 border-primary/20"
+          className="cursor-pointer hover:shadow-md transition-shadow"
           onClick={() => navigate("/schemes")}
         >
           <CardContent className="p-4 flex items-center gap-4">
@@ -329,12 +327,6 @@ export default function Dashboard() {
               <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">
                 GOVT SCHEMES
               </p>
-              <div className="flex items-baseline gap-2">
-                <p className="text-xl font-semibold tracking-tight text-foreground">
-                  View
-                </p>
-                <ArrowRight className="h-4 w-4 text-muted-foreground" />
-              </div>
             </div>
           </CardContent>
         </Card>
