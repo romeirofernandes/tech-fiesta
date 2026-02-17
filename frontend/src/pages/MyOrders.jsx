@@ -72,7 +72,7 @@ export default function MyOrders() {
                                                 <Package className="h-5 w-5 text-primary" />
                                             </div>
                                             <div className="min-w-0">
-                                                <p className="font-medium truncate">{order.itemId?.name || 'Unknown Item'}</p>
+                                                <p className="font-medium truncate">{order.itemName || order.itemId?.name || 'Unknown Item'}</p>
                                                 <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
                                                     <span>#{order.razorpayOrderId.slice(-6)}</span>
                                                     <span>·</span>
