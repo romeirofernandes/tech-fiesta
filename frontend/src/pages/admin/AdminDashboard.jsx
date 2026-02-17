@@ -10,12 +10,9 @@ import {
   Moon,
   Sun,
   IndianRupee,
-  ChevronRight,
-  PanelLeft
 } from "lucide-react";
 import { useTheme } from "@/context/ThemeContext";
 import { useUser } from "@/context/UserContext";
-import { Button } from "@/components/ui/button";
 import {
   Breadcrumb,
   BreadcrumbList,
@@ -104,7 +101,7 @@ export default function AdminDashboard() {
 
   return (
     <AdminSidebarProvider defaultOpen={true}>
-      <div className="flex h-screen w-full overflow-hidden">
+
 
         {/* Admin Sidebar */}
         <AdminSidebar collapsible="icon">
@@ -179,41 +176,37 @@ export default function AdminDashboard() {
 
         {/* Main Content Area */}
         <AdminSidebarInset>
-          <div className="flex-1 h-full overflow-y-auto">
-            <div className="p-4 md:p-8 max-w-7xl mx-auto w-full">
-              {/* Breadcrumb with Sidebar Toggle */}
-              <div className="mb-6 flex items-center gap-4">
-                <AdminSidebarTrigger />
-                <Breadcrumb>
-                  <BreadcrumbList>
-                    <BreadcrumbItem>
-                      <BreadcrumbLink 
-                        className="cursor-pointer hover:text-foreground"
-                        onClick={() => setActiveTab("insights")}
-                      >
-                        Admin
-                      </BreadcrumbLink>
-                    </BreadcrumbItem>
-                    {activeTab !== "insights" && (
-                      <>
-                        <BreadcrumbSeparator>
-                          <ChevronRight className="h-4 w-4" />
-                        </BreadcrumbSeparator>
-                        <BreadcrumbItem>
-                          <BreadcrumbPage>{currentNav?.breadcrumb}</BreadcrumbPage>
-                        </BreadcrumbItem>
-                      </>
-                    )}
-                  </BreadcrumbList>
-                </Breadcrumb>
-              </div>
+          <header className="sticky top-0 z-10 flex h-14 items-center gap-4 border-b bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+              <AdminSidebarTrigger />
+              <div className="h-6 w-px bg-border" />
+              <Breadcrumb>
+                <BreadcrumbList>
+                  <BreadcrumbItem>
+                    <BreadcrumbLink 
+                      className="cursor-pointer hover:text-foreground"
+                      onClick={() => setActiveTab("insights")}
+                    >
+                      Admin
+                    </BreadcrumbLink>
+                  </BreadcrumbItem>
+                  {activeTab !== "insights" && (
+                    <>
+                      <BreadcrumbSeparator />
+                      <BreadcrumbItem>
+                        <BreadcrumbPage>{currentNav?.breadcrumb}</BreadcrumbPage>
+                      </BreadcrumbItem>
+                    </>
+                  )}
+                </BreadcrumbList>
+              </Breadcrumb>
+          </header>
 
-              {/* Content */}
-              {renderContent()}
-            </div>
+          <div className="w-full p-4 md:p-6 lg:p-8">
+            {/* Content */}
+            {renderContent()}
           </div>
         </AdminSidebarInset>
-      </div>
+
     </AdminSidebarProvider>
   );
 }
