@@ -94,7 +94,7 @@ export default function SellCattleModal({ onSuccess }) {
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
                 <Button variant="outline" className="font-bold border-primary text-primary hover:bg-primary/10">
-                    + Sell Cattle
+                    + Sell Animal
                 </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[500px]">
@@ -172,7 +172,7 @@ export default function SellCattleModal({ onSuccess }) {
                         </div>
                         <Button type="submit" className="w-full" disabled={loading}>
                             {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                            List Cattle for Sale
+                            List Animal for Sale
                         </Button>
                     </form>
                 )}

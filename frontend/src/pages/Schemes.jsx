@@ -59,12 +59,8 @@ export default function Schemes() {
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div>
                         <h1 className="text-3xl font-bold flex items-center gap-2">
-                            <Sprout className="h-8 w-8 text-primary" />
                             Government Schemes
                         </h1>
-                        <p className="text-muted-foreground mt-1">
-                            Live list of agricultural policies and benefits from Wikipedia
-                        </p>
                     </div>
                     <div className="flex items-center gap-2">
                         {loading && <span className="text-xs text-muted-foreground animate-pulse">Updating...</span>}

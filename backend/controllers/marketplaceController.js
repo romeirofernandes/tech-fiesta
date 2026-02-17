@@ -17,7 +17,8 @@ exports.getItems = async (req, res) => {
         }
 
         const items = await MarketplaceItem.find(query)
-            .populate('seller', 'fullName imageUrl isVerified')
+            .populate('seller', 'fullName imageUrl isVerified phoneNumber')
+            .populate('linkedAnimalId', 'species name imageUrl')
             .sort({ createdAt: -1 });
         res.json(items);
     } catch (error) {
@@ -30,7 +31,7 @@ exports.getItemById = async (req, res) => {
     try {
         const item = await MarketplaceItem.findById(req.params.id)
             .populate('linkedAnimalId')
-            .populate('seller', 'fullName imageUrl isVerified');
+            .populate('seller', 'fullName imageUrl isVerified phoneNumber');
         if (!item) return res.status(404).json({ message: 'Item not found' });
         res.json(item);
     } catch (error) {
