@@ -2,6 +2,9 @@ const Razorpay = require('razorpay');
 const crypto = require('crypto');
 const EscrowTransaction = require('../models/EscrowTransaction');
 const MarketplaceItem = require('../models/MarketplaceItem');
+const SaleTransaction = require('../models/SaleTransaction');
+const Expense = require('../models/Expense');
+const Farmer = require('../models/Farmer');
 
 // Initialize Razorpay (only if keys are configured)
 let razorpay = null;
@@ -135,6 +138,53 @@ exports.releaseFunds = async (req, res) => {
 
         // Mark item as sold (already done in verify usually, but ensure consistency)
         await MarketplaceItem.findByIdAndUpdate(transaction.itemId._id, { status: 'sold' });
+
+        // --- BI RECORD CREATION ---
+        // Create SaleTransaction for the seller and Expense for the buyer
+        try {
+            const item = transaction.itemId;
+
+            // ---- Seller SaleTransaction ----
+            const seller = await Farmer.findById(transaction.sellerId);
+            const sellerFarmId = seller?.farms?.[0];
+            if (sellerFarmId) {
+                const isCattle = item.type === 'cattle';
+                await SaleTransaction.create({
+                    farmId: sellerFarmId,
+                    animalId: isCattle && item.linkedAnimalId ? item.linkedAnimalId : undefined,
+                    productType: isCattle ? 'live_animal' : 'marketplace',
+                    quantity: 1,
+                    unit: isCattle ? 'animal' : 'item',
+                    pricePerUnit: transaction.amount,
+                    totalAmount: transaction.amount,
+                    buyerName: transaction.buyerName || 'Marketplace Buyer',
+                    date: new Date(),
+                    notes: `Marketplace sale: ${item.name}`
+                });
+                console.log(`Created SaleTransaction for seller farm ${sellerFarmId}`);
+            }
+
+            // ---- Buyer Expense ----
+            let buyerFarmId = transaction.destinationFarmId || null;
+            if (!buyerFarmId && transaction.buyerName) {
+                const buyer = await Farmer.findOne({ fullName: transaction.buyerName });
+                buyerFarmId = buyer?.farms?.[0] || null;
+            }
+            if (buyerFarmId) {
+                await Expense.create({
+                    farmId: buyerFarmId,
+                    animalId: item.type === 'cattle' && item.linkedAnimalId ? item.linkedAnimalId : undefined,
+                    category: 'marketplace_purchase',
+                    amount: transaction.amount,
+                    description: `Marketplace purchase: ${item.name}`,
+                    date: new Date()
+                });
+                console.log(`Created Expense for buyer farm ${buyerFarmId}`);
+            }
+        } catch (biErr) {
+            // Don't fail the release if BI record creation fails
+            console.error('BI record creation error (non-fatal):', biErr.message);
+        }
 
         res.json({ message: 'Funds released and Asset Transferred successfully!', status: 'released_to_seller' });
 

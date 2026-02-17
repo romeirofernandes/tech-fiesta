@@ -20,7 +20,7 @@ const PRODUCT_TYPE_VALUES = Object.values(PRODUCT_TYPES);
 
 // Some product types are valid for sales but not for production records
 const PRODUCTION_PRODUCT_TYPE_VALUES = PRODUCT_TYPE_VALUES.filter(v => v !== PRODUCT_TYPES.LIVE_ANIMAL);
-const SALE_PRODUCT_TYPE_VALUES = PRODUCT_TYPE_VALUES;
+const SALE_PRODUCT_TYPE_VALUES = [...PRODUCT_TYPE_VALUES, 'marketplace'];
 
 /** Default measurement units per product type */
 const PRODUCT_UNITS = {
@@ -56,6 +56,7 @@ const EXPENSE_CATEGORIES = {
   TRANSPORT: 'transport',
   UTILITIES: 'utilities',
   INSURANCE: 'insurance',
+  MARKETPLACE_PURCHASE: 'marketplace_purchase',
   OTHER: 'other',
 };
 

@@ -41,6 +41,7 @@ export const PRODUCT_LABELS = {
   sheep_milk: 'Sheep Milk',
   eggs: 'Eggs',
   live_animal: 'Live Animal',
+  marketplace: 'Marketplace Sale',
   wool: 'Wool',
   manure: 'Manure',
   goat_hair: 'Goat Hair',
@@ -86,11 +87,12 @@ export const EXPENSE_LABELS = {
   transport: 'Transport',
   utilities: 'Utilities',
   insurance: 'Insurance',
+  marketplace_purchase: 'Marketplace Purchase',
   other: 'Other',
 };
 
 export const PRODUCT_TYPES = ['cow_milk', 'buffalo_milk', 'goat_milk', 'sheep_milk', 'eggs', 'live_animal', 'wool', 'manure', 'goat_hair'];
-export const EXPENSE_CATEGORIES = ['feed', 'veterinary', 'labour', 'equipment', 'transport', 'utilities', 'insurance', 'other'];
+export const EXPENSE_CATEGORIES = ['feed', 'veterinary', 'labour', 'equipment', 'transport', 'utilities', 'insurance', 'marketplace_purchase', 'other'];
 
 /** Default units per product type */
 export const PRODUCT_UNITS = {

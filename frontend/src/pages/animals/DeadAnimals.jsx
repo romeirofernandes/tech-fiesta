@@ -63,7 +63,6 @@ export default function DeadAnimals() {
         <div className="flex items-center justify-between">
           <div className="text-right">
              <h1 className="text-3xl font-bold">Memorial Records</h1>
-             <p className="text-muted-foreground">History of past animals</p>
           </div>
         </div>
 
