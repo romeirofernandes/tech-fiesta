@@ -10,6 +10,7 @@ import {
   Moon,
   Sun,
   IndianRupee,
+  ChevronRight,
 } from "lucide-react";
 import { useTheme } from "@/context/ThemeContext";
 import { useUser } from "@/context/UserContext";
@@ -23,6 +24,7 @@ import {
 } from "@/components/ui/breadcrumb";
 
 // Import admin sidebar components
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
 import {
   AdminSidebarProvider,
   AdminSidebar,
@@ -34,10 +36,14 @@ import {
   AdminSidebarMenu,
   AdminSidebarMenuItem,
   AdminSidebarMenuButton,
+  AdminSidebarMenuSub,
+  AdminSidebarMenuSubItem,
+  AdminSidebarMenuSubButton,
   AdminSidebarFooter,
   AdminSidebarInset,
   AdminSidebarSeparator,
   AdminSidebarTrigger,
+  useAdminSidebar,
 } from "@/components/admin/AdminSidebar";
 
 // Import your tab components
@@ -64,16 +70,57 @@ export default function AdminDashboard() {
     { id: "insights", label: "Dashboard", icon: LayoutDashboard, breadcrumb: "Dashboard" },
     { id: "transactions", label: "Transactions", icon: IndianRupee, breadcrumb: "Transactions" },
     { id: "farmers", label: "Farmers", icon: Users, breadcrumb: "Farmer Management" },
-    { id: "health", label: "Animals", icon: HeartPulse, breadcrumb: "Animal Health" },
+    { 
+      id: "health", 
+      label: "Animals", 
+      icon: HeartPulse, 
+      breadcrumb: "Animal Health",
+      subItems: [
+        { id: "health-overview", label: "Farm Overview" },
+        { id: "health-inspections", label: "Inspections" },
+        { id: "health-notifications", label: "Notifications" },
+        { id: "health-flagged", label: "Flagged Farms" },
+        { id: "health-activity", label: "Activity Log" },
+      ]
+    },
     { id: "vaccinations", label: "Vaccination Schedules", icon: Syringe, breadcrumb: "Vaccinations" },
     { id: "alerts", label: "Alerts", icon: Bell, breadcrumb: "System Alerts" },
     { id: "market-prices", label: "Market Prices", icon: IndianRupee, breadcrumb: "Market Prices" },
   ];
 
-  const currentNav = navItems.find(item => item.id === activeTab);
+  const findCurrentNav = () => {
+    for (const item of navItems) {
+      if (item.id === activeTab) return item;
+      if (item.subItems) {
+        const sub = item.subItems.find(s => s.id === activeTab);
+        if (sub) return { ...sub, breadcrumb: item.breadcrumb + " > " + sub.label };
+      }
+    }
+    return navItems[0];
+  };
+
+  const currentNav = findCurrentNav();
+
+  // Helper to check if a group is active (for defaultOpen)
+  const isGroupActive = (item) => {
+    if (item.id === activeTab) return true;
+    if (item.subItems) {
+      return item.subItems.some(sub => sub.id === activeTab);
+    }
+    return false;
+  };
 
   // Render content based on active tab
   const renderContent = () => {
+    // Handle health sub-tabs (removed the prefix 'health-' to pass as view prop)
+    if (activeTab.startsWith("health-")) {
+      return <HealthAnalytics view={activeTab.replace("health-", "")} />;
+    }
+    // Handle main health tab defaulting to overview
+    if (activeTab === "health") {
+       return <HealthAnalytics view="overview" />;
+    }
+
     switch (activeTab) {
       case "insights":
         return (
@@ -84,8 +131,6 @@ export default function AdminDashboard() {
         );
       case "farmers":
         return <FarmerManagement />;
-      case "health":
-        return <HealthAnalytics />;
       case "vaccinations":
         return <VaccinationTracking />;
       case "alerts":
@@ -125,16 +170,60 @@ export default function AdminDashboard() {
               <AdminSidebarGroupContent>
                 <AdminSidebarMenu>
                   {navItems.map((item) => (
-                    <AdminSidebarMenuItem key={item.id}>
-                      <AdminSidebarMenuButton
-                        isActive={activeTab === item.id}
-                        onClick={() => setActiveTab(item.id)}
-                        className="cursor-pointer"
+                    item.subItems ? (
+                      <Collapsible 
+                        key={item.id} 
+                        asChild 
+                        defaultOpen={isGroupActive(item)} 
+                        className="group/collapsible"
                       >
-                        <item.icon />
-                        <span>{item.label}</span>
-                      </AdminSidebarMenuButton>
-                    </AdminSidebarMenuItem>
+                        <AdminSidebarMenuItem>
+                          <CollapsibleTrigger asChild>
+                            <AdminSidebarMenuButton
+                              isActive={isGroupActive(item)}
+                              onClick={() => {
+                                // Optional: if clicking parent toggles, or sets defaults. 
+                                // Here let's just let Collapsible handle expand/collapse
+                                // But if we want clicking "Animals" to go to default view:
+                                // setActiveTab(item.id); 
+                              }}
+                              className="cursor-pointer"
+                            >
+                              <item.icon />
+                              <span>{item.label}</span>
+                              <ChevronRight className="ml-auto h-4 w-4 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                            </AdminSidebarMenuButton>
+                          </CollapsibleTrigger>
+                          <CollapsibleContent>
+                            <AdminSidebarMenuSub>
+                              {item.subItems.map((sub) => (
+                                <AdminSidebarMenuSubItem key={sub.id}>
+                                  <AdminSidebarMenuSubButton
+                                    asChild
+                                    isActive={activeTab === sub.id}
+                                    onClick={() => setActiveTab(sub.id)}
+                                    className="cursor-pointer"
+                                  >
+                                    <span>{sub.label}</span>
+                                  </AdminSidebarMenuSubButton>
+                                </AdminSidebarMenuSubItem>
+                              ))}
+                            </AdminSidebarMenuSub>
+                          </CollapsibleContent>
+                        </AdminSidebarMenuItem>
+                      </Collapsible>
+                    ) : (
+                      <AdminSidebarMenuItem key={item.id}>
+                        <AdminSidebarMenuButton
+                          isActive={activeTab === item.id}
+                          onClick={() => setActiveTab(item.id)}
+                          className="cursor-pointer"
+                        >
+                          <item.icon />
+                          <span>{item.label}</span>
+                        </AdminSidebarMenuButton>
+                      </AdminSidebarMenuItem>
+                    )
                   ))}
                 </AdminSidebarMenu>
               </AdminSidebarGroupContent>
