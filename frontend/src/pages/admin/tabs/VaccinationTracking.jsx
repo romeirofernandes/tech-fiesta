@@ -537,7 +537,7 @@ function OverviewView({ upcomingVaccinations, overdueVaccinations, vaccineTypes,
               Coverage by Vaccine Type
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-6">
+          <CardContent className="space-y-6 max-h-150 overflow-y-auto pr-2">
             {Object.entries(vaccineTypes).length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-4">No vaccine data</p>
             ) : (
