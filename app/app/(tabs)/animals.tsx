@@ -34,7 +34,6 @@ import {
 import { Colors } from '@/constants/theme';
 import { db } from '@/lib/db';
 import { syncService } from '@/services/SyncService';
-import { initDatabase } from '@/lib/db';
 
 // Species configuration
 const SPECIES_LIST = [
@@ -69,7 +68,6 @@ export default function AnimalsScreen() {
 
   const loadAnimals = useCallback(async () => {
     try {
-      await initDatabase();
       const rows = db.getAllSync('SELECT * FROM animals ORDER BY name ASC');
       setAnimals(rows as any[]);
     } catch (error) {

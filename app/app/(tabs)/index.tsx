@@ -25,7 +25,7 @@ import {
 } from 'lucide-react-native';
 import { Colors } from '@/constants/theme';
 import { fetchAndSyncDashboardData, getLocalDashboardData, type DashboardData } from '@/lib/sync-dashboard';
-import { initDatabase } from '@/lib/db';
+
 import { useUser } from '@/context/UserContext';
 
 const { width } = Dimensions.get('window');
@@ -72,7 +72,7 @@ export default function DashboardScreen() {
 
   const loadData = async () => {
     try {
-      await initDatabase();
+
       const localData = getLocalDashboardData();
       setData(localData);
       

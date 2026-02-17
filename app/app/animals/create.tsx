@@ -26,7 +26,7 @@ import {
 import { Colors } from '@/constants/theme';
 import { db } from '@/lib/db';
 import { syncService } from '@/services/SyncService';
-import { initDatabase } from '@/lib/db';
+
 import * as ImagePicker from 'expo-image-picker';
 
 const SPECIES_OPTIONS = [
@@ -82,7 +82,7 @@ export default function CreateAnimalScreen() {
 
   const loadFarms = async () => {
     try {
-      await initDatabase();
+
       const rows = db.getAllSync('SELECT * FROM farms ORDER BY name ASC');
       setFarms(rows as any[]);
     } catch (error) {

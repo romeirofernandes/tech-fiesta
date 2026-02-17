@@ -14,7 +14,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Camera, MapPin, X, ArrowLeft, Loader2, Navigation } from 'lucide-react-native';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { Colors } from '@/constants/theme';
-import { db, initDatabase } from '@/lib/db';
+import { db } from '@/lib/db';
 import { syncService } from '@/services/SyncService';
 
 export default function CreateFarmScreen() {
@@ -146,7 +146,7 @@ export default function CreateFarmScreen() {
         }
 
         try {
-            await initDatabase();
+
             const tempId = Date.now().toString();
             
             const farmData = {
