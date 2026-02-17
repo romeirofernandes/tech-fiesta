@@ -130,7 +130,7 @@ export default function FarmerManagement() {
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead>
-                <tr className="text-muted-foreground border-b border-border bg-muted font-bold text-[10px] uppercase">
+                <tr className="text-muted-foreground border-b border-border font-bold text-[10px] uppercase">
                   <th className="px-6 py-3">Farmer</th>
                   <th className="px-6 py-3">Contact</th>
                   <th className="px-6 py-3">Farms</th>
