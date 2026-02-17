@@ -28,6 +28,29 @@ const escrowTransactionSchema = new mongoose.Schema({
         type: Number,
         required: true
     },
+    // Rental Specific Fields
+    rentalDuration: {
+        type: Number, // e.g., 5
+        required: false
+    },
+    durationUnit: {
+        type: String, // 'days', 'hours'
+        enum: ['days', 'hours'],
+        required: false
+    },
+    rentalStartDate: {
+        type: Date,
+        required: false
+    },
+    rentalEndDate: {
+        type: Date,
+        required: false
+    },
+    returnStatus: {
+        type: String,
+        enum: ['none', 'requested', 'returned', 'disputed'],
+        default: 'none'
+    },
     currency: {
         type: String,
         default: 'INR'

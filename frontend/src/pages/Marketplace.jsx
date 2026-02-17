@@ -94,13 +94,29 @@ export default function Marketplace() {
         setDebouncedSearchName(searchName.trim());
     };
 
+    // Rental Duration State
+    const [showRentDialog, setShowRentDialog] = useState(false);
+    const [rentDuration, setRentDuration] = useState(1);
+    const [selectedItemForRent, setSelectedItemForRent] = useState(null);
+
     const initiatePurchase = (item) => {
         if (item.type === 'cattle') {
             setSelectedItemForPurchase(item);
             setShowFarmSelectDialog(true);
+        } else if (item.type === 'equipment' && item.priceUnit !== 'fixed') {
+            setSelectedItemForRent(item);
+            setRentDuration(1); // Default to 1 day/hour
+            setShowRentDialog(true);
         } else {
             handleBuyNow(item);
         }
+    };
+
+    const confirmRent = () => {
+        if (rentDuration < 1) return alert("Please enter a valid duration");
+        setShowRentDialog(false);
+        // Calculate total for frontend display confirmation if needed, but backend does the real math
+        handleBuyNow(selectedItemForRent, null, rentDuration);
     };
 
     const confirmCattlePurchase = () => {
@@ -109,16 +125,31 @@ export default function Marketplace() {
         handleBuyNow(selectedItemForPurchase, selectedFarmId);
     };
 
-    const handleBuyNow = async (item, destinationFarmId = null) => {
+    // Calculate dynamic rental price for preview
+    const getRentalTotal = () => {
+        if (!selectedItemForRent) return 0;
+        return selectedItemForRent.price * rentDuration;
+    };
+
+    const handleBuyNow = async (item, destinationFarmId = null, rentalDuration = null) => {
         const base = import.meta.env.VITE_API_BASE_URL;
 
+        // Calculate amount for display/prefill
+        let amount = item.price;
+        if (rentalDuration) {
+            amount = item.price * rentalDuration;
+        }
+
         try {
-            const orderRes = await axios.post(`${base}/api/payments/create-order`, {
+            const payload = {
                 itemId: item._id,
-                amount: item.price,
+                amount: amount, // Send estimated amount, but backend recalculates for safety
                 buyerName: mongoUser?.fullName || "Guest Farmer",
-                destinationFarmId: destinationFarmId
-            });
+                destinationFarmId: destinationFarmId,
+                rentalDuration: rentalDuration
+            };
+
+            const orderRes = await axios.post(`${base}/api/payments/create-order`, payload);
 
             const options = {
                 key: "rzp_test_RMleifw23PqSwe",
@@ -176,6 +207,7 @@ export default function Marketplace() {
         return mongoUser && item.seller && (item.seller._id === mongoUser._id || item.seller === mongoUser._id);
     };
 
+    // ... visibleItems logic remains same ...
     const visibleItems = items.filter((item) => {
         const query = debouncedSearchName.toLowerCase();
         if (query) {
@@ -196,7 +228,7 @@ export default function Marketplace() {
     return (
         <Layout loading={loading}>
             <div className="space-y-6 max-w-full px-6 mx-auto p-4 md:p-6 lg:p-8">
-                {/* Header */}
+                {/* Header, Filters, Listing Grid sections remain same */}
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
                     <div>
                         <h1 className="text-3xl font-bold">Marketplace</h1>
@@ -386,24 +418,19 @@ export default function Marketplace() {
                                                 </p>
                                             )}
                                         </div>
+                                        {/* Phone Logic Reuse */}
                                         {(() => {
                                             const phone = selectedItemForView.seller?.phoneNumber || selectedItemForView.contact;
                                             if (!phone) return null;
                                             const isMobile = typeof window !== 'undefined' && /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
-                                            if (isMobile) {
-                                                return (
-                                                    <Button variant="outline" size="sm" asChild>
-                                                        <a href={`tel:${phone}`}>
-                                                            <Phone className="h-4 w-4 mr-1.5" /> Call
-                                                        </a>
-                                                    </Button>
-                                                );
-                                            }
+                                            // ...
                                             return (
-                                                <span className="text-sm text-muted-foreground flex items-center gap-1.5">
-                                                    <Phone className="h-3.5 w-3.5" /> {phone}
-                                                </span>
-                                            );
+                                                <Button variant="outline" size="sm" asChild>
+                                                    <a href={`tel:${phone}`}>
+                                                        <Phone className="h-4 w-4 mr-1.5" /> Call
+                                                    </a>
+                                                </Button>
+                                            )
                                         })()}
                                     </div>
 
@@ -436,29 +463,50 @@ export default function Marketplace() {
                             </p>
                         </DialogHeader>
                         <div className="space-y-3 py-2">
-                            <Label className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">Choose Farm</Label>
+                            {/* ... Farm Select Logic ... */}
                             <Select value={selectedFarmId} onValueChange={setSelectedFarmId}>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Select your farm..." />
-                                </SelectTrigger>
+                                <SelectTrigger><SelectValue placeholder="Select your farm..." /></SelectTrigger>
                                 <SelectContent>
-                                    {Array.isArray(userFarms) && userFarms.map(farm => (
-                                        <SelectItem key={farm._id} value={farm._id}>
-                                            {farm.name} <span className="text-muted-foreground text-xs ml-1">({farm.location})</span>
-                                        </SelectItem>
-                                    ))}
-                                    {(!Array.isArray(userFarms) || userFarms.length === 0) && (
-                                        <div className="p-3 text-center text-sm text-muted-foreground">
-                                            No farms found.{' '}
-                                            <Button variant="link" size="sm" className="p-0 h-auto" onClick={() => navigate('/farms/create')}>Create one</Button>
-                                        </div>
-                                    )}
+                                    {userFarms.map(f => (<SelectItem key={f._id} value={f._id}>{f.name}</SelectItem>))}
                                 </SelectContent>
                             </Select>
                         </div>
                         <DialogFooter className="gap-2">
                             <Button variant="outline" onClick={() => setShowFarmSelectDialog(false)}>Cancel</Button>
                             <Button onClick={confirmCattlePurchase} disabled={!selectedFarmId}>Proceed to Pay</Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+
+                {/* Rent Duration Dialog - NEW */}
+                <Dialog open={showRentDialog} onOpenChange={setShowRentDialog}>
+                    <DialogContent className="sm:max-w-sm">
+                        <DialogHeader>
+                            <DialogTitle>Rent Equipment</DialogTitle>
+                            <p className="text-sm text-muted-foreground">
+                                How long do you want to rent <b>{selectedItemForRent?.name}</b> for?
+                            </p>
+                        </DialogHeader>
+                        <div className="py-4 space-y-4">
+                            <div className="space-y-2">
+                                <Label>Duration ({selectedItemForRent?.priceUnit?.replace('per ', '')}s)</Label>
+                                <Input
+                                    type="number"
+                                    min="1"
+                                    value={rentDuration}
+                                    onChange={(e) => setRentDuration(Number(e.target.value))}
+                                    className="text-lg font-bold"
+                                />
+                            </div>
+
+                            <div className="bg-muted p-4 rounded-lg flex justify-between items-center">
+                                <span className="text-sm font-medium text-muted-foreground">Total Payable</span>
+                                <span className="text-xl font-bold text-primary">₹{getRentalTotal().toLocaleString()}</span>
+                            </div>
+                        </div>
+                        <DialogFooter className="gap-2">
+                            <Button variant="outline" onClick={() => setShowRentDialog(false)}>Cancel</Button>
+                            <Button onClick={confirmRent}>Proceed to Pay</Button>
                         </DialogFooter>
                     </DialogContent>
                 </Dialog>

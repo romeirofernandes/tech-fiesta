@@ -21,14 +21,25 @@ exports.createOrder = async (req, res) => {
         if (!razorpay) {
             return res.status(503).json({ message: 'Payment service not configured' });
         }
-        const { itemId, amount, buyerName, destinationFarmId } = req.body;
+        const { itemId, amount, buyerName, destinationFarmId, rentalDuration } = req.body;
 
         const item = await MarketplaceItem.findById(itemId);
         if (!item) return res.status(404).json({ message: 'Item not found' });
         if (item.status !== 'available') return res.status(400).json({ message: 'Item is no longer available' });
 
+        // Calculate Total Amount if Rental
+        let finalAmount = item.price;
+        let durationUnit = null;
+
+        if (item.type === 'equipment' && rentalDuration) {
+            finalAmount = item.price * rentalDuration;
+            durationUnit = item.priceUnit === 'per hour' ? 'hours' : 'days';
+        } else if (amount) {
+            finalAmount = amount; // Fallback or fixed price items
+        }
+
         const options = {
-            amount: amount * 100, // Amount in smallest currency unit (paise)
+            amount: finalAmount * 100, // Amount in smallest currency unit (paise)
             currency: "INR",
             receipt: `receipt_${Date.now()}`
         };
@@ -40,13 +51,18 @@ exports.createOrder = async (req, res) => {
         // Create DB Record
         const newTransaction = new EscrowTransaction({
             itemId,
-            amount,
+            amount: finalAmount,
             buyerName,
             destinationFarmId, // Store where the animal should go
             sellerId: item.seller, // Store seller ID for easier querying
             razorpayOrderId: order.id,
             status: 'pending_payment',
-            // Generate a simple 4-digit release code (internal use mostly now)
+            // Rental Fields
+            rentalDuration: rentalDuration || 0,
+            durationUnit: durationUnit,
+            rentalStartDate: rentalDuration ? new Date() : null,
+            rentalEndDate: rentalDuration ? new Date(Date.now() + rentalDuration * (durationUnit === 'days' ? 24 * 60 * 60 * 1000 : 60 * 60 * 1000)) : null,
+            // Generate a simple 4-digit release code (internal use)
             releaseCode: Math.floor(1000 + Math.random() * 9000).toString()
         });
 
