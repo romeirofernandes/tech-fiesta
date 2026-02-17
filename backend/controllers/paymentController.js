@@ -265,7 +265,16 @@ exports.getMySales = async (req, res) => {
 // 6. Admin: Get All Transactions
 exports.getAllTransactions = async (req, res) => {
     try {
-        const transactions = await EscrowTransaction.find().populate('itemId').sort({ createdAt: -1 });
+        const transactions = await EscrowTransaction.find()
+            .populate({
+                path: 'itemId',
+                populate: {
+                    path: 'seller',
+                    select: 'fullName'
+                }
+            })
+            .populate('sellerId', 'fullName')
+            .sort({ createdAt: -1 });
         res.json(transactions);
     } catch (error) {
         res.status(500).json({ message: error.message });

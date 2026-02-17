@@ -8,7 +8,7 @@ const escrowTransactionSchema = new mongoose.Schema({
     },
     buyerId: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
+        ref: 'Farmer',
         required: false // Optional if no strict auth
     },
     buyerName: {
@@ -17,7 +17,7 @@ const escrowTransactionSchema = new mongoose.Schema({
     },
     sellerId: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
+        ref: 'Farmer',
         required: false
     },
     destinationFarmId: {
