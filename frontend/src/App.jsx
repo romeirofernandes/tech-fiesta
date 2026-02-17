@@ -1,3 +1,5 @@
+// Update your App.js Routes section
+
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Landing from './pages/Landing';
 import Login from './pages/Login';
@@ -79,8 +81,8 @@ function App() {
           {/* Admin Login Route */}
           <Route path="/admin/login" element={<AdminLogin />} />
           
-          {/* Admin Protected Route */}
-          <Route path="/admin" element={
+          {/* Admin Protected Routes with nested routing */}
+          <Route path="/admin/*" element={
             <AdminProtectedRoute>
               <AdminDashboard />
             </AdminProtectedRoute>
