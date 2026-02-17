@@ -295,11 +295,7 @@ export default function HealthAnalytics() {
   );
 
   return (
-    <div className="space-y-6">
-      
-      {/* Header */}
-    
-
+    <div className="space-y-6 -mt-4 lg:-mt-6">
       {/* Tabs */}
       <div className="border-b border-border">
         <nav className="flex gap-6">

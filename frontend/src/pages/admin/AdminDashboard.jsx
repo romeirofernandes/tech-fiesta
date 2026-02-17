@@ -143,12 +143,12 @@ export default function AdminDashboard() {
 
           <AdminSidebarFooter>
             <AdminSidebarMenu>
-              <AdminSidebarMenuItem>
+              {/* <AdminSidebarMenuItem>
                 <AdminSidebarMenuButton className="cursor-pointer">
                   <UserCircle />
                   <span>Profile</span>
                 </AdminSidebarMenuButton>
-              </AdminSidebarMenuItem>
+              </AdminSidebarMenuItem> */}
               <AdminSidebarMenuItem>
                 <AdminSidebarMenuButton 
                   onClick={toggleTheme}
