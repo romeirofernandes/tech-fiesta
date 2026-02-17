@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   ScrollView,
@@ -8,18 +8,19 @@ import {
   Alert,
   ActivityIndicator,
   Image,
+  Modal,
+  Pressable,
+  FlatList,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useUser } from '@/context/UserContext';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Text } from '@/components/ui/text';
 import {
   Plus,
   Search,
-  Filter,
   Trash2,
   Eye,
   Edit2,
@@ -27,49 +28,207 @@ import {
   Bird,
   Rabbit,
   Bug,
-  CircleAlert,
-  Cloud,
   CloudOff,
+  ChevronDown,
+  Tractor,
+  Layers,
+  Check,
+  X,
 } from 'lucide-react-native';
 import { Colors } from '@/constants/theme';
 import { db } from '@/lib/db';
 import { syncService } from '@/services/SyncService';
 
-// Species configuration
-const SPECIES_LIST = [
-  { value: 'all', label: 'All', emoji: '🐾' },
-  { value: 'cow', label: 'Cow', emoji: '🐄' },
-  { value: 'buffalo', label: 'Buffalo', emoji: '🐃' },
-  { value: 'goat', label: 'Goat', emoji: '🐐' },
-  { value: 'sheep', label: 'Sheep', emoji: '🐑' },
-  { value: 'chicken', label: 'Chicken', emoji: '🐔' },
-  { value: 'pig', label: 'Pig', emoji: '🐷' },
-  { value: 'horse', label: 'Horse', emoji: '🐴' },
-  { value: 'other', label: 'Other', emoji: '🐾' },
-];
-
-const getSpeciesEmoji = (species: string) => {
-  const found = SPECIES_LIST.find((s) => s.value === species);
-  return found ? found.emoji : '🐾';
+// Species configuration with icons instead of emojis
+const SPECIES_CONFIG: Record<string, { label: string; Icon: any }> = {
+  all: { label: 'All Species', Icon: Layers },
+  cow: { label: 'Cow', Icon: Beef },
+  buffalo: { label: 'Buffalo', Icon: Beef },
+  goat: { label: 'Goat', Icon: Rabbit },
+  sheep: { label: 'Sheep', Icon: Rabbit },
+  chicken: { label: 'Chicken', Icon: Bird },
+  pig: { label: 'Pig', Icon: Beef },
+  horse: { label: 'Horse', Icon: Beef },
+  other: { label: 'Other', Icon: Bug },
 };
 
+const getSpeciesIcon = (species: string) => {
+  const config = SPECIES_CONFIG[species?.toLowerCase()] || SPECIES_CONFIG.other;
+  return config.Icon;
+};
+
+// ---- Custom Filter Dropdown Component ----
+type FilterOption = { value: string; label: string };
+
+function FilterDropdown({
+  options,
+  selected,
+  onSelect,
+  title,
+  icon,
+  themeColors,
+}: {
+  options: FilterOption[];
+  selected: string;
+  onSelect: (value: string) => void;
+  title: string;
+  icon: React.ReactNode;
+  themeColors: any;
+}) {
+  const [open, setOpen] = useState(false);
+  const selectedLabel = options.find((o) => o.value === selected)?.label || title;
+
+  return (
+    <>
+      {/* Trigger Button */}
+      <TouchableOpacity
+        onPress={() => setOpen(true)}
+        activeOpacity={0.7}
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          borderWidth: 1,
+          borderColor: themeColors.border,
+          backgroundColor: themeColors.card,
+          height: 42,
+          paddingHorizontal: 12,
+          borderRadius: 10,
+        }}
+      >
+        <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, marginRight: 8 }}>
+          {icon}
+          <Text
+            className="text-sm text-foreground ml-2"
+            numberOfLines={1}
+            style={{ flex: 1 }}
+          >
+            {selectedLabel}
+          </Text>
+        </View>
+        <ChevronDown size={16} color={themeColors.mutedForeground} />
+      </TouchableOpacity>
+
+      {/* Modal Dropdown */}
+      <Modal
+        visible={open}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setOpen(false)}
+      >
+        <Pressable
+          onPress={() => setOpen(false)}
+          style={{
+            flex: 1,
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            justifyContent: 'flex-end',
+          }}
+        >
+          <Pressable
+            onPress={(e) => e.stopPropagation()}
+            style={{
+              backgroundColor: themeColors.card,
+              borderTopLeftRadius: 20,
+              borderTopRightRadius: 20,
+              maxHeight: '50%',
+              paddingBottom: 32,
+            }}
+          >
+            {/* Handle bar */}
+            <View style={{ alignItems: 'center', paddingTop: 12, paddingBottom: 4 }}>
+              <View
+                style={{
+                  width: 40,
+                  height: 4,
+                  borderRadius: 2,
+                  backgroundColor: themeColors.border,
+                }}
+              />
+            </View>
+
+            {/* Header */}
+            <View
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                paddingHorizontal: 20,
+                paddingVertical: 12,
+                borderBottomWidth: 1,
+                borderBottomColor: themeColors.border,
+              }}
+            >
+              <Text className="text-base font-bold text-foreground">{title}</Text>
+              <TouchableOpacity onPress={() => setOpen(false)} hitSlop={8}>
+                <X size={20} color={themeColors.mutedForeground} />
+              </TouchableOpacity>
+            </View>
+
+            {/* Options List */}
+            <FlatList
+              data={options}
+              keyExtractor={(item) => item.value}
+              renderItem={({ item }) => {
+                const isActive = item.value === selected;
+                return (
+                  <TouchableOpacity
+                    onPress={() => {
+                      onSelect(item.value);
+                      setOpen(false);
+                    }}
+                    activeOpacity={0.6}
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      paddingHorizontal: 20,
+                      paddingVertical: 14,
+                      backgroundColor: isActive
+                        ? themeColors.primary + '15'
+                        : 'transparent',
+                    }}
+                  >
+                    <Text
+                      className={`text-sm ${isActive ? 'font-bold' : 'font-normal'}`}
+                      style={{ color: isActive ? themeColors.primary : themeColors.text }}
+                    >
+                      {item.label}
+                    </Text>
+                    {isActive && <Check size={18} color={themeColors.primary} />}
+                  </TouchableOpacity>
+                );
+              }}
+            />
+          </Pressable>
+        </Pressable>
+      </Modal>
+    </>
+  );
+}
+
+// ---- Main Screen ----
 export default function AnimalsScreen() {
   const router = useRouter();
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
   const themeColors = Colors[colorScheme ?? 'light'];
-  
+
   const { mongoUser, loading: userLoading } = useUser();
   const [animals, setAnimals] = useState<any[]>([]);
+  const [farms, setFarms] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSpecies, setSelectedSpecies] = useState('all');
+  const [selectedFarm, setSelectedFarm] = useState('all');
 
   const loadAnimals = useCallback(async () => {
     try {
-      const rows = db.getAllSync('SELECT * FROM animals ORDER BY name ASC');
-      setAnimals(rows as any[]);
+      const animalRows = db.getAllSync('SELECT * FROM animals ORDER BY name ASC');
+      setAnimals(animalRows as any[]);
+
+      const farmRows = db.getAllSync('SELECT * FROM farms ORDER BY name ASC');
+      setFarms(farmRows as any[]);
     } catch (error) {
       console.error('Error loading animals from local DB:', error);
     } finally {
@@ -82,8 +241,11 @@ export default function AnimalsScreen() {
     try {
       if (mongoUser?._id) {
         await syncService.pullAnimals({ farmerId: mongoUser._id });
-        const rows = db.getAllSync('SELECT * FROM animals ORDER BY name ASC');
-        setAnimals(rows as any[]);
+        await syncService.pullFarms(mongoUser._id);
+        const animalRows = db.getAllSync('SELECT * FROM animals ORDER BY name ASC');
+        const farmRows = db.getAllSync('SELECT * FROM farms ORDER BY name ASC');
+        setAnimals(animalRows as any[]);
+        setFarms(farmRows as any[]);
       }
     } catch (error) {
       console.error('Error syncing animals:', error);
@@ -114,11 +276,8 @@ export default function AnimalsScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
-              // Delete locally
               db.runSync('DELETE FROM animals WHERE id = ?', [animal.id]);
-              // Queue for cloud sync
               await syncService.addToQueue('DELETE', 'animals', { _id: animal.id });
-              // Reload
               const rows = db.getAllSync('SELECT * FROM animals ORDER BY name ASC');
               setAnimals(rows as any[]);
             } catch (error) {
@@ -139,14 +298,19 @@ export default function AnimalsScreen() {
       animal.rfid?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       animal.breed?.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesSpecies = selectedSpecies === 'all' || animal.species === selectedSpecies;
-    return matchesSearch && matchesSpecies;
+    const matchesFarm = selectedFarm === 'all' || animal.farmId === selectedFarm;
+    return matchesSearch && matchesSpecies && matchesFarm;
   });
 
-  // Stats
-  const speciesCount = animals.reduce((acc: Record<string, number>, a: any) => {
-    if (a.species) acc[a.species] = (acc[a.species] || 0) + 1;
-    return acc;
-  }, {});
+  // Build options for dropdowns
+  const farmOptions: FilterOption[] = [
+    { value: 'all', label: 'All Farms' },
+    ...farms.map((f) => ({ value: f.id, label: f.name })),
+  ];
+
+  const speciesOptions: FilterOption[] = Object.entries(SPECIES_CONFIG).map(
+    ([value, config]) => ({ value, label: config.label })
+  );
 
   if (loading || userLoading) {
     return (
@@ -187,9 +351,7 @@ export default function AnimalsScreen() {
 
         {/* Search Bar */}
         <View className="px-5 py-3">
-          <View
-            className="flex-row items-center bg-card border border-border rounded-xl px-4 py-2.5"
-          >
+          <View className="flex-row items-center bg-card border border-border rounded-xl px-4 py-2.5">
             <Search size={18} color={themeColors.mutedForeground} />
             <TextInput
               placeholder="Search by name, RFID, or breed..."
@@ -202,49 +364,31 @@ export default function AnimalsScreen() {
           </View>
         </View>
 
-        {/* Species Filter Chips */}
-        <View className="px-5 pb-3">
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            {SPECIES_LIST.map((species) => {
-              const isActive = selectedSpecies === species.value;
-              const count = species.value === 'all' ? animals.length : (speciesCount[species.value] || 0);
-              return (
-                <TouchableOpacity
-                  key={species.value}
-                  onPress={() => setSelectedSpecies(species.value)}
-                  className={`mr-2 px-3.5 py-2 rounded-full flex-row items-center border ${
-                    isActive
-                      ? 'bg-primary border-primary'
-                      : 'bg-card border-border'
-                  }`}
-                >
-                  <Text className="mr-1.5">{species.emoji}</Text>
-                  <Text
-                    className={`text-xs font-semibold ${
-                      isActive ? 'text-primary-foreground' : 'text-foreground'
-                    }`}
-                  >
-                    {species.label}
-                  </Text>
-                  {count > 0 && (
-                    <View
-                      className={`ml-1.5 px-1.5 py-0.5 rounded-full ${
-                        isActive ? 'bg-white/20' : 'bg-muted'
-                      }`}
-                    >
-                      <Text
-                        className={`text-[10px] font-bold ${
-                          isActive ? 'text-primary-foreground' : 'text-muted-foreground'
-                        }`}
-                      >
-                        {count}
-                      </Text>
-                    </View>
-                  )}
-                </TouchableOpacity>
-              );
-            })}
-          </ScrollView>
+        {/* Filter Dropdowns */}
+        <View style={{ paddingHorizontal: 20, paddingBottom: 16, flexDirection: 'row', gap: 12 }}>
+          <View style={{ flex: 1 }}>
+            <FilterDropdown
+              options={farmOptions}
+              selected={selectedFarm}
+              onSelect={setSelectedFarm}
+              title="Filter by Farm"
+              icon={<Tractor size={16} color={themeColors.primary} />}
+              themeColors={themeColors}
+            />
+          </View>
+          <View style={{ flex: 1 }}>
+            <FilterDropdown
+              options={speciesOptions}
+              selected={selectedSpecies}
+              onSelect={setSelectedSpecies}
+              title="Filter by Species"
+              icon={React.createElement(SPECIES_CONFIG[selectedSpecies]?.Icon || Layers, {
+                size: 16,
+                color: themeColors.primary,
+              })}
+              themeColors={themeColors}
+            />
+          </View>
         </View>
 
         {/* Animal Cards */}
@@ -252,14 +396,14 @@ export default function AnimalsScreen() {
           <View className="px-5 py-12">
             <Card className="bg-card border-border">
               <CardContent className="items-center justify-center py-12">
-                <Text className="text-5xl mb-4">🐾</Text>
+                <Layers size={48} color={themeColors.mutedForeground} style={{ marginBottom: 16 }} />
                 <Text className="text-lg font-semibold text-foreground mb-2">No animals found</Text>
                 <Text className="text-sm text-muted-foreground text-center mb-4">
-                  {searchQuery || selectedSpecies !== 'all'
+                  {searchQuery || selectedSpecies !== 'all' || selectedFarm !== 'all'
                     ? 'Try adjusting your search or filters'
                     : 'Start by adding your first animal'}
                 </Text>
-                {!searchQuery && selectedSpecies === 'all' && (
+                {!searchQuery && selectedSpecies === 'all' && selectedFarm === 'all' && (
                   <TouchableOpacity
                     className="bg-primary px-5 py-3 rounded-xl flex-row items-center"
                     // @ts-ignore
@@ -293,7 +437,10 @@ export default function AnimalsScreen() {
                             resizeMode="cover"
                           />
                         ) : (
-                          <Text className="text-3xl">{getSpeciesEmoji(animal.species)}</Text>
+                          React.createElement(getSpeciesIcon(animal.species), {
+                            size: 28,
+                            color: themeColors.primary,
+                          })
                         )}
                       </View>
 
@@ -303,7 +450,6 @@ export default function AnimalsScreen() {
                           <Text className="text-base font-bold text-foreground" numberOfLines={1}>
                             {animal.name}
                           </Text>
-                          {/* Sync status indicator */}
                           {animal.syncStatus === 'pending' && (
                             <View className="flex-row items-center">
                               <CloudOff size={12} color={themeColors.mutedForeground} />
@@ -349,7 +495,6 @@ export default function AnimalsScreen() {
                         )}
                         {animal.farmName && (
                           <View className="flex-row items-center gap-1">
-                            <Text className="text-xs">🏡</Text>
                             <Text className="text-xs text-muted-foreground" numberOfLines={1}>
                               {animal.farmName}
                             </Text>
@@ -392,3 +537,4 @@ export default function AnimalsScreen() {
     </SafeAreaView>
   );
 }
+
