@@ -18,6 +18,7 @@ import FarmDetail from './pages/farms/FarmDetail';
 import CreateFarm from './pages/farms/CreateFarm';
 import EditFarm from './pages/farms/EditFarm';
 import LiveVitals from './pages/LiveVitals';
+import Geofencing from './pages/Geofencing';
 import VaccinationCalendar from './pages/VaccinationCalendar';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminLogin from './pages/AdminLogin';
@@ -154,6 +155,11 @@ function App() {
           <Route path="/live-vitals" element={
             <ProtectedRoute>
               <LiveVitals />
+            </ProtectedRoute>
+          } />
+          <Route path="/geofencing" element={
+            <ProtectedRoute>
+              <Geofencing />
             </ProtectedRoute>
           } />
           <Route path="/bi" element={
