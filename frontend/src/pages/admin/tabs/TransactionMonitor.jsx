@@ -66,7 +66,6 @@ export default function TransactionMonitor() {
                 <div className="flex justify-between items-center">
                     <div>
                         <CardTitle>Escrow Transactions</CardTitle>
-                        <CardDescription>Monitor all secure payments and fund releases.</CardDescription>
                     </div>
                     <Button variant="outline" size="sm" onClick={fetchTransactions} disabled={loading}>
                         <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} /> Refresh

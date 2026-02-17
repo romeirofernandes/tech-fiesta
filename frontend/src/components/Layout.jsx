@@ -14,7 +14,7 @@ export function Layout({ children, loading = false }) {
             <div className="h-6 w-px bg-border" />
             <AppBreadcrumb />
         </header>
-        <div className="p-4 relative">
+        <div className="p-4 pt-0 relative">
             {loading ? (
               <div className="flex flex-col items-center justify-center min-h-[calc(100vh-6rem)]">
                 <div className="relative">
