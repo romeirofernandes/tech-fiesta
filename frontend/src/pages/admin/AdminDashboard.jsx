@@ -12,9 +12,11 @@ import {
   IndianRupee,
   ChevronRight,
   TrendingUp,
+  Globe,
 } from "lucide-react";
 import { useTheme } from "@/context/ThemeContext";
 import { useUser } from "@/context/UserContext";
+import { LanguageToggle } from "@/components/LanguageToggle";
 import {
   Breadcrumb,
   BreadcrumbList,
@@ -248,9 +250,16 @@ export default function AdminDashboard() {
                   <span>Theme</span>
                 </AdminSidebarMenuButton>
               </AdminSidebarMenuItem>
-            </AdminSidebarMenu>
-            <AdminSidebarSeparator />
-            <AdminSidebarMenu>
+
+              <AdminSidebarMenuItem>
+                <LanguageToggle>
+                  <AdminSidebarMenuButton className="w-full cursor-pointer">
+                    <Globe />
+                    <span>Language</span>
+                  </AdminSidebarMenuButton>
+                </LanguageToggle>
+              </AdminSidebarMenuItem>
+
               <AdminSidebarMenuItem>
                 <AdminSidebarMenuButton 
                   onClick={logout}

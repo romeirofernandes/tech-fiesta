@@ -473,7 +473,7 @@ const adminSidebarMenuButtonVariants = cva(
   }
 )
 
-function AdminSidebarMenuButton({
+const AdminSidebarMenuButton = React.forwardRef(({
   asChild = false,
   isActive = false,
   variant = "default",
@@ -481,12 +481,13 @@ function AdminSidebarMenuButton({
   tooltip,
   className,
   ...props
-}) {
+}, ref) => {
   const Comp = asChild ? Slot : "button"
   const { isMobile, state } = useAdminSidebar()
 
   const button = (
     <Comp
+      ref={ref}
       data-slot="admin-sidebar-menu-button"
       data-sidebar="admin-menu-button"
       data-size={size}
@@ -515,7 +516,8 @@ function AdminSidebarMenuButton({
         {...tooltip} />
     </Tooltip>
   );
-}
+})
+AdminSidebarMenuButton.displayName = "AdminSidebarMenuButton"
 
 function AdminSidebarMenuAction({
   className,
