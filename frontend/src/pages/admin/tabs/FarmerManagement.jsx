@@ -16,7 +16,7 @@ export default function FarmerManagement() {
   const fetchData = async () => {
     try {
       const [farmersRes, farmsRes] = await Promise.all([
-        axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/farmers`),
+        axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/admin/farmers`),
         axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/farms`)
       ]);
 
@@ -33,9 +33,7 @@ export default function FarmerManagement() {
 
   // Calculate farmer metrics
   const farmerMetrics = farmers.map(farmer => {
-    const farmerFarms = farms.filter(farm => 
-      farmer.farms?.includes(farm._id)
-    );
+    const farmerFarms = farmer.farms || [];
     
     return {
       ...farmer,

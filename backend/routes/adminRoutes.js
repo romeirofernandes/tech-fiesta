@@ -12,6 +12,9 @@ const adminController = require('../controllers/adminController');
  * Add adminOnly middleware if you have role-based access
  */
 
+// Get all farmers for admin view
+router.get('/farmers', adminController.getAllFarmers);
+
 // Get detailed farm information
 router.get('/farms/:id/details', adminController.getFarmDetails);
 

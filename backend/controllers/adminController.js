@@ -3,6 +3,7 @@ const Animal = require('../models/Animal');
 const Alert = require('../models/Alert');
 const HealthSnapshot = require('../models/HealthSnapshot');
 const VaccinationEvent = require('../models/VaccinationEvent');
+const Farmer = require('../models/Farmer');
 
 /**
  * Admin Action Logger
@@ -102,6 +103,27 @@ exports.getFarmDetails = async (req, res) => {
 
     } catch (error) {
         console.error('Error fetching farm details:', error);
+        res.status(500).json({ message: 'Server Error', error: error.message });
+    }
+};
+
+/**
+ * Get all farmers with detailed farm information
+ * GET /api/admin/farmers
+ */
+exports.getAllFarmers = async (req, res) => {
+    try {
+        // Exclude the admin from the list if ADMIN_EMAIL is set
+        const adminEmail = process.env.ADMIN_EMAIL;
+        const query = adminEmail ? { email: { $ne: adminEmail } } : {};
+
+        const farmers = await Farmer.find(query)
+            .populate('farms', 'name location')
+            .sort({ createdAt: -1 });
+
+        res.status(200).json(farmers);
+    } catch (error) {
+        console.error('Error fetching farmers:', error);
         res.status(500).json({ message: 'Server Error', error: error.message });
     }
 };

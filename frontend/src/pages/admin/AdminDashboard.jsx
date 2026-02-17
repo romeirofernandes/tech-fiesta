@@ -11,6 +11,7 @@ import {
   Sun,
   IndianRupee,
   ChevronRight,
+  TrendingUp,
 } from "lucide-react";
 import { useTheme } from "@/context/ThemeContext";
 import { useUser } from "@/context/UserContext";
@@ -85,7 +86,7 @@ export default function AdminDashboard() {
     },
     { id: "vaccinations", label: "Vaccination Schedules", icon: Syringe, breadcrumb: "Vaccinations" },
     { id: "alerts", label: "Alerts", icon: Bell, breadcrumb: "System Alerts" },
-    { id: "market-prices", label: "Market Prices", icon: IndianRupee, breadcrumb: "Market Prices" },
+    { id: "market-prices", label: "Market Prices", icon: TrendingUp, breadcrumb: "Market Prices" },
   ];
 
   const findCurrentNav = () => {
