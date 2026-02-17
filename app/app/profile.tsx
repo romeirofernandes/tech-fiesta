@@ -12,7 +12,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Plus, Pencil, Trash2, Save, X, CloudUpload, Image as ImageIcon } from 'lucide-react-native';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { Colors } from '@/constants/theme';
-import { db, initDatabase } from '@/lib/db';
+import { db } from '@/lib/db';
 import { syncService } from '@/services/SyncService';
 
 interface Farm {
@@ -51,7 +51,7 @@ export default function ProfileScreen() {
   useEffect(() => {
     const setup = async () => {
       try {
-        await initDatabase();
+
         loadLocalFarms();
         if (mongoUser?._id) {
            // Helper to sync in background

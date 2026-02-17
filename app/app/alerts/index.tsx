@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Bell, BellOff, CheckCircle2, AlertTriangle, Info } from 'lucide-react-native';
 import { Colors } from '@/constants/theme';
 import { getLocalDashboardData, fetchAndSyncDashboardData, type DashboardData } from '@/lib/sync-dashboard';
-import { initDatabase } from '@/lib/db';
+
 import { useUser } from '@/context/UserContext';
 
 type Alert = DashboardData['alerts'][0];
@@ -26,7 +26,7 @@ export default function NotificationsScreen() {
 
   const loadData = async () => {
     try {
-      await initDatabase();
+
       const localData = getLocalDashboardData();
       setAlerts(normalizeAlerts(localData.alerts));
       

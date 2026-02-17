@@ -46,7 +46,7 @@ import {
 import axios from "axios";
 import { toast } from "sonner";
 
-export default function HealthAnalytics() {
+export default function HealthAnalytics({ view = "overview" }) {
   const [data, setData] = useState({
     snapshots: [],
     animals: [],
@@ -64,7 +64,7 @@ export default function HealthAnalytics() {
   const [actionLoading, setActionLoading] = useState(false);
   const [showInspectionDialog, setShowInspectionDialog] = useState(false);
   const [showNotificationDialog, setShowNotificationDialog] = useState(false);
-  const [activeTab, setActiveTab] = useState("overview");
+  // view prop replaces activeTab state
 
   useEffect(() => {
     fetchData();
@@ -296,43 +296,10 @@ export default function HealthAnalytics() {
 
   return (
     <div className="space-y-6">
-      
-      {/* Header */}
-    
 
-      {/* Tabs */}
-      <div className="border-b border-border">
-        <nav className="flex gap-6">
-          {[
-            { id: 'overview', label: 'Farm Overview', icon: Building2 },
-            { id: 'inspections', label: 'Inspections', icon: Calendar, badge: inspections.length },
-            { id: 'notifications', label: 'Notifications', icon: MessageSquare, badge: notifications.filter(n => !n.isResolved).length },
-            { id: 'flagged', label: 'Flagged Farms', icon: Flag, badge: flaggedFarms.length },
-            { id: 'activity', label: 'Activity Log', icon: Activity }
-          ].map(tab => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 px-1 py-3 border-b-2 transition-colors ${
-                activeTab === tab.id
-                  ? 'border-primary text-foreground font-medium'
-                  : 'border-transparent text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              <tab.icon className="h-4 w-4" />
-              {tab.label}
-              {tab.badge !== undefined && tab.badge > 0 && (
-                <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">
-                  {tab.badge}
-                </Badge>
-              )}
-            </button>
-          ))}
-        </nav>
-      </div>
 
       {/* Overview Tab */}
-      {activeTab === 'overview' && (
+      {view === 'overview' && (
         <>
           {/* KPI Cards */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -710,7 +677,7 @@ export default function HealthAnalytics() {
       )}
 
       {/* Inspections Tab */}
-      {activeTab === 'inspections' && (
+      {view === 'inspections' && (
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
@@ -792,7 +759,7 @@ export default function HealthAnalytics() {
       )}
 
       {/* Notifications Tab */}
-      {activeTab === 'notifications' && (
+      {view === 'notifications' && (
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
@@ -861,7 +828,7 @@ export default function HealthAnalytics() {
       )}
 
       {/* Flagged Farms Tab */}
-      {activeTab === 'flagged' && (
+      {view === 'flagged' && (
         <Card>
           <CardHeader>
             <CardTitle className="text-base font-semibold">Flagged Farms</CardTitle>
@@ -932,7 +899,7 @@ export default function HealthAnalytics() {
       )}
 
       {/* Activity Log Tab */}
-      {activeTab === 'activity' && (
+      {view === 'activity' && (
         <Card>
           <CardHeader>
             <CardTitle className="text-base font-semibold">Activity Log</CardTitle>

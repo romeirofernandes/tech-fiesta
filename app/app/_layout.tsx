@@ -6,14 +6,14 @@ import '../global.css';
 
 import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { InstrumentSerif_400Regular } from '@expo-google-fonts/instrument-serif';
 
 import { Colors, FontFamily } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { UserProvider } from '@/context/UserContext';
 import { syncService } from '@/services/SyncService';
-import { initDatabase } from '@/lib/db';
+import { getDbAsync } from '@/lib/db';
 
 export const unstable_settings = {
   anchor: '(tabs)',
@@ -24,6 +24,7 @@ export default function RootLayout() {
   const colorScheme = nativeColorScheme ?? 'light';
   const isDark = colorScheme === 'dark';
   const colors = Colors[colorScheme];
+  const [dbReady, setDbReady] = useState(false);
 
   const [loaded, error] = useFonts({
     'InstrumentSerif-Regular': InstrumentSerif_400Regular,
@@ -31,10 +32,13 @@ export default function RootLayout() {
 
   // Initialize database tables on mount (before sync monitoring)
   useEffect(() => {
-    initDatabase().then(() => {
+    getDbAsync().then(() => {
       console.log('[App] Database ready');
+      setDbReady(true);
     }).catch((e) => {
       console.error('[App] Database init error:', e);
+      // Still allow app to render even if DB init fails
+      setDbReady(true);
     });
   }, []);
 
@@ -42,12 +46,21 @@ export default function RootLayout() {
     if (loaded || error) {
       SplashScreen.hideAsync();
     }
-    // Start background sync monitoring & cleanup on unmount/re-render
-    const unsubscribe = syncService.startMonitoring();
-    return () => unsubscribe();
   }, [loaded, error]);
 
+  // Start sync monitoring only after DB is ready
+  useEffect(() => {
+    if (!dbReady) return;
+    const unsubscribe = syncService.startMonitoring();
+    return () => unsubscribe();
+  }, [dbReady]);
+
   if (!loaded && !error) {
+    return null;
+  }
+
+  // Don't render children until DB is initialized
+  if (!dbReady) {
     return null;
   }
 
@@ -70,3 +83,4 @@ export default function RootLayout() {
     </UserProvider>
   );
 }
+
