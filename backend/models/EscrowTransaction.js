@@ -8,7 +8,7 @@ const escrowTransactionSchema = new mongoose.Schema({
     },
     buyerId: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
+        ref: 'Farmer',
         required: false // Optional if no strict auth
     },
     buyerName: {
@@ -17,7 +17,7 @@ const escrowTransactionSchema = new mongoose.Schema({
     },
     sellerId: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
+        ref: 'Farmer',
         required: false
     },
     destinationFarmId: {
@@ -27,6 +27,29 @@ const escrowTransactionSchema = new mongoose.Schema({
     amount: {
         type: Number,
         required: true
+    },
+    // Rental Specific Fields
+    rentalDuration: {
+        type: Number, // e.g., 5
+        required: false
+    },
+    durationUnit: {
+        type: String, // 'days', 'hours'
+        enum: ['days', 'hours'],
+        required: false
+    },
+    rentalStartDate: {
+        type: Date,
+        required: false
+    },
+    rentalEndDate: {
+        type: Date,
+        required: false
+    },
+    returnStatus: {
+        type: String,
+        enum: ['none', 'requested', 'returned', 'disputed'],
+        default: 'none'
     },
     currency: {
         type: String,
