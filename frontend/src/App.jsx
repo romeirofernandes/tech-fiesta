@@ -26,6 +26,7 @@ import BiOverview from './pages/bi/BiOverview';
 import ProductionTracking from './pages/bi/ProductionTracking';
 import FinanceTracking from './pages/bi/FinanceTracking';
 import MarketPrices from './pages/bi/MarketPrices';
+import VideoSummary from './pages/VideoSummary';
 import Alerts from './pages/Alerts';
 import Schemes from './pages/Schemes';
 import SchemeDetail from './pages/SchemeDetail';
@@ -180,6 +181,11 @@ function App() {
           <Route path="/bi/prices" element={
             <ProtectedRoute>
               <MarketPrices />
+            </ProtectedRoute>
+          } />
+          <Route path="/video-summary" element={
+            <ProtectedRoute>
+              <VideoSummary />
             </ProtectedRoute>
           } />
           <Route path="/alerts" element={
