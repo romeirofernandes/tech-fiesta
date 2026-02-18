@@ -6,6 +6,13 @@ const escrowTransactionSchema = new mongoose.Schema({
         ref: 'MarketplaceItem',
         required: true
     },
+    itemName: {
+        type: String,
+        required: true
+    },
+    itemImage: {
+        type: String
+    },
     buyerId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Farmer',

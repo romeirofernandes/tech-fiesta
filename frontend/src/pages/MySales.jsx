@@ -99,7 +99,7 @@ export default function MySales() {
                                                             <Coins className="h-4 w-4 text-primary" />
                                                         </div>
                                                         <div>
-                                                            <p className="font-medium">{sale.itemId?.name || 'Unknown Item'}</p>
+                                                            <p className="font-medium">{sale.itemName || sale.itemId?.name || 'Unknown Item'}</p>
                                                             <p className="text-xs text-muted-foreground">
                                                                 {new Date(sale.createdAt).toLocaleDateString()}
                                                             </p>

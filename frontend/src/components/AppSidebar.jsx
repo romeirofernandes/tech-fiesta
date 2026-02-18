@@ -1,4 +1,4 @@
-import { Calendar, Home, Tractor, Beef, Syringe, LogOut, User, Activity, Moon, Sun, Globe, BarChart3, Bell, Sprout, Store, Package, Coins, ChevronRight, TrendingUp, DollarSign, LineChart, AlertCircle, Radio } from "lucide-react"
+import { Calendar, Home, Tractor, Beef, Syringe, LogOut, User, Activity, Moon, Sun, Globe, BarChart3, Bell, Sprout, Store, Package, Coins, ChevronRight, TrendingUp, DollarSign, LineChart, AlertCircle, Radio, Video } from "lucide-react"
 import { useUser } from "../context/UserContext"
 import { useTheme } from "../context/ThemeContext"
 import { Button } from "@/components/ui/button"
@@ -36,7 +36,9 @@ const navGroups = [
         subItems: [
           { title: "All Farms", url: "/farms" },
           { title: "Create Farm", url: "/farms/create" },
-          { title: "Farm Monitor", url: "/farm-monitoring", }
+          { title: "Farm Monitor", url: "/farm-monitoring", },
+          { title: "Geofencing", url: "/geofencing", icon: Radio },
+
         ],
       },
       {
@@ -55,7 +57,6 @@ const navGroups = [
     items: [
       { title: "Vaccination Calendar", url: "/calendar", icon: Calendar },
       { title: "Live Vitals", url: "/live-vitals", icon: Activity },
-      { title: "Geofencing", url: "/geofencing", icon: Radio },
       { title: "Alerts", url: "/alerts", icon: Bell },
       { title: "Emergency", url: "/emergency", icon: AlertCircle },
     ],
@@ -83,6 +84,11 @@ const navGroups = [
           { title: "Market Prices", url: "/bi/prices" },
         ],
       },
+      {
+        title: "Video Summary",
+        url: "/video-summary",
+        icon: Video,
+      }
     ],
   },
 ];

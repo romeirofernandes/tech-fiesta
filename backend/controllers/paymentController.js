@@ -51,6 +51,8 @@ exports.createOrder = async (req, res) => {
         // Create DB Record
         const newTransaction = new EscrowTransaction({
             itemId,
+            itemName: item.name,
+            itemImage: item.imageUrl,
             amount: finalAmount,
             buyerName,
             destinationFarmId, // Store where the animal should go
