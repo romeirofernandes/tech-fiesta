@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { Layout } from "@/components/Layout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { useUser } from "@/context/UserContext";
 import {
   Select,
@@ -30,6 +31,9 @@ import {
   WifiOff,
   RefreshCw,
   Radio,
+  ShieldAlert,
+  AlertTriangle,
+  CheckCircle,
 } from "lucide-react";
 import { useIotPolling } from "@/hooks/useIotPolling";
 import { format } from "date-fns";
@@ -135,6 +139,8 @@ export default function LiveVitals() {
   const [selectedAnimal, setSelectedAnimal] = useState("latest");
   const [timeRange, setTimeRange] = useState("1h");
   const [timeSinceData, setTimeSinceData] = useState("");
+  const [isolationAlerts, setIsolationAlerts] = useState([]);
+  const [loadingAlerts, setLoadingAlerts] = useState(false);
 
   // Long polling for IoT sensor data (replaces WebSocket)
   const { 
@@ -238,6 +244,54 @@ export default function LiveVitals() {
 
     fetchAnimals();
   }, []);
+
+  // Fetch isolation alerts periodically
+  useEffect(() => {
+    const fetchIsolationAlerts = async () => {
+      try {
+        setLoadingAlerts(true);
+        const response = await fetch(`${API_BASE}/api/iot/isolation-alerts`);
+        if (response.ok) {
+          const data = await response.json();
+          setIsolationAlerts(data);
+        }
+      } catch (error) {
+        console.error("Failed to fetch isolation alerts:", error);
+      } finally {
+        setLoadingAlerts(false);
+      }
+    };
+
+    fetchIsolationAlerts();
+    // Poll every 10 seconds for new isolation alerts
+    const interval = setInterval(fetchIsolationAlerts, 10000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Handle isolation alert resolution
+  const resolveIsolationAlert = async (alertId, animalName) => {
+    try {
+      const response = await fetch(`${API_BASE}/api/iot/isolation-alerts/${alertId}/resolve`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          resolvedBy: 'farmer',
+          resolutionNotes: `${animalName} has been isolated`
+        })
+      });
+
+      if (response.ok) {
+        toast.success(`${animalName} marked as isolated`);
+        // Remove from local state
+        setIsolationAlerts(prev => prev.filter(alert => alert._id !== alertId));
+      } else {
+        toast.error("Failed to resolve alert");
+      }
+    } catch (error) {
+      console.error("Failed to resolve isolation alert:", error);
+      toast.error("Failed to resolve alert");
+    }
+  };
 
   // Loading state derived from polling status
   const loading = status === 'idle' || (status === 'polling' && historicalData.length === 0);
@@ -478,6 +532,131 @@ export default function LiveVitals() {
             <p className="text-muted-foreground">
               Waiting for sensor data. Make sure the ESP32 is connected and an RFID card has been scanned.
             </p>
+          </Card>
+        )}
+
+        {/* Animals to be Isolated Section */}
+        {!loadingAlerts && (
+          <Card className={isolationAlerts.length > 0 ? "border-red-200 dark:border-red-900" : "border-green-200 dark:border-green-900"}>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <ShieldAlert className={`h-6 w-6 ${isolationAlerts.length > 0 ? 'text-red-500' : 'text-green-500'}`} />
+                  <div>
+                    <CardTitle className="text-xl">Animals to be Isolated</CardTitle>
+                    <CardDescription>
+                      {isolationAlerts.length > 0 
+                        ? "Animals with sustained abnormal vitals requiring immediate isolation to prevent disease spread"
+                        : "Based on sustained vital patterns from historical sensor data"}
+                    </CardDescription>
+                  </div>
+                </div>
+                {isolationAlerts.length > 0 && (
+                  <Badge variant="destructive" className="text-lg px-4 py-2">
+                    {isolationAlerts.length}
+                  </Badge>
+                )}
+              </div>
+            </CardHeader>
+            <CardContent>
+              {isolationAlerts.length > 0 ? (
+                <div className="grid gap-4 md:grid-cols-2">
+                  {isolationAlerts.map((alert) => (
+                    <Card key={alert._id} className="border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950/20">
+                      <CardContent className="pt-6">
+                        <div className="space-y-4">
+                          {/* Animal Info */}
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-1">
+                                <h4 className="font-bold text-lg">{alert.animalId?.name || "Unknown Animal"}</h4>
+                                <Badge variant="outline" className="text-xs">
+                                  {alert.animalId?.species || "Unknown"}
+                                </Badge>
+                              </div>
+                              <p className="text-sm text-muted-foreground font-mono">
+                                RFID: {alert.animalId?.rfid || "N/A"}
+                              </p>
+                            </div>
+                            <AlertTriangle className="h-8 w-8 text-red-500" />
+                          </div>
+
+                          {/* Alert Reason */}
+                          <div className="bg-background/50 rounded-lg p-3">
+                            <p className="text-sm font-medium text-red-700 dark:text-red-400">
+                              {alert.message.replace('🚨 ', '')}
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Alert created: {format(new Date(alert.createdAt), "PPp")}
+                            </p>
+                          </div>
+
+                          {/* Current Vitals */}
+                          {alert.latestVitals && (
+                            <div className="grid grid-cols-3 gap-2">
+                              {alert.latestVitals.temperature && (
+                                <div className="bg-background/50 rounded-lg p-2 text-center">
+                                  <Thermometer className={`h-4 w-4 mx-auto mb-1 ${
+                                    alert.latestVitals.temperature > 40 ? 'text-red-500' : 'text-orange-500'
+                                  }`} />
+                                  <p className={`text-sm font-bold ${
+                                    alert.latestVitals.temperature > 40 ? 'text-red-600 dark:text-red-400' : ''
+                                  }`}>
+                                    {alert.latestVitals.temperature.toFixed(1)}°C
+                                  </p>
+                                  <p className="text-xs text-muted-foreground">Temp</p>
+                                </div>
+                              )}
+                              {alert.latestVitals.heartRate && (
+                                <div className="bg-background/50 rounded-lg p-2 text-center">
+                                  <Heart className={`h-4 w-4 mx-auto mb-1 ${
+                                    alert.latestVitals.heartRate > 100 ? 'text-red-500' : 'text-pink-500'
+                                  }`} />
+                                  <p className={`text-sm font-bold ${
+                                    alert.latestVitals.heartRate > 100 ? 'text-red-600 dark:text-red-400' : ''
+                                  }`}>
+                                    {alert.latestVitals.heartRate} BPM
+                                  </p>
+                                  <p className="text-xs text-muted-foreground">Heart</p>
+                                </div>
+                              )}
+                              {alert.latestVitals.humidity && (
+                                <div className="bg-background/50 rounded-lg p-2 text-center">
+                                  <Droplets className="h-4 w-4 text-blue-500 mx-auto mb-1" />
+                                  <p className="text-sm font-bold">
+                                    {alert.latestVitals.humidity.toFixed(1)}%
+                                  </p>
+                                  <p className="text-xs text-muted-foreground">Humidity</p>
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          {/* Action Button */}
+                          <Button 
+                            onClick={() => resolveIsolationAlert(alert._id, alert.animalId?.name)}
+                            className="w-full bg-green-600 hover:bg-green-700 text-white"
+                          >
+                            <CheckCircle className="h-4 w-4 mr-2" />
+                            Mark as Isolated
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <CheckCircle className="h-16 w-16 mx-auto text-green-500 mb-4" />
+                  <h3 className="text-lg font-semibold text-green-700 dark:text-green-400 mb-2">
+                    All Animals Healthy
+                  </h3>
+                  <p className="text-muted-foreground">
+                    No animals require isolation based on current vital patterns
+                  </p>
+                </div>
+              )}
+            </CardContent>
           </Card>
         )}
 

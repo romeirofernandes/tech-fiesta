@@ -1,6 +1,9 @@
 const IotSensorReading = require('../models/IotSensorReading');
 const RFIDEvent = require('../models/RFIDEvent');
 const Animal = require('../models/Animal');
+const Alert = require('../models/Alert');
+const HeartRateThreshold = require('../models/HeartRateThreshold');
+const HEART_RATE_DEFAULTS = require('../config/heartRateDefaults');
 
 // IoT Device Connection Tracker
 const iotDeviceStatus = {
@@ -23,6 +26,106 @@ const updateIotHeartbeat = (deviceId = 'esp32_serial') => {
   iotDeviceStatus.isConnected = true;
   iotDeviceStatus.deviceId = deviceId;
 };
+
+// Temperature threshold constants for isolation alerts
+const TEMP_THRESHOLD = {
+  max: 40, // °C - Above this indicates fever
+  criticalMax: 41.5 // °C - Critical fever
+};
+
+// Heart rate stress threshold (universal, overrides species defaults if higher)
+const STRESS_THRESHOLD_BPM = 100;
+
+// Check vitals from database history and create isolation alert if sustained pattern detected
+async function checkVitalsAndCreateIsolationAlert(animalId) {
+  if (!animalId) return;
+  
+  try {
+    // Get last 5 readings for this animal (within last 15 minutes to ensure recent data)
+    const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000);
+    const recentReadings = await IotSensorReading.find({
+      animalId: animalId,
+      timestamp: { $gte: fifteenMinutesAgo }
+    })
+    .sort({ timestamp: -1 })
+    .limit(5);
+    
+    // Need at least 3 readings to determine a pattern
+    if (recentReadings.length < 3) {
+      console.log(`ℹ️  Not enough readings for animal ${animalId} (${recentReadings.length}/3 minimum)`);
+      return;
+    }
+    
+    const reasons = [];
+    let severity = 'medium';
+    
+    // Count fever readings (temperature > 40°C)
+    const feverCount = recentReadings.filter(r => 
+      r.temperature != null && r.temperature > TEMP_THRESHOLD.max
+    ).length;
+    
+    // Count stress readings (heart rate > 100 BPM)
+    const stressCount = recentReadings.filter(r => 
+      r.heartRate != null && r.heartRate > STRESS_THRESHOLD_BPM
+    ).length;
+    
+    // Check for critical fever
+    const criticalFeverCount = recentReadings.filter(r => 
+      r.temperature != null && r.temperature > TEMP_THRESHOLD.criticalMax
+    ).length;
+    
+    // Sustained pattern = 3+ out of 5 readings (60%+)
+    const totalReadings = recentReadings.length;
+    const sustainedThreshold = Math.ceil(totalReadings * 0.6); // 60% of readings
+    
+    if (feverCount >= sustainedThreshold) {
+      if (criticalFeverCount >= sustainedThreshold) {
+        reasons.push(`Critical Fever (${criticalFeverCount}/${totalReadings} readings > ${TEMP_THRESHOLD.criticalMax}°C)`);
+        severity = 'high';
+      } else {
+        reasons.push(`Sustained Fever (${feverCount}/${totalReadings} readings > ${TEMP_THRESHOLD.max}°C)`);
+        severity = 'high';
+      }
+    }
+    
+    if (stressCount >= sustainedThreshold) {
+      reasons.push(`Sustained Stress (${stressCount}/${totalReadings} readings > ${STRESS_THRESHOLD_BPM} BPM)`);
+      if (severity !== 'high') severity = 'high';
+    }
+    
+    // If any sustained abnormality detected, check for existing alert and create if needed
+    if (reasons.length > 0) {
+      // Check for existing unresolved isolation alert (within last 24 hours to avoid duplicates)
+      const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+      const existingAlert = await Alert.findOne({
+        animalId,
+        type: 'health',
+        severity: { $in: ['high', 'medium'] },
+        message: { $regex: /Isolation Required|Fever|Stress/i },
+        isResolved: false,
+        createdAt: { $gte: twentyFourHoursAgo }
+      });
+      
+      if (!existingAlert) {
+        // Create new isolation alert
+        const message = `🚨 Isolation Required: ${reasons.join(', ')}`;
+        await Alert.create({
+          animalId,
+          type: 'health',
+          severity,
+          message
+        });
+        console.log(`✅ Isolation alert created for animal ${animalId}: ${message}`);
+      } else {
+        console.log(`ℹ️  Existing isolation alert found for animal ${animalId} (created ${existingAlert.createdAt})`);
+      }
+    } else {
+      console.log(`✓ Animal ${animalId} vitals normal (${feverCount} fever, ${stressCount} stress out of ${totalReadings} readings)`);
+    }
+  } catch (error) {
+    console.error('Error checking vitals for isolation:', error);
+  }
+}
 
 // Helper: Find animal by RFID tag
 const findAnimalByRfid = async (rfidTag) => {
@@ -147,6 +250,14 @@ exports.createSensorReading = async (req, res) => {
     
     // Populate animal info for response
     await reading.populate('animalId', 'name rfid species breed');
+    
+    // Check vitals and create isolation alert if sustained abnormal pattern detected
+    if (animal && animal._id) {
+      // Run async without blocking response (fire and forget)
+      checkVitalsAndCreateIsolationAlert(animal._id).catch(err => 
+        console.error('Isolation alert check failed:', err)
+      );
+    }
     
     res.status(201).json(reading);
   } catch (error) {
@@ -294,3 +405,65 @@ exports.createRfidEvent = async (req, res) => {
     res.status(400).json({ message: error.message });
   }
 };
+
+// GET /api/iot/isolation-alerts - Get active isolation alerts
+exports.getIsolationAlerts = async (req, res) => {
+  try {
+    const alerts = await Alert.find({
+      type: 'health',
+      isResolved: false,
+      message: { $regex: /Isolation Required|Fever|Stress/i }
+    })
+    .populate('animalId', 'name rfid species breed')
+    .sort({ createdAt: -1 })
+    .limit(50);
+    
+    // Get latest vitals for each animal
+    const enrichedAlerts = await Promise.all(alerts.map(async (alert) => {
+      if (!alert.animalId) return alert.toObject();
+      
+      const latestReading = await IotSensorReading.findOne({
+        animalId: alert.animalId._id
+      })
+      .sort({ timestamp: -1 })
+      .select('temperature humidity heartRate timestamp');
+      
+      return {
+        ...alert.toObject(),
+        latestVitals: latestReading || null
+      };
+    }));
+    
+    res.json(enrichedAlerts);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// PATCH /api/iot/isolation-alerts/:id/resolve - Resolve isolation alert
+exports.resolveIsolationAlert = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { resolvedBy, resolutionNotes } = req.body;
+    
+    const alert = await Alert.findByIdAndUpdate(
+      id,
+      {
+        isResolved: true,
+        resolvedAt: new Date(),
+        resolvedBy: resolvedBy || 'system',
+        resolutionNotes: resolutionNotes || 'Animal isolated'
+      },
+      { new: true }
+    ).populate('animalId', 'name rfid species');
+    
+    if (!alert) {
+      return res.status(404).json({ message: 'Alert not found' });
+    }
+    
+    res.json(alert);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
