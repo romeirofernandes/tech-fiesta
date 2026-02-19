@@ -120,8 +120,7 @@ export default function CreateFarm() {
 
   return (
     <Layout>
-      <div className="max-w-6xl mx-auto space-y-6">
-
+      <div className="space-y-6 max-w-full px-6 mx-auto p-4 md:p-6 lg:p-8">w
         <Card>
           <CardHeader>
             <CardTitle>Create New Farm</CardTitle>

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { Button } from './ui/button';
 
 /**
  * Radar Display Component - Military-style circular radar visualization
@@ -17,7 +18,7 @@ export function RadarDisplay({ sweepData = [], className = '' }) {
   const maxRadius = 250;
 
   // Distance rings configuration (in cm)
-  const distanceRings = [20, 40, 60, 80, 100];
+  const distanceRings = [20, 40, 60, 80];
   const maxDistance = 100; // cm
 
   // Animate sweep line
@@ -48,42 +49,58 @@ export function RadarDisplay({ sweepData = [], className = '' }) {
 
   // Generate arc path for distance rings
   const generateArcPath = (radius) => {
-    const startAngle = 180;
-    const endAngle = 0;
-    const start = polarToCartesian(startAngle, (radius / maxRadius) * 100);
-    const end = polarToCartesian(endAngle, (radius / maxRadius) * 100);
-    
-    return `M ${start.x} ${start.y} A ${radius} ${radius} 0 0 1 ${end.x} ${end.y}`;
+    // Draw TOP semicircle from left -> right.
+    // From 9 o'clock to 3 o'clock, sweepFlag=0 yields the upper arc.
+    const startX = centerX - radius;
+    const startY = centerY;
+    const endX = centerX + radius;
+    const endY = centerY;
+
+    return `M ${startX} ${startY} A ${radius} ${radius} 0 0 1 ${endX} ${endY}`;
   };
 
   // Generate sweep line path
   const sweepLineEnd = polarToCartesian(sweepAngle, 100);
 
+  // Theme colors (OKLCH tokens from src/index.css)
+  // Use the variables directly (they already contain `oklch(...)`).
+  const colors = {
+    background: 'var(--card)',
+    border: 'var(--border)',
+    muted: 'var(--muted)',
+    mutedForeground: 'var(--muted-foreground)',
+    primary: 'var(--primary)',
+    destructive: 'var(--destructive)',
+  };
+
   return (
-    <Card className={`${className} bg-slate-950 border-green-900/30`}>
+    <Card className={className}>
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-green-400 text-lg font-mono">
+          <CardTitle className="text-lg font-mono text-foreground">
             GEOFENCE RADAR
           </CardTitle>
-          <button
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
             onClick={() => setAnimationEnabled(!animationEnabled)}
-            className="text-xs text-green-400/70 hover:text-green-400 font-mono"
+            className="h-7 px-2 font-mono text-xs"
           >
             {animationEnabled ? '[SCANNING]' : '[PAUSED]'}
-          </button>
+          </Button>
         </div>
       </CardHeader>
-      <CardContent>
-        <div className="relative">
+      <CardContent className="pt-0">
+        <div className="relative w-full">
           <svg
-            width={width}
-            height={height}
-            className="mx-auto"
-            style={{ filter: 'drop-shadow(0 0 10px rgba(34, 197, 94, 0.3))' }}
+            viewBox={`-4 -4 ${width + 8} ${height + 8}`}
+            preserveAspectRatio="xMidYMid meet"
+            className="mx-auto w-11/12 h-auto"
+            style={{ filter: '' }}
           >
             {/* Background */}
-            <rect width={width} height={height} fill="#020617" />
+            <rect width={width} height={height} fill={colors.background} />
 
             {/* Grid lines - angle markers */}
             {[0, 30, 45, 60, 90, 120, 135, 150, 180].map(angle => {
@@ -95,9 +112,10 @@ export function RadarDisplay({ sweepData = [], className = '' }) {
                   y1={centerY}
                   x2={end.x}
                   y2={end.y}
-                  stroke="#16a34a"
+                  stroke={colors.mutedForeground}
                   strokeWidth="0.5"
-                  opacity="0.2"
+                  strokeLinecap="round"
+                  opacity="0.3"
                 />
               );
             })}
@@ -111,18 +129,18 @@ export function RadarDisplay({ sweepData = [], className = '' }) {
                   <path
                     d={generateArcPath(radius)}
                     fill="none"
-                    stroke="#16a34a"
+                    stroke={colors.border}
                     strokeWidth="1"
-                    opacity="0.3"
+                    opacity="0.5"
                   />
                   {/* Distance label */}
                   <text
                     x={centerX + 5}
                     y={centerY - radius + 5}
-                    fill="#16a34a"
+                    fill={colors.mutedForeground}
                     fontSize="10"
                     fontFamily="monospace"
-                    opacity="0.5"
+                    opacity="0.9"
                   >
                     {distance}cm
                   </text>
@@ -130,25 +148,43 @@ export function RadarDisplay({ sweepData = [], className = '' }) {
               );
             })}
 
+            {/* Outer boundary semicircle */}
+            <path
+              d={generateArcPath(maxRadius)}
+              fill="none"
+              stroke={colors.primary}
+              strokeWidth="2"
+              opacity="0.35"
+            />
+            <line
+              x1={centerX - maxRadius}
+              y1={centerY}
+              x2={centerX + maxRadius}
+              y2={centerY}
+              stroke={colors.primary}
+              strokeWidth="2"
+              opacity="0.2"
+            />
+
             {/* Sweep line with glow effect */}
             <line
               x1={centerX}
               y1={centerY}
               x2={sweepLineEnd.x}
               y2={sweepLineEnd.y}
-              stroke="#22c55e"
+              stroke={colors.primary}
               strokeWidth="2"
               opacity="0.8"
               style={{
-                filter: 'drop-shadow(0 0 8px rgba(34, 197, 94, 0.8))'
+                filter: 'drop-shadow(0 0 6px rgba(0, 0, 0, 0.12))'
               }}
             />
 
             {/* Sweep gradient/fade effect */}
             <defs>
               <linearGradient id="sweepGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor="#22c55e" stopOpacity="0" />
-                <stop offset="100%" stopColor="#22c55e" stopOpacity="0.3" />
+                <stop offset="0%" stopColor={colors.primary} stopOpacity="0" />
+                <stop offset="100%" stopColor={colors.primary} stopOpacity="0.18" />
               </linearGradient>
             </defs>
 
@@ -167,10 +203,10 @@ export function RadarDisplay({ sweepData = [], className = '' }) {
                     cx={pos.x}
                     cy={pos.y}
                     r={isCloseRange ? 6 : 4}
-                    fill={isCloseRange ? '#ef4444' : '#22c55e'}
+                    fill={isCloseRange ? colors.destructive : colors.primary}
                     opacity="0.9"
                     style={{
-                      filter: `drop-shadow(0 0 ${isCloseRange ? 6 : 4}px ${isCloseRange ? '#ef4444' : '#22c55e'})`
+                      filter: `drop-shadow(0 0 ${isCloseRange ? 6 : 4}px rgba(0, 0, 0, 0.14))`
                     }}
                   >
                     <animate
@@ -186,7 +222,7 @@ export function RadarDisplay({ sweepData = [], className = '' }) {
                     <text
                       x={pos.x + 10}
                       y={pos.y - 5}
-                      fill="#ef4444"
+                      fill={colors.destructive}
                       fontSize="11"
                       fontFamily="monospace"
                       fontWeight="bold"
@@ -203,18 +239,18 @@ export function RadarDisplay({ sweepData = [], className = '' }) {
               cx={centerX}
               cy={centerY}
               r="4"
-              fill="#22c55e"
+              fill={colors.primary}
               opacity="0.8"
             />
 
             {/* Angle labels */}
-            <text x={centerX - 30} y={centerY + 20} fill="#16a34a" fontSize="12" fontFamily="monospace">
+            <text x={centerX - 30} y={centerY + 20} fill={colors.mutedForeground} fontSize="12" fontFamily="monospace">
               90°
             </text>
-            <text x={centerX + width / 2 - 40} y={centerY + 20} fill="#16a34a" fontSize="12" fontFamily="monospace">
+            <text x={centerX + width / 2 - 40} y={centerY + 20} fill={colors.mutedForeground} fontSize="12" fontFamily="monospace">
               0°
             </text>
-            <text x={20} y={centerY + 20} fill="#16a34a" fontSize="12" fontFamily="monospace">
+            <text x={20} y={centerY + 20} fill={colors.mutedForeground} fontSize="12" fontFamily="monospace">
               180°
             </text>
           </svg>
@@ -222,12 +258,12 @@ export function RadarDisplay({ sweepData = [], className = '' }) {
           {/* Legend */}
           <div className="mt-4 flex items-center justify-center gap-6 text-xs font-mono">
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-green-500"></div>
-              <span className="text-green-400">Safe Range (&gt;10cm)</span>
+              <div className="w-3 h-3 rounded-full bg-primary"></div>
+              <span className="text-muted-foreground">Safe Range (&gt;10cm)</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-red-500"></div>
-              <span className="text-red-400">Alert (&lt;10cm)</span>
+              <div className="w-3 h-3 rounded-full bg-destructive"></div>
+              <span className="text-muted-foreground">Alert (&lt;10cm)</span>
             </div>
           </div>
         </div>
