@@ -96,7 +96,7 @@ export default function Geofencing() {
 
   return (
     <Layout>
-      <div className="space-y-6">
+      <div className="space-y-6 max-w-full px-6 mx-auto p-4 md:p-6 lg:p-8">
         {/* Header */}
         <div>
           <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
@@ -117,22 +117,22 @@ export default function Geofencing() {
                 <span className="text-sm text-muted-foreground font-medium">Radar:</span>
                 {status === 'connected' ? (
                   <>
-                    <Radio className="h-4 w-4 text-green-500 animate-pulse" />
-                    <Badge variant="outline" className="bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-400">
+                    <Radio className="h-4 w-4 text-primary animate-pulse" />
+                    <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
                       Active
                     </Badge>
                   </>
                 ) : status === 'polling' ? (
                   <>
-                    <RefreshCw className="h-4 w-4 text-blue-500 animate-spin" />
-                    <Badge variant="outline" className="bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-400">
+                    <RefreshCw className="h-4 w-4 text-primary animate-spin" />
+                    <Badge variant="outline" className="bg-muted/50">
                       Scanning...
                     </Badge>
                   </>
                 ) : (
                   <>
-                    <Radio className="h-4 w-4 text-red-500" />
-                    <Badge variant="outline" className="bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-400">
+                    <Radio className="h-4 w-4 text-destructive" />
+                    <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/20">
                       Disconnected
                     </Badge>
                   </>
@@ -144,22 +144,22 @@ export default function Geofencing() {
                 <span className="text-sm text-muted-foreground font-medium">Device:</span>
                 {radarStatus === 'connected' ? (
                   <>
-                    <Wifi className="h-4 w-4 text-green-500" />
-                    <Badge variant="outline" className="bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-400">
+                    <Wifi className="h-4 w-4 text-primary" />
+                    <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
                       Connected
                     </Badge>
                   </>
                 ) : radarStatus === 'disconnected' ? (
                   <>
-                    <WifiOff className="h-4 w-4 text-red-500" />
-                    <Badge variant="outline" className="bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-400">
+                    <WifiOff className="h-4 w-4 text-destructive" />
+                    <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/20">
                       Disconnected
                     </Badge>
                   </>
                 ) : (
                   <>
-                    <WifiOff className="h-4 w-4 text-gray-400" />
-                    <Badge variant="outline" className="bg-gray-50 text-gray-700 dark:bg-gray-950 dark:text-gray-400">
+                    <WifiOff className="h-4 w-4 text-muted-foreground" />
+                    <Badge variant="outline" className="bg-muted/50">
                       Unknown
                     </Badge>
                   </>
@@ -171,14 +171,14 @@ export default function Geofencing() {
                 <span className="text-sm text-muted-foreground font-medium">Location:</span>
                 {location ? (
                   <>
-                    <MapPin className="h-4 w-4 text-green-500" />
-                    <Badge variant="outline" className="bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-400">
+                    <MapPin className="h-4 w-4 text-primary" />
+                    <Badge variant="outline" className="bg-muted/50">
                       {location.lat.toFixed(4)}, {location.lng.toFixed(4)}
                     </Badge>
                   </>
                 ) : (
                   <>
-                    <MapPin className="h-4 w-4 text-gray-400" />
+                    <MapPin className="h-4 w-4 text-muted-foreground" />
                     <Badge variant="outline">
                       {locationError || 'Getting location...'}
                     </Badge>
@@ -190,7 +190,7 @@ export default function Geofencing() {
               {lastUpdated && (
                 <div className="flex items-center gap-2">
                   <span className="text-sm text-muted-foreground font-medium">Last Update:</span>
-                  <Activity className="h-4 w-4 text-green-500" />
+                  <Activity className="h-4 w-4 text-primary" />
                   <Badge variant="outline">
                     {format(lastUpdated, 'HH:mm:ss')}
                   </Badge>
@@ -252,7 +252,7 @@ export default function Geofencing() {
                     </div>
                     <div className="flex justify-between items-center py-2">
                       <span className="text-sm text-muted-foreground">Unresolved</span>
-                      <span className="font-semibold text-red-600">{stats.unresolvedAlerts}</span>
+                      <span className="font-semibold text-destructive">{stats.unresolvedAlerts}</span>
                     </div>
                   </>
                 )}
@@ -261,9 +261,9 @@ export default function Geofencing() {
 
             {/* Latest Alert */}
             {latestAlert && (
-              <Card className="border-red-200 dark:border-red-900">
+              <Card className="border-destructive/30">
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-lg flex items-center gap-2 text-red-600">
+                  <CardTitle className="text-lg flex items-center gap-2 text-destructive">
                     <AlertTriangle className="h-5 w-5" />
                     Latest Alert
                   </CardTitle>
@@ -308,14 +308,14 @@ export default function Geofencing() {
                     key={alert._id}
                     className={`p-4 rounded-lg border ${
                       alert.isResolved
-                        ? 'bg-muted/30 border-muted'
-                        : 'bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-900'
+                        ? 'bg-muted/30 border-border'
+                        : 'bg-destructive/10 border-destructive/20'
                     }`}
                   >
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
-                          <AlertTriangle className={`h-4 w-4 ${alert.isResolved ? 'text-muted-foreground' : 'text-red-500'}`} />
+                          <AlertTriangle className={`h-4 w-4 ${alert.isResolved ? 'text-muted-foreground' : 'text-destructive'}`} />
                           <span className={`text-sm font-medium ${alert.isResolved ? 'text-muted-foreground' : ''}`}>
                             {alert.message}
                           </span>
@@ -329,7 +329,7 @@ export default function Geofencing() {
                           )}
                         </div>
                         {alert.isResolved && alert.resolvedAt && (
-                          <div className="text-xs text-green-600 dark:text-green-400 mt-1">
+                          <div className="text-xs text-primary mt-1">
                             ✓ Resolved {format(new Date(alert.resolvedAt), 'PPp')}
                           </div>
                         )}
