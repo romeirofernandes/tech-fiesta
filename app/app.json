@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "app",
-    "slug": "app",
+    "name": "पशु पहचान",
+    "slug": "पशु पहचान",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -37,7 +37,13 @@
           }
         }
       ],
-      "expo-sqlite"
+      "expo-sqlite",
+      [
+        "expo-calendar",
+        {
+          "calendarPermission": "Allow पशु पहचान to access your calendar to sync vaccination schedules."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

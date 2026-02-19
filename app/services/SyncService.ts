@@ -131,6 +131,10 @@ class SyncService {
             } else if (item.action === 'DELETE') {
               success = await this.syncDeleteAnimal(data);
             }
+          } else if (item.tableName === 'vaccinations') {
+            if (item.action === 'RESOLVE') {
+              success = await this.syncResolveVaccination(data);
+            }
           }
 
           if (success) {
@@ -240,6 +244,29 @@ class SyncService {
       return false;
     } catch (error) {
       console.error("Sync Update Profile Failed:", error);
+      return false;
+    }
+  }
+
+  // --- Vaccination Sync Actions ---
+
+  async syncResolveVaccination(data: any) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/vaccination-events/${data._id}/resolve`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({}),
+      });
+
+      if (response.ok) {
+        db.runSync('UPDATE vaccinations SET syncStatus = ?, eventType = ? WHERE id = ?', ['synced', 'administered', data._id]);
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error("Sync Resolve Vaccination Failed:", error);
       return false;
     }
   }
@@ -490,6 +517,41 @@ class SyncService {
       }
     } catch (error) {
       console.error("Error pulling animals:", error);
+    } finally {
+      this.isSyncing = false;
+    }
+  }
+
+  async pullVaccinations(farmerId: string) {
+    if (this.isSyncing || !(await this.isOnline())) return;
+    this.isSyncing = true;
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/vaccination-events?farmerId=${farmerId}`);
+      if (response.ok) {
+        const events = await response.json();
+        
+        for (const v of events) {
+          const local = db.getFirstSync<{syncStatus: string}>('SELECT syncStatus FROM vaccinations WHERE id = ?', [v._id]);
+          if (local && local.syncStatus === 'pending') continue;
+
+          db.runSync(
+            'INSERT OR REPLACE INTO vaccinations (id, animalId, animalName, vaccineName, date, status, eventType, syncStatus) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+            [
+              v._id,
+              v.animalId?._id || v.animalId,
+              v.animalId?.name || null,
+              v.vaccineName,
+              v.date,
+              v.status || null,
+              v.eventType,
+              'synced',
+            ]
+          );
+        }
+      }
+    } catch (error) {
+      console.error("Error pulling vaccinations:", error);
     } finally {
       this.isSyncing = false;
     }
