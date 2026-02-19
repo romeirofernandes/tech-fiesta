@@ -9,9 +9,14 @@ import {
     Easing,
 } from 'remotion';
 
+const withOpacity = (color, opacity) => {
+    return `color-mix(in srgb, ${color}, transparent ${100 - opacity * 100}%)`;
+};
+
 // ─── Theme Colors ───
 
 const DarkTheme = {
+    mode:      'dark',
     // Backgrounds
     bgDeep:    '#050f0a',
     bgCard:    '#0c1a12',
@@ -44,35 +49,36 @@ const DarkTheme = {
 };
 
 const LightTheme = {
+    mode:      'light',
     // Backgrounds
-    bgDeep:    '#ffffff',
-    bgCard:    '#f8fafc', // slate-50
-    bgMuted:   '#f1f5f9', // slate-100
-    bgAccent:  '#e2e8f0', // slate-200
+    bgDeep:    'var(--background)',
+    bgCard:    'var(--card)', 
+    bgMuted:   'var(--muted)',
+    bgAccent:  'var(--accent)',
 
     // Text
-    white:     '#0f172a', // slate-900 (Primary text)
-    muted:     '#64748b', // slate-500 (Secondary text)
-    dim:       '#334155', // slate-700
-    faint:     '#94a3b8', // slate-400
+    white:     'var(--foreground)', 
+    muted:     'var(--muted-foreground)',
+    dim:       'var(--secondary-foreground)',
+    faint:     'var(--border)',
 
-    // Brand (Adjusted for contrast on light bg)
-    primary:   '#16a34a', // green-600
-    primaryDk: '#15803d', // green-700
-    gold:      '#ca8a04', // yellow-600
-    red:       '#dc2626', // red-600
-    blue:      '#2563eb', // blue-600
-    purple:    '#9333ea', // purple-600
-    orange:    '#ea580c', // orange-600
-    pink:      '#db2777', // pink-600
-    teal:      '#0d9488', // teal-600
+    // Brand
+    primary:   'var(--primary)',
+    primaryDk: 'var(--primary)', // Using same for now
+    gold:      'var(--chart-2)',
+    red:       'var(--destructive)',
+    blue:      'var(--chart-3)',
+    purple:    'var(--chart-5)',
+    orange:    'var(--chart-2)',
+    pink:      'var(--chart-4)',
+    teal:      'var(--primary)', // Fallback
 
     // Chart palette
-    chart1: '#16a34a',
-    chart2: '#ca8a04',
-    chart3: '#2563eb',
-    chart4: '#ea580c',
-    chart5: '#9333ea',
+    chart1: 'var(--chart-1)',
+    chart2: 'var(--chart-2)',
+    chart3: 'var(--chart-3)',
+    chart4: 'var(--chart-4)',
+    chart5: 'var(--chart-5)',
 };
 
 // ─── Context ───
@@ -125,7 +131,7 @@ const ProgressBar = ({ label, value, max, delay = 0, color, unit = '' }) => {
                 <div style={{
                     width: `${barWidth}%`,
                     height: '100%',
-                    background: `linear-gradient(90deg, ${finalColor}, ${finalColor}cc)`,
+                    background: `linear-gradient(90deg, ${finalColor}, ${withOpacity(finalColor, 0.8)})`,
                     borderRadius: 5,
                 }} />
             </div>
@@ -155,7 +161,7 @@ const SimpleProgressBar = ({ label, value, max, delay = 0, color, unit = '' }) =
                 <div style={{
                     width: `${barWidth}%`,
                     height: '100%',
-                    background: `linear-gradient(90deg, ${finalColor}, ${finalColor}cc)`,
+                    background: `linear-gradient(90deg, ${finalColor}, ${withOpacity(finalColor, 0.8)})`,
                     borderRadius: 5,
                 }} />
             </div>
@@ -205,7 +211,7 @@ const BarChart = ({ data, delay = 0, height = 200, colorKey }) => {
                         <div style={{
                             width: barW,
                             height: barH,
-                            background: `linear-gradient(180deg, ${color}, ${color}88)`,
+                            background: `linear-gradient(180deg, ${color}, ${withOpacity(color, 0.53)})`,
                             borderRadius: '6px 6px 0 0',
                         }} />
                         <span style={{
@@ -242,7 +248,7 @@ const StatCard = ({ label, value, delay = 0, color, width = 180 }) => {
             transform: `scale(${scale})`,
             opacity,
             background: T.bgCard,
-            border: `1px solid ${finalColor}33`,
+            border: `1px solid ${withOpacity(finalColor, 0.2)}`,
             padding: '20px 16px',
             borderRadius: 12,
             minWidth: width,
@@ -250,7 +256,7 @@ const StatCard = ({ label, value, delay = 0, color, width = 180 }) => {
             flexDirection: 'column',
             alignItems: 'center',
             margin: 8,
-            boxShadow: `0 4px 6px -1px ${T.bgDeep}10`,
+            boxShadow: `0 4px 6px -1px ${withOpacity(T.bgDeep, 0.06)}`,
         }}>
             <span style={{ fontSize: 40, fontWeight: 800, color: T.white, lineHeight: 1 }}>{value}</span>
             <span style={{ fontSize: 14, color: T.muted, marginTop: 6, textTransform: 'capitalize', fontWeight: 500 }}>{label}</span>
@@ -283,22 +289,33 @@ const SectionHeader = ({ text }) => {
 };
 
 // ─── Scene base wrapper ───
-const SceneBg = ({ children, gradient }) => {
+// ─── Scene base wrapper ───
+const SceneBg = ({ children }) => {
     const T = useThemeColors();
-    // Use dynamic gradient based on theme if not provided?
-    // Or interpolate between theme colors?
-    const defaultGradient = `linear-gradient(160deg, ${T.bgDeep} 0%, ${T.bgMuted} 100%)`;
+    const isDark = T.mode === 'dark';
 
     return (
-        <AbsoluteFill style={{
-            background: gradient || defaultGradient,
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: 60,
-        }}>
-            {children}
+        <AbsoluteFill style={{ backgroundColor: isDark ? '#020617' : '#ffffff' }}>
+            {/* The Glow/Gradient Div */}
+            <AbsoluteFill style={{
+                backgroundImage: isDark
+                    ? `radial-gradient(circle 500px at 50% 100px, rgba(132,204,22,0.4), transparent)`
+                    : `radial-gradient(125% 125% at 50% 90%, var(--background) 40%, var(--primary) 100%)`, // Replaced hardcoded #ffffff and #10b981
+                backgroundSize: isDark ? undefined : "100% 100%",
+                zIndex: 0,
+            }} />
+
+            {/* Content Container */}
+            <AbsoluteFill style={{
+                zIndex: 1,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: 60,
+            }}>
+                {children}
+            </AbsoluteFill>
         </AbsoluteFill>
     );
 };
@@ -320,16 +337,16 @@ const IntroScene = ({ farmerName, farmCount, summaryDate }) => {
         : '';
 
     return (
-        <SceneBg gradient={`linear-gradient(160deg, ${T.bgDeep} 0%, ${T.bgAccent} 50%, ${T.bgMuted} 100%)`}>
+        <SceneBg>
             {/* Decorative rings */}
             <div style={{
                 position: 'absolute', width: 400, height: 400, borderRadius: '50%',
-                border: `1px solid ${T.primary}15`,
+                border: `1px solid ${withOpacity(T.primary, 0.08)}`,
                 opacity: interpolate(frame, [0, 2 * fps], [0, 0.6], { extrapolateRight: 'clamp' }),
             }} />
             <div style={{
                 position: 'absolute', width: 600, height: 600, borderRadius: '50%',
-                border: `1px solid ${T.primary}08`,
+                border: `1px solid ${withOpacity(T.primary, 0.03)}`,
                 opacity: interpolate(frame, [0.5 * fps, 2.5 * fps], [0, 0.4], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' }),
             }} />
 
@@ -417,7 +434,7 @@ const ProductionScene = ({ production }) => {
     const maxProd = Math.max(...(production || []).map(p => p.totalQuantity), 1);
 
     return (
-        <SceneBg gradient={`linear-gradient(160deg, ${T.bgDeep} 0%, ${T.bgMuted} 100%)`}>
+        <SceneBg>
             <SectionHeader text="Production — Last 30 Days" />
 
             {barData.length > 0 ? (
@@ -503,7 +520,7 @@ const HealthVaccScene = ({ vaccinationsLast30Days, healthAlerts, totalAnimals })
     const healthPct = totalAnimals > 0 ? Math.round((healthy / totalAnimals) * 100) : 100;
 
     return (
-        <SceneBg gradient={`linear-gradient(160deg, ${T.bgDeep} 0%, ${T.bgAccent} 100%)`}>
+        <SceneBg>
             <SectionHeader text="Health & Vaccinations" />
 
             <div style={{ display: 'flex', gap: 24, marginBottom: 30 }}>
@@ -533,7 +550,7 @@ const OutroScene = ({ farmerName }) => {
     const lineW = interpolate(frame, [0.3 * fps, 1.2 * fps], [0, 80], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
 
     return (
-        <SceneBg gradient={`linear-gradient(160deg, ${T.bgDeep} 0%, ${T.bgAccent} 50%, ${T.bgMuted} 100%)`}>
+        <SceneBg>
             <div style={{
                 opacity: titleO,
                 transform: `scale(${s})`,
@@ -563,7 +580,7 @@ export const FarmerSummaryVideo = ({ data, theme }) => {
 
     return (
         <ThemeContext.Provider value={activeTheme}>
-            <AbsoluteFill style={{ background: activeTheme.bgDeep }}>
+            <AbsoluteFill>
                 <Series>
                     <Series.Sequence durationInFrames={Math.round(3 * fps)}>
                         <IntroScene farmerName={data.farmerName} farmCount={data.farmCount} summaryDate={data.summaryDate} />
