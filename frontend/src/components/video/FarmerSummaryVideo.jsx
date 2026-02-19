@@ -565,7 +565,7 @@ const OutroScene = ({ farmerName }) => {
             </div>
             <div style={{ width: lineW, height: 3, background: `linear-gradient(90deg, transparent, ${T.primary}, transparent)`, borderRadius: 2, marginTop: 20, marginBottom: 20 }} />
             <div style={{ opacity: subtitleO, fontSize: 20, color: T.dim }}>
-                Powered by Pashu Pehchan
+                Powered by पशु पहचान
             </div>
         </SceneBg>
     );
