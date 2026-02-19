@@ -23,4 +23,8 @@ router.post('/sensors/bulk', iotController.bulkSensorData);
 router.get('/rfid', iotController.getRfidEvents);
 router.post('/rfid', iotController.createRfidEvent);
 
+// Isolation alerts
+router.get('/isolation-alerts', iotController.getIsolationAlerts);
+router.patch('/isolation-alerts/:id/resolve', iotController.resolveIsolationAlert);
+
 module.exports = router;

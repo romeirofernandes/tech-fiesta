@@ -54,6 +54,7 @@ app.use('/api/payments', require('./routes/paymentRoutes'));
 app.use('/api/iot', require('./routes/iotRoutes'));
 app.use('/api/radar', radarRoutes);
 app.use('/api/emergency', require('./routes/emergencyRoutes'));
+app.use('/api/summary', require('./routes/summaryRoutes'));
 app.use('/api/admin', adminRoutes);
 
 const port = process.env.PORT;

@@ -23,6 +23,8 @@
     "@radix-ui/react-slot": "^1.2.4",
     "@radix-ui/react-tabs": "^1.1.13",
     "@radix-ui/react-tooltip": "^1.2.8",
+    "@remotion/player": "^4.0.424",
+    "@remotion/shapes": "^4.0.424",
     "@tailwindcss/vite": "^4.1.18",
     "axios": "^1.13.2",
     "class-variance-authority": "^0.7.1",
@@ -41,6 +43,7 @@
     "react-leaflet": "^5.0.0",
     "react-router-dom": "^7.11.0",
     "recharts": "^3.6.0",
+    "remotion": "^4.0.424",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.4.0",
     "tailwindcss": "^4.1.18"
