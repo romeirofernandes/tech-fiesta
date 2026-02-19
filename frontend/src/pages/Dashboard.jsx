@@ -215,9 +215,9 @@ export default function Dashboard() {
       <div className="space-y-6 max-w-full px-6 mx-auto p-4 md:p-6 lg:p-8">
         {/* Header */}
         <div>
-          <h1 className="text-3xl font-bold">Dashboard</h1>
+          <h1 className="text-3xl font-bold">Your Farm Overview</h1>
           <p className="text-muted-foreground mt-1">
-            Overview of your farm operations
+            Everything happening on your farm, at a glance
           </p>
         </div>
 
@@ -233,14 +233,14 @@ export default function Dashboard() {
               </div>
               <div>
                 <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">
-                  TOTAL ANIMALS
+                  YOUR ANIMALS
                 </p>
                 <div className="flex items-baseline gap-2">
                   <p className="text-2xl font-semibold tracking-tight text-foreground">
                     {animals.length}
                   </p>
                   <p className="text-[10px] text-muted-foreground font-medium">
-                    {Object.keys(speciesCount).length} species
+                    {Object.keys(speciesCount).length} types
                   </p>
                 </div>
               </div>
@@ -257,7 +257,7 @@ export default function Dashboard() {
               </div>
               <div>
                 <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">
-                  TOTAL FARMS
+                  YOUR FARMS
                 </p>
                 <div className="flex items-baseline gap-2">
                   <p className="text-2xl font-semibold tracking-tight text-foreground">
@@ -279,7 +279,7 @@ export default function Dashboard() {
               </div>
               <div>
                 <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">
-                  ACTIVE ALERTS
+                  WARNINGS
                 </p>
                 <div className="flex items-baseline gap-2">
                   <p className="text-2xl font-semibold tracking-tight text-foreground">
@@ -288,10 +288,10 @@ export default function Dashboard() {
                   <p className="text-[10px] text-muted-foreground font-medium">
                     {criticalAlerts.length > 0 ? (
                       <span className="text-destructive font-bold">
-                        {criticalAlerts.length} critical
+                        {criticalAlerts.length} urgent
                       </span>
                     ) : (
-                      "No critical"
+                      "All clear"
                     )}
                   </p>
                 </div>
@@ -309,7 +309,7 @@ export default function Dashboard() {
               </div>
               <div>
                 <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">
-                  VACCINATIONS DUE
+                  SHOTS DUE SOON
                 </p>
               </div>
           </CardContent>
@@ -325,7 +325,7 @@ export default function Dashboard() {
             </div>
             <div>
               <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">
-                GOVT SCHEMES
+                GOVT. HELP SCHEMES
               </p>
             </div>
           </CardContent>
@@ -341,14 +341,14 @@ export default function Dashboard() {
             </div>
             <div>
               <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">
-                AVG HEALTH SCORE
+                ANIMAL HEALTH
               </p>
               <div className="flex items-baseline gap-2">
                 <p className="text-2xl font-semibold tracking-tight text-foreground">
                   {avgHealthScore > 0 ? `${avgHealthScore}/100` : "—"}
                 </p>
                 <p className="text-[10px] text-muted-foreground font-medium">
-                  {healthSnapshots.length} records
+                  {healthSnapshots.length} check-ups
                 </p>
               </div>
             </div>
@@ -362,14 +362,14 @@ export default function Dashboard() {
             </div>
             <div>
               <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">
-                SENSOR READINGS
+                DEVICE READINGS
               </p>
               <div className="flex items-baseline gap-2">
                 <p className="text-2xl font-semibold tracking-tight text-foreground">
                   {sensorEvents.length}
                 </p>
                 <p className="text-[10px] text-muted-foreground font-medium">
-                  Heart rate events
+                  Heartbeat readings
                 </p>
               </div>
             </div>
@@ -379,7 +379,7 @@ export default function Dashboard() {
         <Card>
           <CardContent className="p-4">
             <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold mb-3">
-              SPECIES BREAKDOWN
+              ANIMALS BY TYPE
             </p>
             <div className="flex flex-wrap gap-2">
               {Object.entries(speciesCount).map(([species, count]) => (
@@ -393,7 +393,7 @@ export default function Dashboard() {
               ))}
               {Object.keys(speciesCount).length === 0 && (
                 <span className="text-xs text-muted-foreground">
-                  No animals yet
+                  No animals added yet
                 </span>
               )}
             </div>
@@ -408,7 +408,7 @@ export default function Dashboard() {
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-sm">
               <MapPin className="h-4 w-4" />
-              Farm Locations
+              Where Your Farms Are
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
@@ -436,8 +436,7 @@ export default function Dashboard() {
                         <div className="text-sm">
                           <p className="font-semibold">{farm.name}</p>
                           <p className="text-xs text-muted-foreground">
-                            {farm.animalCount} animal
-                            {farm.animalCount !== 1 ? "s" : ""}
+                            {farm.animalCount} animal{farm.animalCount !== 1 ? "s" : ""} here
                           </p>
                         </div>
                       </Tooltip>
@@ -450,7 +449,7 @@ export default function Dashboard() {
                   <div className="bg-card/90 backdrop-blur-sm border border-border rounded-lg p-4 text-center pointer-events-auto">
                     <MapPin className="h-8 w-8 text-muted-foreground/50 mx-auto mb-2" />
                     <p className="text-sm text-muted-foreground">
-                      No farms with locations yet
+                      No farms added with a location yet
                     </p>
                     <Button
                       variant="link"
@@ -458,7 +457,7 @@ export default function Dashboard() {
                       onClick={() => navigate("/farms/create")}
                       className="mt-1"
                     >
-                      Add a farm
+                      Add your farm
                     </Button>
                   </div>
                 </div>
@@ -473,7 +472,7 @@ export default function Dashboard() {
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center gap-2 text-sm">
                 <Bell className="h-4 w-4" />
-                Recent Alerts
+                Recent Warnings
               </CardTitle>
               <Button
                 variant="ghost"
@@ -481,7 +480,7 @@ export default function Dashboard() {
                 onClick={() => navigate("/alerts")}
                 className="text-xs text-muted-foreground"
               >
-                View all
+                See all
                 <ArrowRight className="ml-1 h-3 w-3" />
               </Button>
             </div>
@@ -491,7 +490,7 @@ export default function Dashboard() {
               <div className="p-6 text-center">
                 <Bell className="h-8 w-8 text-muted-foreground/30 mx-auto mb-2" />
                 <p className="text-sm text-muted-foreground">
-                  No active alerts
+                  All good — no warnings right now
                 </p>
               </div>
             ) : (

@@ -14,11 +14,11 @@ const { ReadlineParser } = require('@serialport/parser-readline');
 // Configuration
 const API_BASE_URL = process.env.API_URL || 'http://127.0.0.1:5000';
 const BAUD_RATE = 115200;
-const POST_INTERVAL_MS = 5000; // Post sensor data every 5 seconds
+const POST_INTERVAL_MS = 2000;      // Post every 2 s (matches ESP32 emit rate)
 const HEARTBEAT_INTERVAL_MS = 10000; // Send heartbeat every 10 seconds
+const DEVICE_ID = 'neckband_001';    // Must match what the ESP32 was flashed with
 
-// State management
-let currentRfid = null;
+// Sensor buffer — updated every time a JSON line arrives from the ESP32
 let sensorBuffer = {
   temperature: null,
   humidity: null,
@@ -94,96 +94,48 @@ async function postData(endpoint, data) {
   }
 }
 
-// Parse RFID from serial output
-// Format: ">>> RFID Card Detected! UID:  04 3A 2B 1C"
-function parseRfid(line) {
-  const match = line.match(/UID:\s*([0-9A-Fa-f\s]+)/);
-  if (match) {
-    // Remove spaces and lowercase
-    return match[1].replace(/\s+/g, '').toLowerCase();
+// Parse a JSON line emitted by the ESP32
+// Expected format: {"temperature":38.5,"humidity":62.0,"heartRate":74}
+function parseJsonLine(line) {
+  const trimmed = line.trim();
+  if (!trimmed.startsWith('{')) return null;
+  try {
+    return JSON.parse(trimmed);
+  } catch {
+    return null;
   }
-  return null;
 }
 
-// Parse temperature from serial output
-// Format: "Temperature: 36.5 °C / 97.7 °F" or "Temperature: 36.5 °C"
-function parseTemperature(line) {
-  const match = line.match(/Temperature:\s*([\d.]+)\s*°C/);
-  if (match) {
-    return parseFloat(match[1]);
-  }
-  return null;
-}
-
-// Parse humidity from serial output
-// Format: "Humidity: 65.0 %"
-function parseHumidity(line) {
-  const match = line.match(/Humidity:\s*([\d.]+)\s*%/);
-  if (match) {
-    return parseFloat(match[1]);
-  }
-  return null;
-}
-
-// Parse heart rate from serial output
-// Format: "BPM: 72.0 | Avg BPM: 70" or "Avg BPM: 70"
-function parseHeartRate(line) {
-  const match = line.match(/Avg BPM:\s*(\d+)/);
-  if (match) {
-    return parseInt(match[1]);
-  }
-  return null;
-}
-
-// Process incoming serial line
+// Process incoming serial line — ESP32 emits one JSON object per line
 async function processLine(line) {
-  console.log(`[Serial] ${line}`);
-
-  // Check for RFID detection
-  if (line.includes('RFID Card Detected') || line.includes('UID:')) {
-    const rfid = parseRfid(line);
-    if (rfid) {
-      currentRfid = rfid;
-      console.log(`\n📟 RFID Detected: ${rfid}`);
-      
-      // Post RFID event
-      await postData('/api/iot/rfid', {
-        rfidTag: rfid,
-        readerId: 'serial_bridge'
-      });
-    }
+  // Skip debug/info lines that start with '['
+  const trimmed = line.trim();
+  if (!trimmed.startsWith('{')) {
+    if (trimmed.length > 0) console.log(`[Serial] ${trimmed}`);
+    return;
   }
 
-  // Check for user switch
-  if (line.includes('New card detected') || line.includes('Switching user')) {
-    console.log('\n🔄 User switch detected, resetting buffer');
-    sensorBuffer = {
-      temperature: null,
-      humidity: null,
-      heartRate: null
-    };
+  const parsed = parseJsonLine(trimmed);
+  if (!parsed) {
+    console.warn(`[Serial] Could not parse line: ${trimmed}`);
+    return;
   }
 
-  // Parse sensor values
-  const temp = parseTemperature(line);
-  if (temp !== null) {
-    sensorBuffer.temperature = temp;
-    console.log(`🌡️  Temperature: ${temp}°C`);
+  // Merge into buffer (keep last known value if a field is absent this tick)
+  if (parsed.temperature != null) {
+    sensorBuffer.temperature = parsed.temperature;
+    console.log(`🌡️  Temperature: ${parsed.temperature} °C`);
+  }
+  if (parsed.humidity != null) {
+    sensorBuffer.humidity = parsed.humidity;
+    console.log(`💧 Humidity: ${parsed.humidity} %`);
+  }
+  if (parsed.heartRate != null) {
+    sensorBuffer.heartRate = parsed.heartRate;
+    console.log(`❤️  Heart Rate: ${parsed.heartRate} BPM`);
   }
 
-  const humid = parseHumidity(line);
-  if (humid !== null) {
-    sensorBuffer.humidity = humid;
-    console.log(`💧 Humidity: ${humid}%`);
-  }
-
-  const hr = parseHeartRate(line);
-  if (hr !== null) {
-    sensorBuffer.heartRate = hr;
-    console.log(`❤️  Heart Rate: ${hr} BPM`);
-  }
-
-  // Check if it's time to post sensor data
+  // Post to backend on every line (ESP32 already throttles to PRINT_INTERVAL)
   const now = Date.now();
   if (now - lastPostTime >= POST_INTERVAL_MS) {
     await postSensorData();
@@ -191,27 +143,21 @@ async function processLine(line) {
   }
 }
 
-// Post buffered sensor data to API
+// Post buffered sensor data to API (no RFID required)
 async function postSensorData() {
-  if (!currentRfid) {
-    console.log('⏳ No RFID set, skipping sensor post');
-    return;
-  }
-
   const { temperature, humidity, heartRate } = sensorBuffer;
-  
+
   // Only post if we have at least one sensor value
   if (temperature === null && humidity === null && heartRate === null) {
-    console.log('⏳ No sensor data in buffer, skipping');
+    console.log('⏳ No sensor data in buffer yet, skipping');
     return;
   }
 
   const data = {
-    rfidTag: currentRfid,
     temperature,
     humidity,
     heartRate,
-    deviceId: 'esp32_serial'
+    deviceId: DEVICE_ID
   };
 
   console.log('\n📤 Posting sensor data:', JSON.stringify(data));
@@ -289,14 +235,6 @@ async function main() {
   setInterval(async () => {
     await sendHeartbeat();
   }, HEARTBEAT_INTERVAL_MS);
-
-  // Periodic sensor posting (backup in case no new data triggers it)
-  setInterval(async () => {
-    if (currentRfid && Date.now() - lastPostTime >= POST_INTERVAL_MS) {
-      await postSensorData();
-      lastPostTime = Date.now();
-    }
-  }, POST_INTERVAL_MS);
 }
 
 main().catch(console.error);

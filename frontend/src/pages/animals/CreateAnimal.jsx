@@ -77,7 +77,7 @@ export default function CreateAnimal() {
 
  const analyzeImageWithGemini = async (file, retryCount = 0) => {
     setAnalyzingImage(true);
-    toast.info("Analyzing image with AI...", { duration: 2000 });
+toast.info("Checking your photo with AI...", { duration: 2000 });
 
     try {
       const base64Image = await new Promise((resolve, reject) => {
@@ -212,7 +212,7 @@ Return ONLY valid JSON, no markdown formatting or code blocks.`;
       if (extractedData.gender) filledFields.push('gender');
       if (extractedData.age) filledFields.push('age');
 
-      toast.success(`✨ AI filled ${filledFields.length} fields: ${filledFields.join(', ')}`, { duration: 4000 });
+      toast.success(`AI filled ${filledFields.length} fields: ${filledFields.join(', ')}`, { duration: 4000 });
       
       if (extractedData.notes) {
         toast.info(`AI Notes: ${extractedData.notes}`, { duration: 6000 });
@@ -230,9 +230,9 @@ Return ONLY valid JSON, no markdown formatting or code blocks.`;
       }
       
       if (error.message?.includes('429') || error.message?.includes('quota')) {
-        toast.error("API rate limit reached. Please wait a moment and try again.", { duration: 5000 });
+        toast.error("Too many requests. Please wait a moment and try again.", { duration: 5000 });
       } else {
-        toast.error("Failed to analyze image. You can still fill the form manually.");
+        toast.error("Could not check photo. You can still fill the form yourself.");
       }
     } finally {
       setAnalyzingImage(false);
@@ -243,7 +243,7 @@ Return ONLY valid JSON, no markdown formatting or code blocks.`;
     const file = e.target.files[0];
     if (file) {
       if (file.size > 5 * 1024 * 1024) {
-        toast.error("Image size should be less than 5MB");
+        toast.error("Image should be smaller than 5MB");
         return;
       }
       
@@ -269,31 +269,31 @@ Return ONLY valid JSON, no markdown formatting or code blocks.`;
 
   const validateStep1 = () => {
     if (!formData.name.trim()) {
-      toast.error("Please enter animal name");
+      toast.error("Please enter the animal's name");
       return false;
     }
     if (!formData.rfid.trim()) {
-      toast.error("Please enter RFID");
+      toast.error("Please enter the tag ID");
       return false;
     }
     if (!formData.species) {
-      toast.error("Please select species");
+      toast.error("Please choose the type of animal");
       return false;
     }
     if (!formData.breed.trim()) {
-      toast.error("Please enter breed");
+      toast.error("Please enter the breed");
       return false;
     }
     if (!formData.gender) {
-      toast.error("Please select gender");
+      toast.error("Please select male or female");
       return false;
     }
     if (!formData.age || formData.age <= 0) {
-      toast.error("Please enter valid age");
+      toast.error("Please enter how old the animal is");
       return false;
     }
     if (!formData.farmId) {
-      toast.error("Please select a farm");
+      toast.error("Please choose which farm this animal is on");
       return false;
     }
     return true;
@@ -366,11 +366,11 @@ Return ONLY valid JSON, no markdown formatting or code blocks.`;
         }
       );
 
-      toast.success("Animal created successfully!");
+      toast.success("Animal added successfully!");
       navigate(`/animals/${response.data.animal._id}`);
     } catch (error) {
       console.error("Error:", error);
-      toast.error(error.response?.data?.message || "Failed to create animal");
+      toast.error(error.response?.data?.message || "Could not add animal. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -409,7 +409,7 @@ Return ONLY valid JSON, no markdown formatting or code blocks.`;
         {step === 1 && (
           <Card>
             <CardHeader>
-              <CardTitle>Basic Information</CardTitle>
+              <CardTitle>Animal Details</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
               {/* Image Upload */}
@@ -447,7 +447,7 @@ Return ONLY valid JSON, no markdown formatting or code blocks.`;
                   {analyzingImage ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Analyzing with AI...
+                      Checking photo...
                     </>
                   ) : (
                     <>
@@ -459,7 +459,7 @@ Return ONLY valid JSON, no markdown formatting or code blocks.`;
                 {imageFile && !analyzingImage && (
                   <p className="text-sm text-muted-foreground flex items-center gap-1">
                     <Sparkles className="h-3 w-3" />
-                    AI has analyzed your image
+                    AI checked your photo
                   </p>
                 )}
               </div>
@@ -471,12 +471,12 @@ Return ONLY valid JSON, no markdown formatting or code blocks.`;
                     id="name"
                     value={formData.name}
                     onChange={(e) => handleInputChange("name", e.target.value)}
-                    placeholder="e.g., Bella"
+                    placeholder="e.g., Laxmi"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="rfid">RFID Tag *</Label>
+                  <Label htmlFor="rfid">Animal Tag ID *</Label>
                   <Input
                     id="rfid"
                     value={formData.rfid}
@@ -486,13 +486,13 @@ Return ONLY valid JSON, no markdown formatting or code blocks.`;
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="species">Species *</Label>
+                  <Label htmlFor="species">Type of Animal *</Label>
                   <Select
                     value={formData.species}
                     onValueChange={(value) => handleInputChange("species", value)}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Select species" />
+                      <SelectValue placeholder="Choose type" />
                     </SelectTrigger>
                     <SelectContent>
                       {speciesOptions.map(({ value, label, Icon, color }) => (
@@ -515,13 +515,13 @@ Return ONLY valid JSON, no markdown formatting or code blocks.`;
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="gender">Gender *</Label>
+                  <Label htmlFor="gender">Male or Female *</Label>
                   <Select
                     value={formData.gender}
                     onValueChange={(value) => handleInputChange("gender", value)}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Select gender" />
+                      <SelectValue placeholder="Choose" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="male">Male</SelectItem>
@@ -531,7 +531,7 @@ Return ONLY valid JSON, no markdown formatting or code blocks.`;
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="age">Age *</Label>
+                  <Label htmlFor="age">How Old? *</Label>
                   <div className="flex gap-2">
                     <Input
                       id="age"
@@ -559,13 +559,13 @@ Return ONLY valid JSON, no markdown formatting or code blocks.`;
                 </div>
 
                 <div className="space-y-2 md:col-span-2">
-                  <Label htmlFor="farm">Farm *</Label>
+                  <Label htmlFor="farm">Which Farm? *</Label>
                   <Select
                     value={formData.farmId}
                     onValueChange={(value) => handleInputChange("farmId", value)}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Select a farm" />
+                      <SelectValue placeholder="Pick your farm" />
                     </SelectTrigger>
                     <SelectContent>
                       {(Array.isArray(farms) ? farms : []).map((farm) => (
@@ -583,13 +583,13 @@ Return ONLY valid JSON, no markdown formatting or code blocks.`;
                   </Select>
                   {farms.length === 0 && (
                     <p className="text-sm text-muted-foreground">
-                      No farms available.{" "}
+                      No farms yet.{" "}
                       <Button
                         variant="link"
                         className="p-0 h-auto"
                         onClick={() => navigate("/farms/create")}
                       >
-                        Create one first
+                        Add a farm first
                       </Button>
                     </p>
                   )}
@@ -598,7 +598,7 @@ Return ONLY valid JSON, no markdown formatting or code blocks.`;
 
               <div className="flex justify-end">
                 <Button onClick={handleNext} size="lg">
-                  Next: Health Information
+                  Next: Health Info
                   <ChevronRight className="ml-2 h-4 w-4" />
                 </Button>
               </div>
@@ -610,27 +610,27 @@ Return ONLY valid JSON, no markdown formatting or code blocks.`;
         {step === 2 && (
           <Card>
             <CardHeader>
-              <CardTitle>Health & Vaccination Information</CardTitle>
+              <CardTitle>Health & Shot Records</CardTitle>
               <p className="text-sm text-muted-foreground">
-                This information will help us generate a personalized vaccination schedule
+                This helps us make the right shot schedule for your animal
               </p>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-2">
                 <Label htmlFor="hasVaccinations">
-                  Has this animal received any vaccinations previously? *
+                  Has this animal ever been given any shots (vaccines)? *
                 </Label>
                 <Select
                   value={answers.hasVaccinations}
                   onValueChange={(value) => handleAnswerChange("hasVaccinations", value)}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select an option" />
+                    <SelectValue placeholder="Choose one" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="yes">Yes</SelectItem>
                     <SelectItem value="no">No</SelectItem>
-                    <SelectItem value="unknown">Not sure / Unknown</SelectItem>
+                    <SelectItem value="unknown">Not sure</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -639,7 +639,7 @@ Return ONLY valid JSON, no markdown formatting or code blocks.`;
                 <>
                   <div className="space-y-2">
                     <Label htmlFor="lastVaccinationDate">
-                      When was the last vaccination? (approximate)
+                      When was the last shot given? (roughly)
                     </Label>
                     <Input
                       id="lastVaccinationDate"
@@ -651,7 +651,7 @@ Return ONLY valid JSON, no markdown formatting or code blocks.`;
 
                   <div className="space-y-2">
                     <Label htmlFor="lastVaccineName">
-                      What was the last vaccination for?
+                      What was the shot for?
                     </Label>
                     <Input
                       id="lastVaccineName"
@@ -665,20 +665,20 @@ Return ONLY valid JSON, no markdown formatting or code blocks.`;
 
               <div className="space-y-2">
                 <Label htmlFor="healthStatus">
-                  What is the current health status of the animal? *
+                  How is the animal's health right now? *
                 </Label>
                 <Select
                   value={answers.healthStatus}
                   onValueChange={(value) => handleAnswerChange("healthStatus", value)}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select health status" />
+                    <SelectValue placeholder="Choose health status" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="healthy">Healthy / No issues</SelectItem>
-                    <SelectItem value="minor-issues">Minor health issues</SelectItem>
-                    <SelectItem value="recovering">Recovering from illness</SelectItem>
-                    <SelectItem value="chronic">Chronic condition</SelectItem>
+                    <SelectItem value="healthy">Healthy — No problems</SelectItem>
+                    <SelectItem value="minor-issues">Small health issue</SelectItem>
+                    <SelectItem value="recovering">Getting better from sickness</SelectItem>
+                    <SelectItem value="chronic">Long-term illness</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -686,20 +686,20 @@ Return ONLY valid JSON, no markdown formatting or code blocks.`;
               {formData.gender === "female" && (
                 <div className="space-y-2">
                   <Label htmlFor="pregnancyStatus">
-                    Is the animal currently pregnant or has it given birth recently?
+                    Is this animal pregnant or did she give birth recently?
                   </Label>
                   <Select
                     value={answers.pregnancyStatus}
                     onValueChange={(value) => handleAnswerChange("pregnancyStatus", value)}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Select status" />
+                      <SelectValue placeholder="Choose status" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="not-pregnant">Not pregnant</SelectItem>
-                      <SelectItem value="pregnant">Currently pregnant</SelectItem>
-                      <SelectItem value="recent-birth">Recently gave birth</SelectItem>
-                      <SelectItem value="unknown">Unknown</SelectItem>
+                      <SelectItem value="pregnant">Pregnant right now</SelectItem>
+                      <SelectItem value="recent-birth">Just gave birth</SelectItem>
+                      <SelectItem value="unknown">Not sure</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -707,13 +707,13 @@ Return ONLY valid JSON, no markdown formatting or code blocks.`;
 
               <div className="space-y-2">
                 <Label htmlFor="additionalInfo">
-                  Any additional information? (optional)
+                  Anything else to share? (optional)
                 </Label>
                 <textarea
                   id="additionalInfo"
                   value={answers.additionalInfo}
                   onChange={(e) => handleAnswerChange("additionalInfo", e.target.value)}
-                  placeholder="Any other relevant health information, previous illnesses, special care requirements, etc."
+                  placeholder="Any other information about this animal's health or history..."
                   className="w-full min-h-25 px-3 py-2 border rounded-md bg-transparent text-sm"
                 />
               </div>
@@ -721,7 +721,7 @@ Return ONLY valid JSON, no markdown formatting or code blocks.`;
               <div className="flex justify-between">
                 <Button variant="outline" onClick={() => setStep(1)}>
                   <ChevronLeft className="mr-2 h-4 w-4" />
-                  Previous
+                  Go Back
                 </Button>
                 <Button
                   onClick={handleSubmit}
@@ -731,10 +731,10 @@ Return ONLY valid JSON, no markdown formatting or code blocks.`;
                   {loading ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Creating Animal...
+                      Adding animal...
                     </>
                   ) : (
-                    "Create Animal"
+                    "Add Animal"
                   )}
                 </Button>
               </div>

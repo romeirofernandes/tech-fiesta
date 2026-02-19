@@ -143,10 +143,10 @@ export default function EditAnimal() {
         }
       );
 
-      toast.success("Animal updated successfully!");
+      toast.success("Animal updated!");
       navigate(`/animals/${id}`);
     } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to update animal");
+      toast.error(error.response?.data?.message || "Could not update animal. Try again.");
     } finally {
       setLoading(false);
     }
@@ -168,7 +168,7 @@ export default function EditAnimal() {
       <div className="space-y-6 max-w-full px-6 mx-auto p-4 md:p-6 lg:p-8">
         <Card>
           <CardHeader>
-            <CardTitle>Edit Animal</CardTitle>
+            <CardTitle>Update Animal Details</CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
@@ -208,7 +208,7 @@ export default function EditAnimal() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="rfid">RFID Tag *</Label>
+                  <Label htmlFor="rfid">Animal Tag ID *</Label>
                   <Input
                     id="rfid"
                     value={formData.rfid}
@@ -218,7 +218,7 @@ export default function EditAnimal() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="species">Species *</Label>
+                  <Label htmlFor="species">Type of Animal *</Label>
                   <Select
                     value={formData.species}
                     onValueChange={(value) => handleInputChange("species", value)}
@@ -247,7 +247,7 @@ export default function EditAnimal() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="gender">Gender *</Label>
+                  <Label htmlFor="gender">Male or Female *</Label>
                   <Select
                     value={formData.gender}
                     onValueChange={(value) => handleInputChange("gender", value)}
@@ -263,7 +263,7 @@ export default function EditAnimal() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="age">Age *</Label>
+                  <Label htmlFor="age">How Old? *</Label>
                   <div className="flex gap-2">
                     <Input
                       id="age"
@@ -291,7 +291,7 @@ export default function EditAnimal() {
                 </div>
 
                 <div className="space-y-2 md:col-span-2">
-                  <Label htmlFor="farm">Farm *</Label>
+                  <Label htmlFor="farm">Which Farm? *</Label>
                   <Select
                     value={formData.farmId}
                     onValueChange={(value) => handleInputChange("farmId", value)}
@@ -322,7 +322,7 @@ export default function EditAnimal() {
                   variant="outline"
                   onClick={() => navigate(`/animals/${id}`)}
                 >
-                  Cancel
+                  Go Back
                 </Button>
                 <Button type="submit" disabled={loading}>
                   {loading ? (

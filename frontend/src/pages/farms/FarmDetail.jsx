@@ -45,7 +45,7 @@ export default function FarmDetail() {
       setAnimals(Array.isArray(animalsResponse.data) ? animalsResponse.data : []);
       setLoading(false);
     } catch (error) {
-      toast.error("Failed to fetch farm details");
+      toast.error("Could not load farm details. Please try again.");
       setLoading(false);
     }
   };
@@ -76,7 +76,7 @@ export default function FarmDetail() {
           <h2 className="text-2xl font-bold mb-2">Farm not found</h2>
           <Button onClick={() => navigate("/farms")}>
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Farms
+            Back to My Farms
           </Button>
         </div>
       </Layout>
@@ -92,7 +92,7 @@ export default function FarmDetail() {
           <h1 className="text-3xl font-bold">{farm.name}</h1>
           <Button onClick={() => navigate(`/farms/${id}/edit`)}>
             <Edit2 className="mr-2 h-4 w-4" />
-            Edit Farm
+            Update Farm
           </Button>
         </div>
 
@@ -126,7 +126,7 @@ export default function FarmDetail() {
         {coordinates && (
           <Card>
             <CardHeader>
-              <CardTitle>Location Map</CardTitle>
+              <CardTitle>Farm on Map</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="rounded-lg overflow-hidden border" style={{ height: 400 }}>
@@ -149,21 +149,21 @@ export default function FarmDetail() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Animals at this Farm</CardTitle>
+            <CardTitle>Animals at This Farm</CardTitle>
             <Button
               variant="outline"
               size="sm"
               onClick={() => navigate("/animals/create")}
             >
               <Beef className="mr-2 h-4 w-4" />
-              Add Animal
+              Add Animal Here
             </Button>
           </CardHeader>
           <CardContent>
             {animals.length === 0 ? (
               <div className="text-center py-12">
                 <Beef className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                <p className="text-muted-foreground">No animals at this farm yet</p>
+                <p className="text-muted-foreground">No animals at this farm yet. Add one!</p>
               </div>
             ) : (
               <div className="space-y-3">

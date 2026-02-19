@@ -79,11 +79,11 @@ export default function Farms() {
       await axios.delete(`${import.meta.env.VITE_API_BASE_URL}/api/farms/${deleteId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      toast.success("Farm deleted successfully");
+      toast.success("Farm removed successfully!");
       setDeleteId(null);
       fetchFarms();
     } catch (error) {
-      toast.error("Failed to delete farm");
+      toast.error("Could not remove this farm. Try again.");
       setDeleteId(null);
     }
   };
@@ -93,14 +93,14 @@ export default function Farms() {
       <div className="space-y-6 max-w-full px-6 mx-auto p-4 md:p-6 lg:p-8">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
-            <h1 className="text-3xl font-bold">Farms</h1>
+            <h1 className="text-3xl font-bold">My Farms</h1>
             <p className="text-muted-foreground mt-1">
-              Manage your farm locations
+              See and manage all your farms
             </p>
           </div>
           <Button onClick={() => navigate("/farms/create")} size="lg">
             <Plus className="mr-2 h-4 w-4" />
-            Add Farm
+            Add a Farm
           </Button>
         </div>
 
@@ -109,7 +109,7 @@ export default function Farms() {
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search by name or location..."
+                placeholder="Search your farms..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-10"
@@ -122,16 +122,16 @@ export default function Farms() {
           <Card>
             <CardContent className="flex flex-col items-center justify-center py-12">
               <MapPin className="h-12 w-12 mb-4 text-muted-foreground" />
-              <h3 className="text-lg font-semibold mb-2">No farms found</h3>
+              <h3 className="text-lg font-semibold mb-2">No farms yet</h3>
               <p className="text-muted-foreground text-center mb-4">
                 {searchQuery
-                  ? "Try adjusting your search"
-                  : "Get started by adding your first farm"}
+                  ? "Try a different name"
+                  : "Add your first farm to get started"}
               </p>
               {!searchQuery && (
                 <Button onClick={() => navigate("/farms/create")}>
                   <Plus className="mr-2 h-4 w-4" />
-                  Add Farm
+                  Add a Farm
                 </Button>
               )}
             </CardContent>
@@ -192,15 +192,15 @@ export default function Farms() {
                         <AlertDialogContent>
                           <AlertDialogHeader>
                             <AlertDialogTitle>
-                              Are you sure you want to delete this farm?
+                              Do you want to remove this farm?
                             </AlertDialogTitle>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
                             <AlertDialogCancel onClick={() => setDeleteId(null)}>
-                              Cancel
+                              Go Back
                             </AlertDialogCancel>
                             <AlertDialogAction onClick={handleDelete}>
-                              Delete
+                              Yes, Remove
                             </AlertDialogAction>
                           </AlertDialogFooter>
                         </AlertDialogContent>
