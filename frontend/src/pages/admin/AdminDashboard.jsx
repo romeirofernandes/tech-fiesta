@@ -12,6 +12,7 @@ import {
   ChevronRight,
   TrendingUp,
   Globe,
+  ShieldCheck,
 } from "lucide-react";
 import { useTheme } from "@/context/ThemeContext";
 import { useUser } from "@/context/UserContext";
@@ -55,6 +56,7 @@ import AlertsManagement from "./tabs/AlertsManagement";
 import FarmerManagement from "./tabs/FarmerManagement";
 import MarketPricesAdmin from "./tabs/MarketPricesAdmin";
 import TransactionMonitor from "./tabs/TransactionMonitor";
+import BlockchainRecords from "./tabs/BlockchainRecords";
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
@@ -87,6 +89,7 @@ export default function AdminDashboard() {
     { id: "vaccinations", label: "Vaccination Schedules", icon: Syringe, path: "/admin/vaccinations", breadcrumb: "Vaccinations" },
     { id: "alerts", label: "Alerts", icon: Bell, path: "/admin/alerts", breadcrumb: "System Alerts" },
     { id: "market-prices", label: "Market Prices", icon: TrendingUp, path: "/admin/market-prices", breadcrumb: "Market Prices" },
+    { id: "blockchain", label: "Blockchain Ledger", icon: ShieldCheck, path: "/admin/blockchain", breadcrumb: "Blockchain Records" },
   ];
 
   const findCurrentNav = () => {
@@ -274,6 +277,7 @@ export default function AdminDashboard() {
             <Route path="/vaccinations" element={<VaccinationTracking />} />
             <Route path="/alerts" element={<AlertsManagement />} />
             <Route path="/market-prices" element={<MarketPricesAdmin />} />
+            <Route path="/blockchain" element={<BlockchainRecords />} />
           </Routes>
         </div>
       </AdminSidebarInset>

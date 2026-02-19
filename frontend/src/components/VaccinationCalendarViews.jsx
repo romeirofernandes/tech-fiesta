@@ -10,6 +10,7 @@ import {
   Pencil,
   Trash2,
   CheckCircle,
+  ShieldCheck,
 } from "lucide-react";
 import { useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
@@ -254,18 +255,7 @@ function EventActions({ event, onEditEvent, onDeleteEvent, onResolveEvent }) {
           <Pencil className="h-2.5 w-2.5" />
         </button>
       )}
-      {onDeleteEvent && (
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onDeleteEvent(event);
-          }}
-          className="p-0.5 rounded hover:bg-white/20"
-          type="button"
-        >
-          <Trash2 className="h-2.5 w-2.5" />
-        </button>
-      )}
+
     </div>
   );
 }
@@ -570,12 +560,26 @@ function ListView({
                     >
                       {event.eventType}
                     </Badge>
+                    {event.blockchain?.txHash && (
+                      <a
+                        href={event.blockchain.explorerUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        title="Verified on Polygon blockchain"
+                      >
+                        <Badge variant="outline" className="text-[10px] gap-0.5 text-green-600 border-green-300 hover:bg-green-50 dark:text-green-400 dark:border-green-800 dark:hover:bg-green-950">
+                          <ShieldCheck className="h-3 w-3" />
+                          On-Chain
+                        </Badge>
+                      </a>
+                    )}
                   </div>
                   <p className="text-sm text-muted-foreground">
                     {getAnimalName(event)}
                   </p>
                 </div>
-                <span className="text-sm text-muted-foreground shrink-0">
+                <span className="text-sm text-muted-foreground shrink-0 group-hover:opacity-0 transition-opacity">
                   {format(new Date(event.date), "h:mm a")}
                 </span>
 

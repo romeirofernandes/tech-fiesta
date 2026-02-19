@@ -30,6 +30,7 @@ import {
   Clock,
   Wifi,
   WifiOff,
+  CheckCircle,
 } from 'lucide-react-native';
 import { Colors } from '@/constants/theme';
 import { db } from '@/lib/db';
@@ -122,23 +123,60 @@ export default function AnimalDetailScreen() {
 
         // Persist vaccinations to local DB
         for (const v of apiVaccinations) {
-          db.runSync(
-            'INSERT OR REPLACE INTO vaccinations (id, animalId, vaccineName, date, status, eventType) VALUES (?, ?, ?, ?, ?, ?)',
-            [
-              v._id ?? null,
-              id,
-              v.vaccineName ?? null,
-              v.date ?? null,
-              v.status ?? null,
-              v.eventType ?? null,
-            ]
-          );
+          try {
+            const local = db.getFirstSync<{ syncStatus: string }>('SELECT syncStatus FROM vaccinations WHERE id = ?', [v._id]);
+            if (local && local.syncStatus === 'pending') continue;
+
+            db.runSync(
+              'INSERT OR REPLACE INTO vaccinations (id, animalId, animalName, vaccineName, date, status, eventType, syncStatus) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+              [
+                v._id ?? null,
+                id,
+                v.animalId?.name || animal?.name || null,
+                v.vaccineName ?? null,
+                v.date ?? null,
+                v.status ?? null,
+                v.eventType ?? null,
+                'synced'
+              ]
+            );
+          } catch (e) {
+            console.log('Error caching vaccination:', e);
+          }
         }
       }
     } catch (error) {
       console.error('Error fetching animal from API:', error);
     }
   }, [id]);
+  
+  const handleResolveVaccination = async (vacc: any) => {
+    try {
+      // 0. Validate ID
+      const vaccId = vacc._id || vacc.id;
+      if (!vaccId) return;
+
+      // 1. Optimistic Update Local State
+      setVaccinations(prev => 
+        prev.map(v => (v._id === vaccId || v.id === vaccId) ? { ...v, eventType: 'administered', status: 'administered' } : v)
+      );
+
+      // 2. Update Local DB
+      db.runSync(
+        'UPDATE vaccinations SET eventType = ?, status = ?, syncStatus = ? WHERE id = ?',
+        ['administered', 'administered', 'pending', vaccId]
+      );
+
+      // 3. Queue Sync Job
+      await syncService.addToQueue('RESOLVE', 'vaccinations', { _id: vaccId });
+
+      Alert.alert('Success', 'Vaccination marked as done');
+    } catch (error) {
+      console.error('Error resolving vaccination:', error);
+      Alert.alert('Error', 'Failed to update status');
+      // Revert optimistic update if needed, but local DB error is rare here
+    }
+  };
 
   useFocusEffect(
     useCallback(() => {
@@ -481,26 +519,38 @@ export default function AnimalDetailScreen() {
                             </Text>
                           </View>
                         </View>
-                        <View
-                          className={`px-2.5 py-1 rounded-full ${
-                            isAdministered
-                              ? 'bg-green-500/10'
-                              : isOverdue
-                              ? 'bg-destructive/10'
-                              : 'bg-amber-500/10'
-                          }`}
-                        >
-                          <Text
-                            className={`text-[10px] font-bold ${
+                        <View className="flex-row items-center gap-2">
+                          {!isAdministered && (
+                            <TouchableOpacity
+                              onPress={() => handleResolveVaccination(vacc)}
+                              className="bg-primary/10 px-3 py-1.5 rounded-full flex-row items-center gap-1"
+                            >
+                              <CheckCircle size={12} color={themeColors.primary} />
+                              <Text className="text-[10px] font-bold text-primary">Mark Done</Text>
+                            </TouchableOpacity>
+                          )}
+                          
+                          <View
+                            className={`px-2.5 py-1 rounded-full ${
                               isAdministered
-                                ? 'text-green-600'
+                                ? 'bg-green-500/10'
                                 : isOverdue
-                                ? 'text-destructive'
-                                : 'text-amber-600'
+                                ? 'bg-destructive/10'
+                                : 'bg-amber-500/10'
                             }`}
                           >
-                            {isAdministered ? 'Done' : isOverdue ? 'Overdue' : 'Upcoming'}
-                          </Text>
+                            <Text
+                              className={`text-[10px] font-bold ${
+                                isAdministered
+                                  ? 'text-green-600'
+                                  : isOverdue
+                                  ? 'text-destructive'
+                                  : 'text-amber-600'
+                              }`}
+                            >
+                              {isAdministered ? 'Done' : isOverdue ? 'Overdue' : 'Upcoming'}
+                            </Text>
+                          </View>
                         </View>
                       </View>
                     );

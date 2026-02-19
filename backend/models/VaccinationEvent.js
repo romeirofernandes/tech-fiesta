@@ -34,6 +34,24 @@ const vaccinationEventSchema = new mongoose.Schema({
       default: null
     }
   },
+  // Certificate image (uploaded to Cloudinary)
+  certificateUrl: {
+    type: String,
+    default: null
+  },
+  // Blockchain proof
+  blockchain: {
+    txHash: { type: String, default: null },
+    recordId: { type: Number, default: null },
+    blockNumber: { type: Number, default: null },
+    explorerUrl: { type: String, default: null },
+    network: { type: String, default: 'polygon-amoy' }
+  },
+  // AI-extracted metadata from certificate
+  extractedData: {
+    type: Object,
+    default: null
+  },
   createdAt: {
     type: Date,
     default: Date.now

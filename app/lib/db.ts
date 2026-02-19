@@ -3,38 +3,15 @@ import * as SQLite from 'expo-sqlite';
 let _db: SQLite.SQLiteDatabase | null = null;
 let _dbReady: Promise<SQLite.SQLiteDatabase> | null = null;
 
+let _migrated = false;
+
 /**
  * Get the database instance synchronously.
  * Returns null if the database hasn't been initialized yet.
  */
-export function getDb(): SQLite.SQLiteDatabase {
-  if (!_db) {
-    // Attempt to open synchronously as a fallback
-    _db = SQLite.openDatabaseSync('tech_fiesta.db');
-  }
-  return _db;
-}
-
-/**
- * Get a promise that resolves to the database once it has been initialized.
- * Safe to call multiple times – will only init once.
- */
-export function getDbAsync(): Promise<SQLite.SQLiteDatabase> {
-  if (!_dbReady) {
-    _dbReady = initDatabase();
-  }
-  return _dbReady;
-}
-
-export async function initDatabase(): Promise<SQLite.SQLiteDatabase> {
-  // If already initialized, return immediately
-  if (_db) {
-    return _db;
-  }
-
+// Helper to ensure all tables exist
+function ensureTables(database: SQLite.SQLiteDatabase) {
   try {
-    const database = SQLite.openDatabaseSync('tech_fiesta.db');
-
     // Create Farms table
     database.execSync(`
       CREATE TABLE IF NOT EXISTS farms (
@@ -127,6 +104,7 @@ export async function initDatabase(): Promise<SQLite.SQLiteDatabase> {
       CREATE TABLE IF NOT EXISTS vaccinations (
         id TEXT PRIMARY KEY,
         animalId TEXT,
+        animalName TEXT,
         vaccineName TEXT,
         date TEXT,
         status TEXT,
@@ -134,6 +112,18 @@ export async function initDatabase(): Promise<SQLite.SQLiteDatabase> {
         syncStatus TEXT DEFAULT 'synced'
       );
     `);
+
+    // Migration: add animalName column to vaccinations if missing
+    try {
+      const vaccTableInfo = database.getAllSync('PRAGMA table_info(vaccinations)');
+      const hasAnimalName = vaccTableInfo.some((col: any) => col.name === 'animalName');
+      if (!hasAnimalName) {
+        database.execSync('ALTER TABLE vaccinations ADD COLUMN animalName TEXT');
+        console.log('Migration: added animalName to vaccinations');
+      }
+    } catch (e) {
+      console.log('Vaccinations migration check error:', e);
+    }
 
     // Create Health Snapshots table
     database.execSync(`
@@ -157,13 +147,45 @@ export async function initDatabase(): Promise<SQLite.SQLiteDatabase> {
       );
     `);
 
-    console.log('Database initialized successfully');
-    _db = database;
-    return database;
+    console.log('Database tables ensured');
   } catch (error) {
-    console.error('Database initialization failed:', error);
-    throw error;
+    console.error('Database table creation failed:', error);
   }
+}
+
+/**
+ * Get the database instance synchronously.
+ * Returns null if the database hasn't been initialized yet.
+ */
+export function getDb(): SQLite.SQLiteDatabase {
+  if (!_db) {
+    // Attempt to open synchronously as a fallback
+    _db = SQLite.openDatabaseSync('tech_fiesta.db');
+  }
+
+  if (!_migrated && _db) {
+    ensureTables(_db);
+    _migrated = true;
+  }
+
+  return _db;
+}
+
+/**
+ * Get a promise that resolves to the database once it has been initialized.
+ * Safe to call multiple times – will only init once.
+ */
+export function getDbAsync(): Promise<SQLite.SQLiteDatabase> {
+  if (!_dbReady) {
+    // initDatabase is now just a wrapper around getDb logic which is likely sync enough
+    _dbReady = initDatabase();
+  }
+  return _dbReady;
+}
+
+export async function initDatabase(): Promise<SQLite.SQLiteDatabase> {
+  const db = getDb();
+  return db;
 }
 
 /** 

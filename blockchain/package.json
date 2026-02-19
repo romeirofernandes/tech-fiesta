@@ -1,0 +1,14 @@
+{
+  "name": "tech-fiesta-blockchain",
+  "version": "1.0.0",
+  "description": "Smart contracts for immutable vaccination records",
+  "scripts": {
+    "compile": "npx hardhat compile",
+    "deploy:amoy": "npx hardhat run scripts/deploy.js --network amoy",
+    "deploy:local": "npx hardhat run scripts/deploy.js --network localhost"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "hardhat": "^2.22.0"
+  }
+}
