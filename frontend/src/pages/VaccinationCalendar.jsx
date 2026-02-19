@@ -76,8 +76,10 @@ export default function VaccinationCalendar() {
   }, [mongoUser]);
 
   useEffect(() => {
-    fetchVaccinationEvents();
-  }, [selectedAnimalId]);
+    if (mongoUser) {
+      fetchVaccinationEvents();
+    }
+  }, [selectedAnimalId, mongoUser]);
 
   const fetchAnimals = async () => {
     if (!mongoUser) return;
@@ -97,10 +99,11 @@ export default function VaccinationCalendar() {
   };
 
   const fetchVaccinationEvents = async () => {
+    if (!mongoUser) return;
     try {
       setLoading(true);
       const token = localStorage.getItem("token");
-      const params = {};
+      const params = { farmerId: mongoUser._id };
       if (selectedAnimalId !== "all") {
         params.animalId = selectedAnimalId;
       }

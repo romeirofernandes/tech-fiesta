@@ -38,6 +38,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import axios from "axios";
+import { useUser } from "@/context/UserContext";
 
 const BASE = import.meta.env.VITE_API_BASE_URL;
 
@@ -53,6 +54,7 @@ const SPECIES_EMOJIS = {
 };
 
 export default function HeartRateThresholds() {
+  const { mongoUser } = useUser();
   const [animals, setAnimals] = useState([]);
   const [defaults, setDefaults] = useState({});
   const [customThresholds, setCustomThresholds] = useState({});
@@ -76,16 +78,18 @@ export default function HeartRateThresholds() {
 
   const fetchData = useCallback(async () => {
     try {
+      const params = { farmerId: mongoUser?._id };
+      
       const [animalsRes, defaultsRes, thresholdsRes, farmsRes] =
         await Promise.all([
-          axios.get(`${BASE}/api/animals`).catch(() => ({ data: [] })),
+          axios.get(`${BASE}/api/animals`, { params }).catch(() => ({ data: [] })),
           axios
             .get(`${BASE}/api/heart-rate-thresholds/defaults`)
             .catch(() => ({ data: {} })),
           axios
-            .get(`${BASE}/api/heart-rate-thresholds`)
+            .get(`${BASE}/api/heart-rate-thresholds`, { params })
             .catch(() => ({ data: [] })),
-          axios.get(`${BASE}/api/farms`).catch(() => ({ data: [] })),
+          axios.get(`${BASE}/api/farms`, { params }).catch(() => ({ data: [] })),
         ]);
 
       setAnimals(Array.isArray(animalsRes.data) ? animalsRes.data : []);
@@ -110,11 +114,13 @@ export default function HeartRateThresholds() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [mongoUser]);
 
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    if (mongoUser) {
+        fetchData();
+    }
+  }, [fetchData, mongoUser]);
 
   // Get effective thresholds for an animal
   const getThresholds = (animal) => {

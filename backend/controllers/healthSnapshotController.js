@@ -1,4 +1,6 @@
 const HealthSnapshot = require('../models/HealthSnapshot');
+const Animal = require('../models/Animal');
+const Farmer = require('../models/Farmer');
 
 exports.createHealthSnapshot = async (req, res) => {
   try {
@@ -18,8 +20,21 @@ exports.createHealthSnapshot = async (req, res) => {
 
 exports.getHealthSnapshots = async (req, res) => {
   try {
-    const { animalId } = req.query;
-    const filter = animalId ? { animalId } : {};
+    const { animalId, farmerId } = req.query;
+    const filter = {};
+    
+    if (farmerId) {
+      const farmer = await Farmer.findById(farmerId);
+      if (farmer && farmer.farms && farmer.farms.length > 0) {
+        const animals = await Animal.find({ farmId: { $in: farmer.farms } }).select('_id');
+        const animalIds = animals.map(a => a._id);
+        filter.animalId = { $in: animalIds };
+      } else {
+        filter.animalId = { $in: [] };
+      }
+    }
+
+    if (animalId) filter.animalId = animalId;
 
     const snapshots = await HealthSnapshot.find(filter)
       .populate('animalId', 'name rfid species')

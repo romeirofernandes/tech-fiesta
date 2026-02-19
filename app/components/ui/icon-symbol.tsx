@@ -20,6 +20,7 @@ const MAPPING = {
   'chevron.right': 'chevron-right',
   'gear': 'settings',
   'pawprint.fill': 'pets',
+  'calendar': 'event',
 } as IconMapping;
 
 /**

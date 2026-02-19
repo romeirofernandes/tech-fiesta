@@ -1,5 +1,6 @@
 const HeartRateThreshold = require('../models/HeartRateThreshold');
 const Animal = require('../models/Animal');
+const Farmer = require('../models/Farmer');
 const HEART_RATE_DEFAULTS = require('../config/heartRateDefaults');
 
 // GET /api/heart-rate-thresholds/defaults
@@ -14,7 +15,21 @@ exports.getDefaults = async (req, res) => {
 // GET /api/heart-rate-thresholds
 exports.getThresholds = async (req, res) => {
   try {
-    const thresholds = await HeartRateThreshold.find()
+    const { farmerId } = req.query;
+    const filter = {};
+
+    if (farmerId) {
+      const farmer = await Farmer.findById(farmerId);
+      if (farmer && farmer.farms && farmer.farms.length > 0) {
+        const animals = await Animal.find({ farmId: { $in: farmer.farms } }).select('_id');
+        const animalIds = animals.map(a => a._id);
+        filter.animalId = { $in: animalIds };
+      } else {
+        filter.animalId = { $in: [] };
+      }
+    }
+
+    const thresholds = await HeartRateThreshold.find(filter)
       .populate('animalId', 'name rfid species farmId')
       .sort({ updatedAt: -1 });
 

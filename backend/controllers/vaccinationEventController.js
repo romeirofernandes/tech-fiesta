@@ -107,7 +107,7 @@ exports.createVaccinationEvent = async (req, res) => {
 
 exports.getVaccinationEvents = async (req, res) => {
   try {
-    const { animalId, eventType } = req.query;
+    const { animalId, eventType, farmerId } = req.query;
 
     // Auto-detect missed vaccinations before returning
     const now = new Date();
@@ -116,6 +116,16 @@ exports.getVaccinationEvents = async (req, res) => {
     await VaccinationEvent.updateMany(missedFilter, { $set: { eventType: 'missed' } });
     
     const filter = {};
+    if (farmerId) {
+      const farmer = await Farmer.findById(farmerId);
+      if (farmer && farmer.farms && farmer.farms.length > 0) {
+        const animals = await Animal.find({ farmId: { $in: farmer.farms } }).select('_id');
+        const animalIds = animals.map(a => a._id);
+        filter.animalId = { $in: animalIds };
+      } else {
+        filter.animalId = { $in: [] };
+      }
+    }
     if (animalId) filter.animalId = animalId;
     if (eventType) filter.eventType = eventType;
 

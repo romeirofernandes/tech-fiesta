@@ -579,7 +579,7 @@ function ListView({
                     {getAnimalName(event)}
                   </p>
                 </div>
-                <span className="text-sm text-muted-foreground shrink-0">
+                <span className="text-sm text-muted-foreground shrink-0 group-hover:opacity-0 transition-opacity">
                   {format(new Date(event.date), "h:mm a")}
                 </span>
 
