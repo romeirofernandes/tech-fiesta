@@ -341,9 +341,6 @@ export default function LiveVitals() {
               <Activity className="h-8 w-8 text-primary" />
               Live Animal Vitals
             </h1>
-            <p className="text-muted-foreground mt-1">
-              Real-time health monitoring from IoT sensors
-            </p>
           </div>
           <ConnectionStatus />
         </div>
