@@ -1,5 +1,7 @@
 const Alert = require('../models/Alert');
 const VaccinationEvent = require('../models/VaccinationEvent');
+const Animal = require('../models/Animal');
+const Farmer = require('../models/Farmer');
 
 /**
  * Check for missed vaccinations and auto-create alerts.
@@ -74,9 +76,23 @@ exports.getAlerts = async (req, res) => {
       console.error('Missed vaccination check failed:', err);
     }
 
-    const { animalId, type, severity, isResolved, search, startDate, endDate, page, limit } = req.query;
+    const { animalId, type, severity, isResolved, search, startDate, endDate, page, limit, farmerId } = req.query;
     
     const filter = {};
+
+    // Filter by farmer
+    if (farmerId) {
+      const farmer = await Farmer.findById(farmerId);
+      if (farmer && farmer.farms && farmer.farms.length > 0) {
+        const animals = await Animal.find({ farmId: { $in: farmer.farms } }).select('_id');
+        const animalIds = animals.map(a => a._id);
+        filter.animalId = { $in: animalIds };
+      } else {
+        // If farmer has no farms or doesn't exist, return no alerts (or handle as appropriate)
+        // For now, if no farms, animalId in [] will return nothing, which is correct
+        filter.animalId = { $in: [] };
+      }
+    }
     if (animalId) filter.animalId = animalId;
     if (type) filter.type = type;
     if (severity) filter.severity = severity;

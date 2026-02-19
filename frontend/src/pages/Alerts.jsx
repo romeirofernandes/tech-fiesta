@@ -19,6 +19,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useUser } from "@/context/UserContext";
 import {
   Pagination,
   PaginationContent,
@@ -62,6 +63,7 @@ const TYPE_ICONS = {
 };
 
 export default function Alerts() {
+  const { mongoUser } = useUser();
   const [alerts, setAlerts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [total, setTotal] = useState(0);
@@ -90,7 +92,8 @@ export default function Alerts() {
   const fetchStats = useCallback(async () => {
     try {
       const response = await axios.get(
-        `${import.meta.env.VITE_API_BASE_URL}/api/alerts`
+        `${import.meta.env.VITE_API_BASE_URL}/api/alerts`,
+        { params: { farmerId: mongoUser?._id } }
       );
       const allAlerts = response.data || [];
       const active = allAlerts.filter((a) => !a.isResolved);
@@ -139,7 +142,7 @@ export default function Alerts() {
 
       const response = await axios.get(
         `${import.meta.env.VITE_API_BASE_URL}/api/alerts`,
-        { params }
+        { params: { ...params, farmerId: mongoUser?._id } }
       );
 
       if (response.data.alerts) {
@@ -164,8 +167,16 @@ export default function Alerts() {
   }, [fetchStats]);
 
   useEffect(() => {
-    fetchAlerts();
-  }, [fetchAlerts]);
+    if (mongoUser) {
+      fetchStats();
+    }
+  }, [fetchStats, mongoUser]);
+
+  useEffect(() => {
+    if (mongoUser) {
+      fetchAlerts();
+    }
+  }, [fetchAlerts, mongoUser]);
 
   // Reset page when filters change
   useEffect(() => {

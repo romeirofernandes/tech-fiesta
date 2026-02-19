@@ -1,4 +1,6 @@
 const SensorEvent = require('../models/SensorEvent');
+const Animal = require('../models/Animal');
+const Farmer = require('../models/Farmer');
 
 exports.createSensorEvent = async (req, res) => {
   try {
@@ -19,9 +21,19 @@ exports.createSensorEvent = async (req, res) => {
 
 exports.getSensorEvents = async (req, res) => {
   try {
-    const { animalId, type, startDate, endDate } = req.query;
+    const { animalId, type, startDate, endDate, farmerId } = req.query;
     
     const filter = {};
+    if (farmerId) {
+      const farmer = await Farmer.findById(farmerId);
+      if (farmer && farmer.farms && farmer.farms.length > 0) {
+        const animals = await Animal.find({ farmId: { $in: farmer.farms } }).select('_id');
+        const animalIds = animals.map(a => a._id);
+        filter.animalId = { $in: animalIds };
+      } else {
+        filter.animalId = { $in: [] };
+      }
+    }
     if (animalId) filter.animalId = animalId;
     if (type) filter.type = type;
     if (startDate || endDate) {
