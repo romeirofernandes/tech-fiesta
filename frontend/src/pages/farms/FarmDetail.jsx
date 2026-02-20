@@ -7,10 +7,14 @@ import { ArrowLeft, Edit2, MapPin, Image as ImageIcon, Beef } from "lucide-react
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import axios from "axios";
-import { MapContainer, TileLayer, Marker } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Circle } from "react-leaflet";
 import L from "leaflet";
+import { useTheme } from "@/context/ThemeContext";
+import { getMapTile } from "@/lib/mapTiles";
 
 export default function FarmDetail() {
+  const { theme } = useTheme();
+  const { url: tileUrl, attribution: tileAttribution } = getMapTile(theme);
   const [farm, setFarm] = useState(null);
   const [animals, setAnimals] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -132,15 +136,29 @@ export default function FarmDetail() {
               <div className="rounded-lg overflow-hidden border" style={{ height: 400 }}>
                 <MapContainer
                   center={coordinates}
-                  zoom={13}
+                  zoom={15}
                   style={{ height: "100%", width: "100%" }}
                   scrollWheelZoom={false}
                 >
                   <TileLayer
-                    attribution='&copy; <a href="https://osm.org/copyright">OpenStreetMap</a> contributors'
-                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    attribution={tileAttribution}
+                    url={tileUrl}
+                    maxZoom={20}
                   />
                   <Marker position={coordinates} icon={markerIcon} />
+                  {farm.herdWatchRadius && (
+                    <Circle
+                      center={coordinates}
+                      radius={farm.herdWatchRadius}
+                      pathOptions={{
+                        color: 'hsl(142, 76%, 36%)',
+                        fillColor: 'hsl(142, 76%, 36%)',
+                        fillOpacity: 0.12,
+                        weight: 2,
+                        dashArray: '6 4',
+                      }}
+                    />
+                  )}
                 </MapContainer>
               </div>
             </CardContent>

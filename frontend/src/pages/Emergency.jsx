@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useUser } from "../context/UserContext";
 import { useTheme } from "../context/ThemeContext";
+import { getMapTile } from "@/lib/mapTiles";
 import { Layout } from "@/components/Layout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -67,9 +68,7 @@ export default function Emergency() {
   const [error, setError] = useState("");
 
   const isDark = theme === "dark";
-  const tileUrl = isDark
-    ? "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-    : "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png";
+  const { url: tileUrl, attribution: tileAttribution } = getMapTile(theme);
 
   // ── Fetch farms on mount ──
   useEffect(() => {
@@ -369,7 +368,8 @@ export default function Emergency() {
               >
                 <TileLayer
                   url={tileUrl}
-                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                  attribution={tileAttribution}
+                  maxZoom={20}
                 />
 
                 {mapBounds && <FitBounds bounds={mapBounds} />}

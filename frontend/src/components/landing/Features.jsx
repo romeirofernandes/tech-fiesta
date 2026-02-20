@@ -4,6 +4,7 @@ import { Activity, Wifi, Bell, BarChart3, Shield, Heart, TrendingUp } from 'luci
 import { useState, useEffect } from 'react'
 import { MapContainer, TileLayer, Marker, Popup, Circle } from 'react-leaflet'
 import { useTheme } from '@/context/ThemeContext'
+import { getMapTile } from '@/lib/mapTiles'
 import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
 
@@ -121,10 +122,8 @@ const LivestockMap = () => {
                 attributionControl={false}
             >
                 <TileLayer
-                    url={isDark 
-                        ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
-                        : 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png'
-                    }
+                    url={getMapTile(theme).url}
+                    attribution={getMapTile(theme).attribution}
                     maxZoom={20}
                 />
                 

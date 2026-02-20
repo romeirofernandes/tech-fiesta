@@ -10,8 +10,12 @@ import { toast } from "sonner";
 import axios from "axios";
 import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
 import L from "leaflet";
+import { useTheme } from "@/context/ThemeContext";
+import { getMapTile } from "@/lib/mapTiles";
 
 export default function EditFarm() {
+  const { theme } = useTheme();
+  const { url: tileUrl, attribution: tileAttribution } = getMapTile(theme);
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
   const [imageFile, setImageFile] = useState(null);
@@ -208,8 +212,9 @@ export default function EditFarm() {
                     scrollWheelZoom={true}
                   >
                     <TileLayer
-                      attribution='&copy; <a href="https://osm.org/copyright">OpenStreetMap</a> contributors'
-                      url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                      attribution={tileAttribution}
+                      url={tileUrl}
+                      maxZoom={20}
                     />
                     <LocationMarker />
                   </MapContainer>
