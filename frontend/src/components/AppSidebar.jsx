@@ -13,6 +13,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@/components/ui/avatar"
 
 import {
   Sidebar,
@@ -101,7 +106,7 @@ const navGroups = [
 ];
 
 export function AppSidebar() {
-  const { user, logout } = useUser();
+  const { user, mongoUser, logout } = useUser();
   const { theme, setTheme } = useTheme();
   const { state } = useSidebar();
   const location = useLocation();
@@ -200,14 +205,19 @@ export function AppSidebar() {
               <DropdownMenuTrigger asChild>
                 <SidebarMenuButton
                   size="lg"
-                  className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground w-full flex items-center justify-between py-6"
+                  className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground outline-none ring-0"
                 >
-                  <div className="flex items-center gap-2 overflow-hidden">
-                    <User className="min-h-5 min-w-5 shrink-0" />
-                    {state === "expanded" && (
-                      <span className="truncate font-semibold">{user?.name || "My Account"}</span>
-                    )}
-                  </div>
+                  <Avatar className="h-8 w-8 rounded-full">
+                    <AvatarImage src={mongoUser?.imageUrl || user?.photoURL || user?.profilePicture || user?.avatar} alt={mongoUser?.fullName || user?.displayName || user?.name || "User"} />
+                    <AvatarFallback className="rounded-full">
+                      <User className="h-4 w-4" />
+                    </AvatarFallback>
+                  </Avatar>
+                  {state === "expanded" && (
+                    <div className="grid flex-1 text-left text-sm leading-tight ml-2">
+                      <span className="truncate font-semibold">{mongoUser?.fullName || user?.displayName || user?.name || "My Account"}</span>
+                    </div>
+                  )}
                   {state === "expanded" && <ChevronUp className="ml-auto h-4 w-4 shrink-0 transition-transform duration-200 group-data-[state=open]:rotate-180" />}
                 </SidebarMenuButton>
               </DropdownMenuTrigger>
