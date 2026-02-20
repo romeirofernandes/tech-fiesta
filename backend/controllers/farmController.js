@@ -2,6 +2,19 @@ const Farm = require('../models/Farm');
 const Farmer = require('../models/Farmer');
 const cloudinary = require('../config/cloudinary');
 
+/**
+ * Try to parse a "lat, lng" string into { lat, lng }.
+ * Returns null if not parseable.
+ */
+const parseCoordinates = (location) => {
+    if (!location) return null;
+    const parts = location.split(',').map(s => parseFloat(s.trim()));
+    if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+        return { lat: parts[0], lng: parts[1] };
+    }
+    return null;
+};
+
 const getCloudinaryPublicId = (url) => {
     if (!url) return null;
     const match = url.match(/\/upload\/(?:v\d+\/)?([^\.]+)/);
@@ -40,10 +53,13 @@ exports.createFarm = async (req, res) => {
             imageUrl = uploadResult.secure_url;
         }
 
+        const coords = parseCoordinates(location);
+
         const newFarm = new Farm({
             name,
             location,
-            imageUrl
+            imageUrl,
+            ...(coords ? { coordinates: coords } : {})
         });
 
         await newFarm.save();
@@ -129,7 +145,11 @@ exports.updateFarm = async (req, res) => {
         }
 
         farm.name = name || farm.name;
-        farm.location = location || farm.location;
+        if (location) {
+            farm.location = location;
+            const coords = parseCoordinates(location);
+            if (coords) farm.coordinates = coords;
+        }
 
         await farm.save();
         res.status(200).json(farm);
@@ -154,6 +174,28 @@ exports.deleteFarm = async (req, res) => {
 
         await farm.deleteOne();
         res.status(200).json({ message: 'Farm deleted successfully' });
+    } catch (error) {
+        res.status(500).json({ message: 'Server Error', error: error.message });
+    }
+};
+
+exports.updateHerdWatchRadius = async (req, res) => {
+    try {
+        const { herdWatchRadius } = req.body;
+
+        if (herdWatchRadius == null || herdWatchRadius < 50 || herdWatchRadius > 10000) {
+            return res.status(400).json({ message: 'herdWatchRadius must be between 50 and 10000 meters' });
+        }
+
+        const farm = await Farm.findById(req.params.id);
+        if (!farm) {
+            return res.status(404).json({ message: 'Farm not found' });
+        }
+
+        farm.herdWatchRadius = herdWatchRadius;
+        await farm.save();
+
+        res.status(200).json(farm);
     } catch (error) {
         res.status(500).json({ message: 'Server Error', error: error.message });
     }

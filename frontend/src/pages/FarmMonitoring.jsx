@@ -171,8 +171,8 @@ export default function FarmMonitoring() {
                     {animal.species} • {animal.rfid}
                 </p>
             </div>
-            <Badge variant={status === 'missing' ? "destructive" : "default"} className="uppercase text-[10px] tracking-wider">
-                {status}
+            <Badge variant={status === 'detected' ? "destructive" : "outline"} className={cn("uppercase text-[10px] tracking-wider", status === 'safe' && "text-green-600 border-green-200 bg-green-50")}>
+                {status === 'detected' ? 'NEAR BOUNDARY' : 'ON FARM'}
             </Badge>
         </div>
     );
@@ -281,21 +281,21 @@ export default function FarmMonitoring() {
                         {/* Quick Stats Grid */}
                         <div className="grid grid-cols-2 gap-3">
                             <Card className={cn("border-l-4 transition-all shadow-sm", 
-                                presentAnimals.length > 0 ? "border-l-green-500 bg-green-500/5" : "border-l-muted")}>
+                                presentAnimals.length > 0 ? "border-l-red-500 bg-red-500/5" : "border-l-muted")}>
                                 <CardContent className="p-4">
                                     <div className="flex items-center justify-between mb-1">
-                                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Present</p>
-                                        <CheckCircle className="h-3.5 w-3.5 text-green-600 opacity-70" />
+                                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Detected</p>
+                                        <AlertCircle className={cn("h-3.5 w-3.5 opacity-70", presentAnimals.length > 0 ? "text-red-600" : "text-muted-foreground")} />
                                     </div>
                                     <p className="text-2xl font-bold tracking-tight text-foreground">{presentAnimals.length}</p>
                                 </CardContent>
                             </Card>
                             <Card className={cn("border-l-4 transition-all shadow-sm", 
-                                missingAnimals.length > 0 ? "border-l-red-500 bg-red-500/5" : "border-l-green-500")}>
+                                missingAnimals.length > 0 ? "border-l-green-500 bg-green-500/5" : "border-l-muted")}>
                                 <CardContent className="p-4">
                                     <div className="flex items-center justify-between mb-1">
-                                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Missing</p>
-                                        <AlertCircle className={cn("h-3.5 w-3.5 opacity-70", missingAnimals.length > 0 ? "text-red-600" : "text-green-600")} />
+                                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Safe</p>
+                                        <CheckCircle className="h-3.5 w-3.5 text-green-600 opacity-70" />
                                     </div>
                                     <p className="text-2xl font-bold tracking-tight text-foreground">{missingAnimals.length}</p>
                                 </CardContent>
@@ -305,54 +305,42 @@ export default function FarmMonitoring() {
 
                     {/* Right Column: Lists (5 Cols) */}
                     <Card className="lg:col-span-5 flex flex-col border shadow-sm h-full overflow-hidden">
-                        <Tabs defaultValue="missing" className="flex-1 flex flex-col w-full">
-                            <div className="p-4 border-b flex items-center justify-between bg-muted/30">
-                                <h3 className="font-semibold flex items-center gap-2">
-                                    <ScanFace className="h-4 w-4" />
-                                    Live Detection
+                        <div className="flex-1 flex flex-col w-full h-full">
+                            <div className="p-4 border-b flex items-center justify-between bg-red-500/10">
+                                <h3 className="font-bold text-red-600 flex items-center gap-2">
+                                    <AlertCircle className="h-5 w-5" />
+                                    Escape Risks Detected
                                 </h3>
-                                <TabsList className="h-8">
-                                    <TabsTrigger value="missing" className="text-xs h-6">
-                                        Missing ({missingAnimals.length})
-                                    </TabsTrigger>
-                                    <TabsTrigger value="present" className="text-xs h-6">
-                                        Present ({presentAnimals.length})
-                                    </TabsTrigger>
-                                </TabsList>
+                                <Badge variant="destructive" className="ml-auto">
+                                    {presentAnimals.length} Alert{presentAnimals.length !== 1 && 's'}
+                                </Badge>
                             </div>
 
-                            <TabsContent value="missing" className="flex-1 p-0 m-0 overflow-y-auto">
-                                <div className="p-4 space-y-3">
-                                    {missingAnimals.length === 0 ? (
-                                        <div className="h-40 flex flex-col items-center justify-center text-muted-foreground text-center">
-                                            <CheckCircle className="h-10 w-10 mb-3 text-green-500/50" />
-                                            <p className="font-medium">All Clear!</p>
-                                            <p className="text-xs">No missing animals detected</p>
-                                        </div>
-                                    ) : (
-                                        missingAnimals.map(animal => (
-                                            <AnimalCard key={animal._id} animal={animal} status="missing" />
-                                        ))
-                                    )}
-                                </div>
-                            </TabsContent>
-                            
-                            <TabsContent value="present" className="flex-1 p-0 m-0 overflow-y-auto">
+                            <div className="flex-1 p-0 m-0 overflow-y-auto bg-background">
                                 <div className="p-4 space-y-3">
                                     {presentAnimals.length === 0 ? (
-                                        <div className="h-40 flex flex-col items-center justify-center text-muted-foreground text-center">
-                                            <Activity className="h-10 w-10 mb-3 text-muted-foreground/50" />
-                                            <p className="font-medium">Waiting for Detection</p>
-                                            <p className="text-xs">System scanning area...</p>
+                                        <div className="h-60 flex flex-col items-center justify-center text-muted-foreground text-center animate-in fade-in zoom-in duration-300">
+                                            <div className="h-16 w-16 bg-green-100 dark:bg-green-900/20 rounded-full flex items-center justify-center mb-4">
+                                                <CheckCircle className="h-8 w-8 text-green-600" />
+                                            </div>
+                                            <h4 className="text-lg font-semibold text-foreground">Boundary Secure</h4>
+                                            <p className="text-sm max-w-[200px]">No animals detected near the exit.</p>
                                         </div>
                                     ) : (
                                         presentAnimals.map(animal => (
-                                            <AnimalCard key={animal._id} animal={animal} status="present" />
+                                            <AnimalCard key={animal._id} animal={animal} status="detected" />
                                         ))
                                     )}
                                 </div>
-                            </TabsContent>
-                        </Tabs>
+                            </div>
+                            
+                            {/* Summary Footer */}
+                            <div className="p-3 bg-muted/30 border-t text-center">
+                                <p className="text-xs text-muted-foreground">
+                                    {missingAnimals.length} animals safe inside farm monitoring zone.
+                                </p>
+                            </div>
+                        </div>
                     </Card>
                 </div>
             </div>

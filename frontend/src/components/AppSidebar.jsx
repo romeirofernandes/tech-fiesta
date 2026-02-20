@@ -38,6 +38,7 @@ const navGroups = [
           { title: "Add a Farm", url: "/farms/create" },
           { title: "Watch My Farm", url: "/farm-monitoring" },
           { title: "Farm Boundary", url: "/geofencing", icon: Radio },
+          { title: "Herd Watch", url: "/herd-watch" },
         ],
       },
       {

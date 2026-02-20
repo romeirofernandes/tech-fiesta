@@ -9,7 +9,7 @@ const alertSchema = new mongoose.Schema({
   type: {
     type: String,
     required: true,
-    enum: ['health', 'vaccination', 'inactivity']
+    enum: ['health', 'vaccination', 'inactivity', 'geofence']
   },
   severity: {
     type: String,
