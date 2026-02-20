@@ -12,12 +12,19 @@
       "supportsTablet": true
     },
     "android": {
-        "adaptiveIcon": {
-          "backgroundColor": "#E6F4FE",
-          "foregroundImage": "./assets/images/icon.png"
-        },
+      "adaptiveIcon": {
+        "backgroundColor": "#E6F4FE",
+        "foregroundImage": "./assets/images/icon.png"
+      },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "android.permission.READ_CALENDAR",
+        "android.permission.WRITE_CALENDAR",
+        "android.permission.READ_CALENDAR",
+        "android.permission.WRITE_CALENDAR"
+      ],
+      "package": "com.gavin100305"
     },
     "web": {
       "output": "static",
