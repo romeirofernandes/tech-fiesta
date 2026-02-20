@@ -17,17 +17,17 @@ const tintColorDark = '#f7f7f7'; // oklch(0.97 0 0)
 // Font families for different platforms - matching index.css
 export const FontFamily = {
   sans: Platform.select({
-    ios: 'System',
-    android: 'Roboto',
-    default: 'System',
-    web: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
-  }) ?? 'System',
+    ios: 'PlusJakartaSans-Regular',
+    android: 'PlusJakartaSans-Regular',
+    default: 'PlusJakartaSans-Regular',
+    web: "'Plus Jakarta Sans Variable', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
+  }) ?? 'PlusJakartaSans-Regular',
   serif: Platform.select({
-    ios: 'Georgia',
-    android: 'serif',
-    default: 'Georgia',
-    web: "'Instrument Serif', Georgia, 'Times New Roman', serif",
-  }) ?? 'Georgia',
+    ios: 'BricolageGrotesque-Regular',
+    android: 'BricolageGrotesque-Regular',
+    default: 'BricolageGrotesque-Regular',
+    web: "'Bricolage Grotesque Variable', Georgia, 'Times New Roman', serif",
+  }) ?? 'BricolageGrotesque-Regular',
   rounded: Platform.select({
     ios: 'System',
     android: 'Roboto',
@@ -153,40 +153,40 @@ export const Colors = {
 // Typography scale - matching index.css (h1-h6 use serif font)
 export const Typography = {
   h1: {
-    fontFamily: FontFamily.serif,
+    fontFamily: Platform.OS === 'web' ? FontFamily.serif : 'BricolageGrotesque-Bold',
     fontSize: 32,
     fontWeight: 'bold' as const,
-    letterSpacing: 0.64,  // 0.02em * 32
+    letterSpacing: 0.64,
   },
   h2: {
-    fontFamily: FontFamily.serif,
+    fontFamily: Platform.OS === 'web' ? FontFamily.serif : 'BricolageGrotesque-SemiBold',
     fontSize: 28,
     fontWeight: '600' as const,
-    letterSpacing: 0.56,  // 0.02em * 28
+    letterSpacing: 0.56,
   },
   h3: {
-    fontFamily: FontFamily.serif,
+    fontFamily: Platform.OS === 'web' ? FontFamily.serif : 'BricolageGrotesque-SemiBold',
     fontSize: 24,
     fontWeight: '600' as const,
-    letterSpacing: 0.48,  // 0.02em * 24
+    letterSpacing: 0.48,
   },
   h4: {
-    fontFamily: FontFamily.serif,
+    fontFamily: Platform.OS === 'web' ? FontFamily.serif : 'BricolageGrotesque-SemiBold',
     fontSize: 20,
     fontWeight: '600' as const,
-    letterSpacing: 0.4,   // 0.02em * 20
+    letterSpacing: 0.4,
   },
   h5: {
-    fontFamily: FontFamily.serif,
+    fontFamily: Platform.OS === 'web' ? FontFamily.serif : 'BricolageGrotesque-SemiBold',
     fontSize: 18,
     fontWeight: '600' as const,
-    letterSpacing: 0.36,  // 0.02em * 18
+    letterSpacing: 0.36,
   },
   h6: {
-    fontFamily: FontFamily.serif,
+    fontFamily: Platform.OS === 'web' ? FontFamily.serif : 'BricolageGrotesque-SemiBold',
     fontSize: 16,
     fontWeight: '600' as const,
-    letterSpacing: 0.32,  // 0.02em * 16
+    letterSpacing: 0.32,
   },
   body: {
     fontFamily: FontFamily.sans,

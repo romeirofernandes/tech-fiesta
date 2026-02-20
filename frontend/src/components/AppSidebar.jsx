@@ -1,4 +1,4 @@
-import { Calendar, Home, Tractor, Beef, Syringe, LogOut, User, Activity, Moon, Sun, Globe, BarChart3, Bell, Sprout, Store, Package, Coins, ChevronRight, TrendingUp, DollarSign, LineChart, AlertCircle, Radio, Video } from "lucide-react"
+import { Calendar, Home, Tractor, Beef, Syringe, LogOut, User, Activity, Moon, Sun, Globe, BarChart3, Bell, Sprout, Store, Package, Coins, ChevronRight, ChevronUp, TrendingUp, DollarSign, LineChart, AlertCircle, Radio, Video } from "lucide-react"
 import { useUser } from "../context/UserContext"
 import { useTheme } from "../context/ThemeContext"
 import { Button } from "@/components/ui/button"
@@ -6,6 +6,13 @@ import { cn } from "@/lib/utils"
 import { useLocation, useNavigate, Link } from "react-router-dom"
 import { LanguageToggle } from "./LanguageToggle"
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 import {
   Sidebar,
@@ -189,46 +196,54 @@ export function AppSidebar() {
       <SidebarFooter>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton asChild isActive={isActive("/profile")} className={cn("w-full", state === "expanded" && isActive("/profile") && "bg-accent/50 border-l-4 border-primary pl-2")}>
-              <Link to="/profile" className="flex items-center w-full">
-                <User className={cn(state === "expanded" && "ml-2")} />
-                {state === "expanded" && <span>My Profile</span>}
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-          <SidebarMenuItem>
-            <SidebarMenuButton asChild className="w-full">
-              <button
-                onClick={toggleTheme}
-                className="flex items-center w-full cursor-pointer"
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <SidebarMenuButton
+                  size="lg"
+                  className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground w-full flex items-center justify-between py-6"
+                >
+                  <div className="flex items-center gap-2 overflow-hidden">
+                    <User className="min-h-5 min-w-5 shrink-0" />
+                    {state === "expanded" && (
+                      <span className="truncate font-semibold">{user?.name || "My Account"}</span>
+                    )}
+                  </div>
+                  {state === "expanded" && <ChevronUp className="ml-auto h-4 w-4 shrink-0 transition-transform duration-200 group-data-[state=open]:rotate-180" />}
+                </SidebarMenuButton>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg mb-2"
+                side={state === "collapsed" ? "right" : "bottom"}
+                align="end"
+                sideOffset={4}
               >
-                {theme === "dark" ? (
-                  <Moon className={cn("h-[1.2rem] w-[1.2rem]", state === "expanded" && "ml-2")} />
-                ) : (
-                  <Sun className={cn("h-[1.2rem] w-[1.2rem]", state === "expanded" && "ml-2")} />
-                )}
-                {state === "expanded" && <span>Change Look</span>}
-              </button>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-          <SidebarMenuItem>
-            <LanguageToggle>
-              <SidebarMenuButton className="w-full">
-                <Globe className={cn("h-[1.2rem] w-[1.2rem]", state === "expanded" && "ml-2")} />
-                {state === "expanded" && <span>Language</span>}
-              </SidebarMenuButton>
-            </LanguageToggle>
-          </SidebarMenuItem>
-          <SidebarMenuItem>
-            <SidebarMenuButton asChild className="w-full">
-              <button
-                onClick={logout}
-                className="flex items-center w-full mb-4 cursor-pointer text-destructive hover:text-destructive/90"
-              >
-                <LogOut className={cn(state === "expanded" && "ml-2")} />
-                {state === "expanded" && <span>Sign Out</span>}
-              </button>
-            </SidebarMenuButton>
+                <DropdownMenuItem asChild>
+                  <Link to="/profile" className="flex items-center w-full cursor-pointer py-2 px-3">
+                    <User className="mr-2 h-4 w-4 text-muted-foreground" />
+                    <span>My Profile</span>
+                  </Link>
+                </DropdownMenuItem>
+                
+                <DropdownMenuItem onClick={toggleTheme} className="cursor-pointer py-2 px-3">
+                  {theme === "dark" ? <Sun className="mr-2 h-4 w-4 text-muted-foreground" /> : <Moon className="mr-2 h-4 w-4 text-muted-foreground" />}
+                  <span>Change Look ({theme === 'dark' ? 'Light' : 'Dark'})</span>
+                </DropdownMenuItem>
+                
+                <LanguageToggle>
+                  <DropdownMenuItem className="cursor-pointer w-full py-2 px-3" onSelect={(e) => e.preventDefault()}>
+                    <Globe className="mr-2 h-4 w-4 text-muted-foreground" />
+                    <span>Language</span>
+                  </DropdownMenuItem>
+                </LanguageToggle>
+                
+                <DropdownMenuSeparator className="my-1" />
+                
+                <DropdownMenuItem onClick={logout} className="text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer py-2 px-3">
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span className="font-medium text-destructive">Sign Out</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>
