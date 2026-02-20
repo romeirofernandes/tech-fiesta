@@ -26,19 +26,19 @@ import {
 // Grouped navigation items with collapsible sub-items
 const navGroups = [
   {
-    label: "Management",
+    label: "My Farm",
     items: [
-      { title: "Dashboard", url: "/dashboard", icon: Home },
+      { title: "Home", url: "/dashboard", icon: Home },
       {
         title: "Farms",
         url: "/farms",
         icon: Tractor,
         subItems: [
-          { title: "All Farms", url: "/farms" },
-          { title: "Create Farm", url: "/farms/create" },
-          { title: "Farm Monitor", url: "/farm-monitoring", },
-          { title: "Geofencing", url: "/geofencing", icon: Radio },
-
+          { title: "My Farms", url: "/farms" },
+          { title: "Add a Farm", url: "/farms/create" },
+          { title: "Watch My Farm", url: "/farm-monitoring" },
+          { title: "Farm Boundary", url: "/geofencing", icon: Radio },
+          { title: "Herd Watch", url: "/herd-watch" },
         ],
       },
       {
@@ -46,46 +46,46 @@ const navGroups = [
         url: "/animals",
         icon: Beef,
         subItems: [
-          { title: "All Animals", url: "/animals" },
-          { title: "Create Animal", url: "/animals/create" },
+          { title: "My Animals", url: "/animals" },
+          { title: "Add an Animal", url: "/animals/create" },
         ],
       },
     ],
   },
   {
-    label: "Health & Monitoring",
+    label: "Health & Care",
     items: [
-      { title: "Vaccination Calendar", url: "/calendar", icon: Calendar },
-      { title: "Live Vitals", url: "/live-vitals", icon: Activity },
-      { title: "Alerts", url: "/alerts", icon: Bell },
-      { title: "Emergency", url: "/emergency", icon: AlertCircle },
+      { title: "Shot Schedule", url: "/calendar", icon: Calendar },
+      { title: "Animal Health", url: "/live-vitals", icon: Activity },
+      { title: "Warnings", url: "/alerts", icon: Bell },
+      { title: "Emergency Help", url: "/emergency", icon: AlertCircle },
     ],
   },
   {
-    label: "Market & Finance",
+    label: "Selling & Money",
     items: [
-      { title: "Marketplace", url: "/marketplace", icon: Store },
+      { title: "Mandi / Market", url: "/marketplace", icon: Store },
       { title: "My Orders", url: "/my-orders", icon: Package },
       { title: "My Sales", url: "/my-sales", icon: Coins },
-      { title: "Schemes", url: "/schemes", icon: Sprout },
+      { title: "Govt. Help", url: "/schemes", icon: Sprout },
     ],
   },
   {
-    label: "Analytics",
+    label: "Reports",
     items: [
       {
-        title: "BI & Analytics",
+        title: "My Reports",
         url: "/bi",
         icon: BarChart3,
         subItems: [
           { title: "Overview", url: "/bi" },
-          { title: "Production", url: "/bi/production" },
-          { title: "Finance", url: "/bi/finance" },
-          { title: "Market Prices", url: "/bi/prices" },
+          { title: "What I Produce", url: "/bi/production" },
+          { title: "My Money", url: "/bi/finance" },
+          { title: "Today's Prices", url: "/bi/prices" },
         ],
       },
       {
-        title: "Video Summary",
+        title: "Video Report",
         url: "/video-summary",
         icon: Video,
       }
@@ -192,7 +192,7 @@ export function AppSidebar() {
             <SidebarMenuButton asChild isActive={isActive("/profile")} className={cn("w-full", state === "expanded" && isActive("/profile") && "bg-accent/50 border-l-4 border-primary pl-2")}>
               <Link to="/profile" className="flex items-center w-full">
                 <User className={cn(state === "expanded" && "ml-2")} />
-                {state === "expanded" && <span>Profile</span>}
+                {state === "expanded" && <span>My Profile</span>}
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -207,7 +207,7 @@ export function AppSidebar() {
                 ) : (
                   <Sun className={cn("h-[1.2rem] w-[1.2rem]", state === "expanded" && "ml-2")} />
                 )}
-                {state === "expanded" && <span>Theme</span>}
+                {state === "expanded" && <span>Change Look</span>}
               </button>
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -226,7 +226,7 @@ export function AppSidebar() {
                 className="flex items-center w-full mb-4 cursor-pointer text-destructive hover:text-destructive/90"
               >
                 <LogOut className={cn(state === "expanded" && "ml-2")} />
-                {state === "expanded" && <span>Logout</span>}
+                {state === "expanded" && <span>Sign Out</span>}
               </button>
             </SidebarMenuButton>
           </SidebarMenuItem>

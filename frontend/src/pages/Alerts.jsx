@@ -49,6 +49,7 @@ import {
 import axios from "axios";
 import { toast } from "sonner";
 import HeartRateThresholds from "./alerts/HeartRateThresholds";
+import GeofenceThresholds from "./alerts/GeofenceThresholds";
 
 const SEVERITY_STYLES = {
   high: "bg-destructive/10 text-destructive",
@@ -60,6 +61,7 @@ const TYPE_ICONS = {
   health: "🩺",
   vaccination: "💉",
   inactivity: "😴",
+  geofence: "📍",
 };
 
 export default function Alerts() {
@@ -369,6 +371,10 @@ export default function Alerts() {
               <Settings2 className="h-4 w-4" />
               Heart Rate Thresholds
             </TabsTrigger>
+            <TabsTrigger value="geofence-thresholds" className="gap-2">
+              <Settings2 className="h-4 w-4" />
+              Radius Thresholds
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="alerts" className="space-y-4">
@@ -408,6 +414,7 @@ export default function Alerts() {
                         <SelectItem value="health">Health</SelectItem>
                         <SelectItem value="vaccination">Vaccination</SelectItem>
                         <SelectItem value="inactivity">Inactivity</SelectItem>
+                        <SelectItem value="geofence">📍 Geofence</SelectItem>
                       </SelectContent>
                     </Select>
                     <Select
@@ -685,6 +692,10 @@ export default function Alerts() {
 
           <TabsContent value="thresholds">
             <HeartRateThresholds />
+          </TabsContent>
+
+          <TabsContent value="geofence-thresholds">
+            <GeofenceThresholds />
           </TabsContent>
         </Tabs>
       </div>

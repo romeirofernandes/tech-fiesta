@@ -59,12 +59,12 @@ export default function CreateFarm() {
     e.preventDefault();
 
     if (!formData.name.trim()) {
-      toast.error("Please enter farm name");
+      toast.error("Please enter a farm name");
       return;
     }
 
     if (!formData.location.trim()) {
-      toast.error("Please select a location on the map");
+      toast.error("Please tap on the map to set your farm location");
       return;
     }
 
@@ -95,10 +95,10 @@ export default function CreateFarm() {
         }
       );
 
-      toast.success("Farm created successfully!");
+      toast.success("Farm added successfully!");
       navigate(`/farms/${response.data._id}`);
     } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to create farm");
+      toast.error(error.response?.data?.message || "Could not add farm. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -123,7 +123,7 @@ export default function CreateFarm() {
       <div className="space-y-6 max-w-full px-6 mx-auto p-4 md:p-6 lg:p-8">w
         <Card>
           <CardHeader>
-            <CardTitle>Create New Farm</CardTitle>
+            <CardTitle>Add a New Farm</CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
@@ -150,7 +150,7 @@ export default function CreateFarm() {
                   onClick={() => fileInputRef.current?.click()}
                 >
                   <Upload className="mr-2 h-4 w-4" />
-                  Upload Photo
+                  Add a Photo
                 </Button>
               </div>
 
@@ -160,13 +160,13 @@ export default function CreateFarm() {
                   id="name"
                   value={formData.name}
                   onChange={(e) => handleInputChange("name", e.target.value)}
-                  placeholder="e.g., Green Valley Farm"
+                  placeholder="e.g., Shyam Ji ka Khet"
                   required
                 />
               </div>
 
               <div className="space-y-2">
-                <Label>Farm Location (Click on Map) *</Label>
+                <Label>Your Farm Location (tap on map) *</Label>
                 <div className="rounded-lg overflow-hidden border" style={{ height: 300 }}>
                   <MapContainer
                     center={coordinates || [20.5937, 78.9629]}
@@ -195,16 +195,16 @@ export default function CreateFarm() {
                   variant="outline"
                   onClick={() => navigate("/farms")}
                 >
-                  Cancel
+                  Go Back
                 </Button>
                 <Button type="submit" disabled={loading}>
                   {loading ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Creating...
+                      Adding...
                     </>
                   ) : (
-                    "Create Farm"
+                    "Add Farm"
                   )}
                 </Button>
               </div>

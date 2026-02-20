@@ -100,7 +100,6 @@ export default function Geofencing() {
         {/* Header */}
         <div>
           <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-            <Radio className="h-8 w-8 text-primary" />
             Geofencing Radar
           </h1>
           <p className="text-muted-foreground mt-1">

@@ -63,7 +63,7 @@ export default function Animals() {
       setLoading(false);
     } catch (error) {
       console.error(error);
-      toast.error("Failed to fetch animals");
+      toast.error("Could not load your animals. Please try again.");
       setLoading(false);
     }
   };
@@ -95,11 +95,11 @@ export default function Animals() {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
-      toast.success("Animal deleted successfully");
+      toast.success("Animal removed!");
       setDeleteId(null);
       fetchAnimals();
     } catch (error) {
-      toast.error("Failed to delete animal");
+      toast.error("Could not remove this animal. Try again.");
       setDeleteId(null);
     }
   };
@@ -115,14 +115,14 @@ export default function Animals() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
-            <h1 className="text-3xl font-bold">Animals</h1>
+            <h1 className="text-3xl font-bold">My Animals</h1>
             <p className="text-muted-foreground mt-1">
-              Manage your livestock inventory
+              See and manage all your animals
             </p>
           </div>
           <div className="flex gap-3">
              <Button variant="outline" onClick={() => navigate("/animals/dead")}>
-               Memorial Records
+               Lost Animals
              </Button>
              <Button onClick={() => navigate("/animals/create")} size="lg">
                 <Plus className="mr-2 h-4 w-4" />
@@ -138,7 +138,7 @@ export default function Animals() {
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Search by name or RFID..."
+                  placeholder="Search by name or tag ID..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-10"
@@ -148,12 +148,12 @@ export default function Animals() {
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" className="w-full sm:w-auto">
                     <Filter className="mr-2 h-4 w-4" />
-                    {selectedSpecies === "all" ? "All Species" : selectedSpecies}
+                    {selectedSpecies === "all" ? "All Types" : selectedSpecies}
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>
                   <DropdownMenuItem onClick={() => setSelectedSpecies("all")}>
-                    All Species
+                    All Types
                   </DropdownMenuItem>
                   {speciesOptions.map(({ value, label, Icon, color }) => (
                     <DropdownMenuItem key={value} onClick={() => setSelectedSpecies(value)}>
@@ -171,11 +171,11 @@ export default function Animals() {
           <Card>
             <CardContent className="flex flex-col items-center justify-center py-12">
               <div className="text-6xl mb-4 flex items-center justify-center">{getSpeciesIcon("other", "h-16 w-16 text-muted-foreground")}</div>
-              <h3 className="text-lg font-semibold mb-2">No animals found</h3>
+              <h3 className="text-lg font-semibold mb-2">No animals yet</h3>
               <p className="text-muted-foreground text-center mb-4">
                 {searchQuery || selectedSpecies !== "all"
-                  ? "Try adjusting your filters"
-                  : "Get started by adding your first animal"}
+                  ? "Try different filters"
+                  : "Add your first animal to get started"}
               </p>
               {!searchQuery && selectedSpecies === "all" && (
                 <Button onClick={() => navigate("/animals/create")}>
@@ -208,8 +208,8 @@ export default function Animals() {
                             {animal.name}
                           </h3>
                           <p className="text-sm text-muted-foreground">
-                            RFID: {animal.rfid}
-                          </p>
+                          Tag ID: {animal.rfid}
+                        </p>
                         </div>
                       </div>
                       <div className="mt-3 space-y-2">
@@ -271,15 +271,15 @@ export default function Animals() {
                       <AlertDialogContent>
                         <AlertDialogHeader>
                           <AlertDialogTitle>
-                            Are you sure you want to delete this animal?
+                            Do you want to remove this animal?
                           </AlertDialogTitle>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
                           <AlertDialogCancel onClick={() => setDeleteId(null)}>
-                            Cancel
+                            Go Back
                           </AlertDialogCancel>
                           <AlertDialogAction onClick={handleDelete}>
-                            Delete
+                            Yes, Remove
                           </AlertDialogAction>
                         </AlertDialogFooter>
                       </AlertDialogContent>

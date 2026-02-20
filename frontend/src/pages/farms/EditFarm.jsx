@@ -64,7 +64,7 @@ export default function EditFarm() {
       
       setFetching(false);
     } catch (error) {
-      toast.error("Failed to fetch farm details");
+      toast.error("Could not load farm details. Going back...");
       navigate("/farms");
     }
   };
@@ -115,10 +115,10 @@ export default function EditFarm() {
         }
       );
 
-      toast.success("Farm updated successfully!");
+      toast.success("Farm updated!");
       navigate(`/farms/${id}`);
     } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to update farm");
+      toast.error(error.response?.data?.message || "Could not update farm. Try again.");
     } finally {
       setLoading(false);
     }
@@ -154,7 +154,7 @@ export default function EditFarm() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Edit Farm</CardTitle>
+            <CardTitle>Update Farm Details</CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
@@ -199,7 +199,7 @@ export default function EditFarm() {
               </div>
 
               <div className="space-y-2">
-                <Label>Farm Location (Click on Map) *</Label>
+                <Label>Your Farm Location (tap on map) *</Label>
                 <div className="rounded-lg overflow-hidden border" style={{ height: 300 }}>
                   <MapContainer
                     center={coordinates || [20.5937, 78.9629]}
@@ -228,7 +228,7 @@ export default function EditFarm() {
                   variant="outline"
                   onClick={() => navigate(`/farms/${id}`)}
                 >
-                  Cancel
+                  Go Back
                 </Button>
                 <Button type="submit" disabled={loading}>
                   {loading ? (

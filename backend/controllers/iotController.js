@@ -215,13 +215,9 @@ exports.createSensorReading = async (req, res) => {
     
     // Support both camelCase and snake_case
     const normalizedRfid = (rfidTag || rfid_tag || '').toLowerCase().replace(/\s+/g, '');
-    
-    if (!normalizedRfid) {
-      return res.status(400).json({ message: 'rfidTag is required' });
-    }
 
-    // Find animal by RFID
-    const animal = await findAnimalByRfid(normalizedRfid);
+    // Find animal by RFID if one was provided
+    const animal = normalizedRfid ? await findAnimalByRfid(normalizedRfid) : null;
 
     // Determine sensor type
     let type = sensorType || sensor_type || 'COMBINED';

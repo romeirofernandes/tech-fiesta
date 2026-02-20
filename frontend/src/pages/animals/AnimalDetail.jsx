@@ -60,7 +60,6 @@ export default function AnimalDetail() {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editDialogMode, setEditDialogMode] = useState("edit"); // "edit" or "add"
   const [vaccinationSchedules, setVaccinationSchedules] = useState([]);
-  const [deleteEvent, setDeleteEvent] = useState(null);
   const [reportDeathOpen, setReportDeathOpen] = useState(false);
   const [currentMonth, setCurrentMonth] = useState(startOfMonth(TODAY));
   const [view, setView] = useState("list"); // list, 2col, month, week
@@ -171,22 +170,7 @@ export default function AnimalDetail() {
     setEditDialogOpen(true);
   };
 
-  const handleDeleteEvent = async () => {
-    if (!deleteEvent) return;
-    try {
-      const token = localStorage.getItem("token");
-      await axios.delete(
-        `${import.meta.env.VITE_API_BASE_URL}/api/vaccination-events/${deleteEvent._id}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      toast.success("Vaccination event deleted");
-      setDeleteEvent(null);
-      fetchAnimalDetails();
-    } catch (error) {
-      toast.error("Failed to delete event");
-      setDeleteEvent(null);
-    }
-  };
+
 
   const handleResolveEvent = async (event) => {
     try {
@@ -503,7 +487,6 @@ export default function AnimalDetail() {
           calendarDays={calendarDays}
           getAnimalName={getAnimalName}
           onEditEvent={handleEditEvent}
-          onDeleteEvent={setDeleteEvent}
           onResolveEvent={handleResolveEvent}
           extraControls={
             <Button variant="outline" size="sm" onClick={handleAddEvent}>
@@ -513,24 +496,7 @@ export default function AnimalDetail() {
           }
         />
 
-        {/* Delete Vaccination Event Dialog */}
-        <AlertDialog open={!!deleteEvent} onOpenChange={open => !open && setDeleteEvent(null)}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>
-                Are you sure you want to delete this vaccination event?
-              </AlertDialogTitle>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel onClick={() => setDeleteEvent(null)}>
-                Cancel
-              </AlertDialogCancel>
-              <AlertDialogAction onClick={handleDeleteEvent}>
-                Delete
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+
 
         <EditVaccinationEventDialog
           event={editingEvent}
