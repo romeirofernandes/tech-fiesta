@@ -21,8 +21,8 @@ const {
 } = require('../constants/biEnums');
 
 const BASE_URL = 'https://api.agmarknet.gov.in/v1/daily-price-arrival/report';
-// Latest-only fetch: page=1 & limit=1
-const PER_PAGE = 1;
+// Fetch the last 10 records per commodity
+const PER_PAGE = 10;
 
 /**
  * Helper: format a JS Date as YYYY-MM-DD for the AGMARKNET API query params.
@@ -138,9 +138,17 @@ async function importPrices(commodity) {
       const modalPrice = parsePrice(rec.model_price);
       if (modalPrice == null || modalPrice <= 0) { totalSkipped++; continue; }
 
-      // Store ONLY one document per commodity for AGMARKNET (latest-only).
-      // If it exists, update it; else create it via upsert.
-      const filter = { commodity, source: 'agmarknet' };
+      const marketName = rec.market_name || '';
+
+      // Upsert by (commodity + date + market + source) so each distinct
+      // market/date combination is its own record, but re-imports update
+      // rather than duplicate.
+      const filter = {
+        commodity,
+        source: 'agmarknet',
+        date: dateObj,
+        market: marketName,
+      };
       const update = {
         $set: {
           commodityLabel: rec.cmdt_name || MARKET_COMMODITY_LABELS[commodity] || commodity,
@@ -148,36 +156,28 @@ async function importPrices(commodity) {
           minPrice: parsePrice(rec.min_price),
           maxPrice: parsePrice(rec.max_price),
           unit: rec.unit_name_price || 'Rs./Unit',
-          market: rec.market_name || '',
           state: rec.state_name || '',
           district: rec.district_name || '',
           variety: rec.variety_name || '',
-          date: dateObj,
           sourceUrl: url,
           updatedAt: new Date(),
         },
         $setOnInsert: {
           commodity,
           source: 'agmarknet',
+          date: dateObj,
+          market: marketName,
           createdAt: new Date(),
         },
       };
 
       const result = await MarketPrice.updateOne(filter, update, { upsert: true });
 
-      // Mongo returns upsert metadata if created.
       const upsertedId = result.upsertedId?._id || result.upsertedId;
       if (upsertedId) {
         totalImported++;
       } else {
         totalUpdated++;
-      }
-
-      // Cleanup: ensure there is only one AGMARKNET doc per commodity.
-      // Keep the most recently updated document.
-      const keep = await MarketPrice.findOne(filter).sort({ updatedAt: -1 }).select('_id');
-      if (keep?._id) {
-        await MarketPrice.deleteMany({ ...filter, _id: { $ne: keep._id } });
       }
     } catch (err) {
       console.error(`[MarketPriceImport] Skipping record:`, err.message);

@@ -76,6 +76,7 @@ const marketPriceSchema = new mongoose.Schema({
 
 marketPriceSchema.index({ commodity: 1, date: -1 });
 marketPriceSchema.index({ source: 1 });
+marketPriceSchema.index({ commodity: 1, source: 1, date: 1, market: 1 });
 
 marketPriceSchema.pre('save', function () {
   this.updatedAt = Date.now();
