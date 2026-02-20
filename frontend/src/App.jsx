@@ -19,6 +19,7 @@ import CreateFarm from './pages/farms/CreateFarm';
 import EditFarm from './pages/farms/EditFarm';
 import LiveVitals from './pages/LiveVitals';
 import Geofencing from './pages/Geofencing';
+import HerdWatch from './pages/HerdWatch';
 import VaccinationCalendar from './pages/VaccinationCalendar';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminLogin from './pages/AdminLogin';
@@ -161,6 +162,11 @@ function App() {
           <Route path="/geofencing" element={
             <ProtectedRoute>
               <Geofencing />
+            </ProtectedRoute>
+          } />
+          <Route path="/herd-watch" element={
+            <ProtectedRoute>
+              <HerdWatch />
             </ProtectedRoute>
           } />
           <Route path="/bi" element={

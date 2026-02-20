@@ -2,6 +2,83 @@ const Alert = require('../models/Alert');
 const VaccinationEvent = require('../models/VaccinationEvent');
 const Animal = require('../models/Animal');
 const Farmer = require('../models/Farmer');
+const AnimalGpsPath = require('../models/AnimalGpsPath');
+const Farm = require('../models/Farm');
+
+/**
+ * Haversine distance in meters between two lat/lng points
+ */
+function haversineDistance(lat1, lng1, lat2, lng2) {
+  const R = 6371000;
+  const toRad = (deg) => (deg * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+    Math.sin(dLng / 2) * Math.sin(dLng / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
+/**
+ * Check for animals straying outside farm boundaries and auto-create geofence alerts.
+ * Called before fetching alerts to ensure they're up-to-date.
+ */
+async function checkAnimalStraying(farmerFarmIds) {
+  try {
+    if (!farmerFarmIds || farmerFarmIds.length === 0) return;
+
+    const farms = await Farm.find({
+      _id: { $in: farmerFarmIds },
+      'coordinates.lat': { $ne: null },
+      'coordinates.lng': { $ne: null }
+    });
+
+    for (const farm of farms) {
+      const paths = await AnimalGpsPath.find({ farmId: farm._id })
+        .populate('animalId', 'name rfid');
+
+      if (paths.length === 0) continue;
+
+      const radius = farm.herdWatchRadius || 300;
+      const farmLat = farm.coordinates.lat;
+      const farmLng = farm.coordinates.lng;
+
+      for (const path of paths) {
+        if (!path.animalId || !path.waypoints || path.waypoints.length === 0) continue;
+
+        const lastWp = path.waypoints[path.waypoints.length - 1];
+        const dist = haversineDistance(farmLat, farmLng, lastWp.lat, lastWp.lng);
+
+        if (dist > radius) {
+          const animalName = path.animalId.name || 'Unknown';
+          const animalIdVal = path.animalId._id || path.animalId;
+
+          // Dedup: skip if same animal has unresolved geofence alert in last 24h
+          const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+          const existingAlert = await Alert.findOne({
+            animalId: animalIdVal,
+            type: 'geofence',
+            isResolved: false,
+            createdAt: { $gte: twentyFourHoursAgo }
+          });
+
+          if (!existingAlert) {
+            await Alert.create({
+              animalId: animalIdVal,
+              type: 'geofence',
+              severity: 'high',
+              message: `${animalName} has strayed ${Math.round(dist)}m from ${farm.name} (boundary: ${radius}m)`
+            });
+          }
+        }
+      }
+    }
+  } catch (err) {
+    console.error('Animal straying check failed:', err);
+  }
+}
 
 /**
  * Check for missed vaccinations and auto-create alerts.
@@ -81,17 +158,26 @@ exports.getAlerts = async (req, res) => {
     const filter = {};
 
     // Filter by farmer
+    let farmerFarmIds = [];
     if (farmerId) {
       const farmer = await Farmer.findById(farmerId);
       if (farmer && farmer.farms && farmer.farms.length > 0) {
+        farmerFarmIds = farmer.farms.map(id => id.toString());
         const animals = await Animal.find({ farmId: { $in: farmer.farms } }).select('_id');
         const animalIds = animals.map(a => a._id);
         filter.animalId = { $in: animalIds };
       } else {
-        // If farmer has no farms or doesn't exist, return no alerts (or handle as appropriate)
-        // For now, if no farms, animalId in [] will return nothing, which is correct
         filter.animalId = { $in: [] };
       }
+    }
+
+    // Auto-detect straying animals and create geofence alerts
+    try {
+      if (farmerFarmIds.length > 0) {
+        await checkAnimalStraying(farmerFarmIds);
+      }
+    } catch (err) {
+      console.error('Straying check failed:', err);
     }
     if (animalId) filter.animalId = animalId;
     if (type) filter.type = type;

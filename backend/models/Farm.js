@@ -21,6 +21,14 @@ const farmSchema = new mongoose.Schema({
     type: Date,
     default: Date.now
   },
+  coordinates: {
+    lat: { type: Number, default: null },
+    lng: { type: Number, default: null }
+  },
+  herdWatchRadius: {
+    type: Number,
+    default: 300 // meters
+  },
   flaggedForReview: {
     type: Boolean,
     default: false
