@@ -280,7 +280,7 @@ const SectionHeader = ({ text }) => {
             fontWeight: 700,
             color: T.white,
             marginBottom: 30,
-            fontFamily: "'Instrument Serif', serif",
+            fontFamily: "'Bricolage Grotesque Variable', sans-serif",
             letterSpacing: '0.02em',
         }}>
             {text}
@@ -295,7 +295,7 @@ const SceneBg = ({ children }) => {
     const isDark = T.mode === 'dark';
 
     return (
-        <AbsoluteFill style={{ backgroundColor: isDark ? '#020617' : '#ffffff' }}>
+        <AbsoluteFill style={{ backgroundColor: isDark ? '#020617' : '#ffffff', fontFamily: "'Plus Jakarta Sans Variable', sans-serif" }}>
             {/* The Glow/Gradient Div */}
             <AbsoluteFill style={{
                 backgroundImage: isDark
@@ -351,7 +351,7 @@ const IntroScene = ({ farmerName, farmCount, summaryDate }) => {
             }} />
 
             <div style={{ opacity: titleO, transform: `translateY(${titleY}px)`, textAlign: 'center' }}>
-                <div style={{ fontSize: 68, fontWeight: 800, color: T.white, fontFamily: "'Instrument Serif', serif", letterSpacing: '0.02em' }}>
+                <div style={{ fontSize: 68, fontWeight: 800, color: T.white, fontFamily: "'Bricolage Grotesque Variable', sans-serif", letterSpacing: '0.02em' }}>
                     {farmerName || 'Farmer'}
                 </div>
             </div>
@@ -558,7 +558,7 @@ const OutroScene = ({ farmerName }) => {
                 fontWeight: 800,
                 color: T.white,
                 textAlign: 'center',
-                fontFamily: "'Instrument Serif', serif",
+                fontFamily: "'Bricolage Grotesque Variable', sans-serif",
                 letterSpacing: '0.02em',
             }}>
                 Keep it up, {farmerName || 'Farmer'}!

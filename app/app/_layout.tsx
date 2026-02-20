@@ -7,7 +7,17 @@ import '../global.css';
 import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, useState } from 'react';
-import { InstrumentSerif_400Regular } from '@expo-google-fonts/instrument-serif';
+import { 
+  PlusJakartaSans_400Regular,
+  PlusJakartaSans_500Medium,
+  PlusJakartaSans_600SemiBold,
+  PlusJakartaSans_700Bold,
+} from '@expo-google-fonts/plus-jakarta-sans';
+import { 
+  BricolageGrotesque_400Regular,
+  BricolageGrotesque_600SemiBold,
+  BricolageGrotesque_700Bold,
+} from '@expo-google-fonts/bricolage-grotesque';
 
 import { Colors, FontFamily } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
@@ -27,7 +37,13 @@ export default function RootLayout() {
   const [dbReady, setDbReady] = useState(false);
 
   const [loaded, error] = useFonts({
-    'InstrumentSerif-Regular': InstrumentSerif_400Regular,
+    'PlusJakartaSans-Regular': PlusJakartaSans_400Regular,
+    'PlusJakartaSans-Medium': PlusJakartaSans_500Medium,
+    'PlusJakartaSans-SemiBold': PlusJakartaSans_600SemiBold,
+    'PlusJakartaSans-Bold': PlusJakartaSans_700Bold,
+    'BricolageGrotesque-Regular': BricolageGrotesque_400Regular,
+    'BricolageGrotesque-SemiBold': BricolageGrotesque_600SemiBold,
+    'BricolageGrotesque-Bold': BricolageGrotesque_700Bold,
   });
 
   // Initialize database tables on mount (before sync monitoring)
