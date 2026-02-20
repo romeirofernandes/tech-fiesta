@@ -5,15 +5,20 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Upload, Loader2, Image as ImageIcon } from "lucide-react";
+import { ArrowLeft, Upload, Loader2, Image as ImageIcon, LocateFixed } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import axios from "axios";
 import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
 import L from "leaflet";
+import { useTheme } from "@/context/ThemeContext";
+import { getMapTile } from "@/lib/mapTiles";
 
 export default function CreateFarm() {
+  const { theme } = useTheme();
+  const { url: tileUrl, attribution: tileAttribution } = getMapTile(theme);
   const [loading, setLoading] = useState(false);
+  const [locating, setLocating] = useState(false);
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [coordinates, setCoordinates] = useState(null);
@@ -53,6 +58,31 @@ export default function CreateFarm() {
 
   const handleInputChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const useCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      toast.error("Geolocation is not supported by your browser");
+      return;
+    }
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const coords = [pos.coords.latitude, pos.coords.longitude];
+        setCoordinates(coords);
+        setFormData((prev) => ({
+          ...prev,
+          location: `${coords[0].toFixed(5)}, ${coords[1].toFixed(5)}`,
+        }));
+        setLocating(false);
+        toast.success("Location set to your current position");
+      },
+      (err) => {
+        setLocating(false);
+        toast.error("Could not get location: " + err.message);
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
   };
 
   const handleSubmit = async (e) => {
@@ -120,7 +150,7 @@ export default function CreateFarm() {
 
   return (
     <Layout>
-      <div className="space-y-6 max-w-full px-6 mx-auto p-4 md:p-6 lg:p-8">w
+      <div className="space-y-6 max-w-full px-6 mx-auto p-4 md:p-6 lg:p-8">
         <Card>
           <CardHeader>
             <CardTitle>Add a New Farm</CardTitle>
@@ -166,7 +196,23 @@ export default function CreateFarm() {
               </div>
 
               <div className="space-y-2">
-                <Label>Your Farm Location (tap on map) *</Label>
+                <div className="flex items-center justify-between">
+                  <Label>Your Farm Location (tap on map) *</Label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={useCurrentLocation}
+                    disabled={locating}
+                  >
+                    {locating ? (
+                      <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <LocateFixed className="mr-1.5 h-3.5 w-3.5" />
+                    )}
+                    {locating ? 'Locating…' : 'Use Current Location'}
+                  </Button>
+                </div>
                 <div className="rounded-lg overflow-hidden border" style={{ height: 300 }}>
                   <MapContainer
                     center={coordinates || [20.5937, 78.9629]}
@@ -175,8 +221,9 @@ export default function CreateFarm() {
                     scrollWheelZoom={true}
                   >
                     <TileLayer
-                      attribution='&copy; <a href="https://osm.org/copyright">OpenStreetMap</a> contributors'
-                      url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                      attribution={tileAttribution}
+                      url={tileUrl}
+                      maxZoom={20}
                     />
                     <LocationMarker />
                   </MapContainer>

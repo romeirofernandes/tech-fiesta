@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Tractor, MapPin, CheckCircle2, Store, ArrowRight, Lock, Phone, Search } from "lucide-react";
+import { Tractor, MapPin, CheckCircle2, Store, ArrowRight, Lock, Phone, Search, Thermometer, Droplets, HeartPulse, Syringe, ChevronLeft, ChevronRight } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { SpeciesIcon, speciesOptions } from "@/lib/animalIcons";
 import { Label } from "@/components/ui/label";
@@ -199,9 +199,58 @@ export default function Marketplace() {
 
     const [selectedItemForView, setSelectedItemForView] = useState(null);
 
+    // Vaccination & Sensor data for detail dialog
+    const [vaccinations, setVaccinations] = useState([]);
+    const [vaccPage, setVaccPage] = useState(1);
+    const [sensorAvg, setSensorAvg] = useState(null);
+    const [loadingExtras, setLoadingExtras] = useState(false);
+    const VACC_PER_PAGE = 10;
+
     const openItemDetails = (item) => {
         setSelectedItemForView(item);
+        setVaccinations([]);
+        setSensorAvg(null);
+        setVaccPage(1);
     };
+
+    // Fetch vaccination events + sensor averages when detail dialog opens for cattle
+    useEffect(() => {
+        if (!selectedItemForView || selectedItemForView.type !== 'cattle') return;
+        const animalId = selectedItemForView.linkedAnimalId?._id;
+        if (!animalId) return;
+
+        const base = import.meta.env.VITE_API_BASE_URL;
+        setLoadingExtras(true);
+
+        Promise.allSettled([
+            axios.get(`${base}/api/vaccination-events?animalId=${animalId}`),
+            axios.get(`${base}/api/iot/sensors/by_animal?animal_id=${animalId}`),
+        ]).then(([vaccRes, sensorRes]) => {
+            if (vaccRes.status === 'fulfilled' && Array.isArray(vaccRes.value.data)) {
+                setVaccinations(vaccRes.value.data);
+            }
+            if (sensorRes.status === 'fulfilled') {
+                const readings = Array.isArray(sensorRes.value.data) ? sensorRes.value.data : sensorRes.value.data?.readings || [];
+                if (readings.length > 0) {
+                    const sum = readings.reduce(
+                        (acc, r) => ({
+                            temp: acc.temp + (r.temperature || 0),
+                            hum: acc.hum + (r.humidity || 0),
+                            hr: acc.hr + (r.heartRate || 0),
+                            ct: acc.ct + 1,
+                        }),
+                        { temp: 0, hum: 0, hr: 0, ct: 0 }
+                    );
+                    setSensorAvg({
+                        temperature: (sum.temp / sum.ct).toFixed(1),
+                        humidity: (sum.hum / sum.ct).toFixed(1),
+                        heartRate: Math.round(sum.hr / sum.ct),
+                        count: sum.ct,
+                    });
+                }
+            }
+        }).finally(() => setLoadingExtras(false));
+    }, [selectedItemForView]);
 
     const isOwner = (item) => {
         return mongoUser && item.seller && (item.seller._id === mongoUser._id || item.seller === mongoUser._id);
@@ -361,7 +410,7 @@ export default function Marketplace() {
 
                 {/* Item Details Dialog */}
                 <Dialog open={!!selectedItemForView} onOpenChange={(open) => !open && setSelectedItemForView(null)}>
-                    <DialogContent className="sm:max-w-lg p-0 overflow-hidden">
+                    <DialogContent className="sm:max-w-2xl p-0 overflow-hidden max-h-[90vh] overflow-y-auto">
                         {selectedItemForView && (
                             <div className="flex flex-col">
                                 {/* Image */}
@@ -433,6 +482,110 @@ export default function Marketplace() {
                                             )
                                         })()}
                                     </div>
+
+                                    {/* Sensor Averages */}
+                                    {selectedItemForView.type === 'cattle' && sensorAvg && (
+                                        <div>
+                                            <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold mb-2">Health Vitals (avg)</p>
+                                            <div className="grid grid-cols-3 gap-3">
+                                                <div className="flex items-center gap-2 p-3 bg-red-500/5 border border-red-500/10 rounded-lg">
+                                                    <Thermometer className="h-5 w-5 text-red-500 shrink-0" />
+                                                    <div>
+                                                        <p className="text-lg font-bold leading-tight">{sensorAvg.temperature}°C</p>
+                                                        <p className="text-[10px] text-muted-foreground">Temperature</p>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center gap-2 p-3 bg-blue-500/5 border border-blue-500/10 rounded-lg">
+                                                    <Droplets className="h-5 w-5 text-blue-500 shrink-0" />
+                                                    <div>
+                                                        <p className="text-lg font-bold leading-tight">{sensorAvg.humidity}%</p>
+                                                        <p className="text-[10px] text-muted-foreground">Humidity</p>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center gap-2 p-3 bg-pink-500/5 border border-pink-500/10 rounded-lg">
+                                                    <HeartPulse className="h-5 w-5 text-pink-500 shrink-0" />
+                                                    <div>
+                                                        <p className="text-lg font-bold leading-tight">{sensorAvg.heartRate}</p>
+                                                        <p className="text-[10px] text-muted-foreground">Heart Rate</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Vaccination Records */}
+                                    {selectedItemForView.type === 'cattle' && vaccinations.length > 0 && (() => {
+                                        const totalPages = Math.ceil(vaccinations.length / VACC_PER_PAGE);
+                                        const paged = vaccinations.slice((vaccPage - 1) * VACC_PER_PAGE, vaccPage * VACC_PER_PAGE);
+                                        return (
+                                            <div>
+                                                <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold mb-2">
+                                                    Vaccination Records ({vaccinations.length})
+                                                </p>
+                                                <div className="border rounded-lg overflow-hidden">
+                                                    <table className="w-full text-sm">
+                                                        <thead>
+                                                            <tr className="bg-muted/50 text-left">
+                                                                <th className="px-3 py-2 font-medium">Vaccine</th>
+                                                                <th className="px-3 py-2 font-medium">Type</th>
+                                                                <th className="px-3 py-2 font-medium">Date</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            {paged.map((v, i) => (
+                                                                <tr key={v._id || i} className="border-t border-border">
+                                                                    <td className="px-3 py-2 flex items-center gap-1.5">
+                                                                        <Syringe className="h-3.5 w-3.5 text-green-600 shrink-0" />
+                                                                        {v.vaccineName}
+                                                                    </td>
+                                                                    <td className="px-3 py-2">
+                                                                        <Badge variant="outline" className="text-[10px] capitalize">
+                                                                            {v.eventType || 'administered'}
+                                                                        </Badge>
+                                                                    </td>
+                                                                    <td className="px-3 py-2 text-muted-foreground">
+                                                                        {v.date ? new Date(v.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
+                                                                    </td>
+                                                                </tr>
+                                                            ))}
+                                                        </tbody>
+                                                    </table>
+                                                    {totalPages > 1 && (
+                                                        <div className="flex items-center justify-between px-3 py-2 border-t bg-muted/30">
+                                                            <span className="text-xs text-muted-foreground">
+                                                                Page {vaccPage} of {totalPages}
+                                                            </span>
+                                                            <div className="flex gap-1">
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="icon"
+                                                                    className="h-7 w-7"
+                                                                    disabled={vaccPage <= 1}
+                                                                    onClick={() => setVaccPage((p) => p - 1)}
+                                                                >
+                                                                    <ChevronLeft className="h-4 w-4" />
+                                                                </Button>
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="icon"
+                                                                    className="h-7 w-7"
+                                                                    disabled={vaccPage >= totalPages}
+                                                                    onClick={() => setVaccPage((p) => p + 1)}
+                                                                >
+                                                                    <ChevronRight className="h-4 w-4" />
+                                                                </Button>
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        );
+                                    })()}
+
+                                    {/* Loading state for extras */}
+                                    {selectedItemForView.type === 'cattle' && loadingExtras && (
+                                        <div className="text-center py-3 text-sm text-muted-foreground">Loading health data…</div>
+                                    )}
 
                                     {/* Action */}
                                     {selectedItemForView.status === 'sold' ? (

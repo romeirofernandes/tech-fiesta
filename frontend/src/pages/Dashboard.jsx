@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { MapContainer, TileLayer, Marker, Tooltip } from "react-leaflet";
 import { useTheme } from "@/context/ThemeContext";
+import { getMapTile } from "@/lib/mapTiles";
 import { useUser } from "@/context/UserContext";
 import { useNavigate } from "react-router-dom";
 import L from "leaflet";
@@ -193,9 +194,7 @@ export default function Dashboard() {
       : 78.9629;
 
   const isDark = theme === "dark";
-  const tileUrl = isDark
-    ? "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-    : "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png";
+  const { url: tileUrl, attribution: tileAttribution } = getMapTile(theme);
 
   const recentAlerts = activeAlerts.slice(0, 5);
 
@@ -421,7 +420,7 @@ export default function Dashboard() {
                   zoomControl={true}
                   attributionControl={false}
                 >
-                  <TileLayer url={tileUrl} maxZoom={20} />
+                  <TileLayer url={tileUrl} attribution={tileAttribution} maxZoom={20} />
 
                   {farmMarkers.map((farm) => (
                     <Marker

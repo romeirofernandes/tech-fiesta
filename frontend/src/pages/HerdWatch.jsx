@@ -1,9 +1,11 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { Layout } from '@/components/Layout';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useUser } from '@/context/UserContext';
+import { useTheme } from '@/context/ThemeContext';
+import { getMapTile } from '@/lib/mapTiles';
 import {
   MapPin, ArrowLeft, AlertTriangle, Clock, Eye, Footprints, Shield
 } from 'lucide-react';
@@ -55,13 +57,19 @@ function formatDuration(startTime, endTime) {
 }
 
 /** Component to animate map fly-to */
-function FlyTo({ center, zoom }) {
+function FlyTo({ center, zoom, onDone }) {
   const map = useMap();
   useEffect(() => {
     if (center) {
-      map.flyTo(center, zoom, { duration: 1.2 });
+      map.flyTo(center, zoom, {
+        duration: 2.2,
+        easeLinearity: 0.15,
+      });
+      const handler = () => onDone?.();
+      map.once('moveend', handler);
+      return () => map.off('moveend', handler);
     }
-  }, [center, zoom, map]);
+  }, [center, zoom, map, onDone]);
   return null;
 }
 
@@ -78,12 +86,15 @@ function FitBounds({ bounds }) {
 
 export default function HerdWatch() {
   const { mongoUser } = useUser();
+  const { theme } = useTheme();
+  const { url: tileUrl, attribution: tileAttribution } = getMapTile(theme);
   const [farms, setFarms] = useState([]);
   const [selectedFarm, setSelectedFarm] = useState(null);
   const [paths, setPaths] = useState([]);
   const [farmData, setFarmData] = useState(null);
   const [loadingFarms, setLoadingFarms] = useState(true);
   const [loadingPaths, setLoadingPaths] = useState(false);
+  const [showBoundary, setShowBoundary] = useState(false);
 
   const farmerId = mongoUser?._id;
 
@@ -127,11 +138,13 @@ export default function HerdWatch() {
   }, [fetchFarms]);
 
   const handleFarmClick = (farm) => {
+    setShowBoundary(false);
     setSelectedFarm(farm);
     fetchPaths(farm._id);
   };
 
   const handleBack = () => {
+    setShowBoundary(false);
     setSelectedFarm(null);
     setPaths([]);
     setFarmData(null);
@@ -160,7 +173,7 @@ export default function HerdWatch() {
 
   return (
     <Layout>
-      <div className="space-y-4 mt-4">
+      <div className="space-y-6 max-w-full px-6 mx-auto p-4 md:p-6 lg:p-8">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -170,11 +183,10 @@ export default function HerdWatch() {
               </Button>
             )}
             <div>
-              <h1 className="text-2xl font-bold flex items-center gap-2">
-                <Footprints className="h-6 w-6 text-primary" />
+              <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
                 Herd Watch
               </h1>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-muted-foreground mt-1">
                 {selectedFarm
                   ? `Tracking animals in ${selectedFarm.name}`
                   : 'Click on a farm to see animal paths'}
@@ -209,24 +221,28 @@ export default function HerdWatch() {
           </div>
         )}
 
-        <div className="flex flex-col lg:flex-row gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Map */}
-          <div className="flex-1 rounded-xl overflow-hidden border bg-card" style={{ minHeight: '520px' }}>
-            {loadingFarms ? (
-              <div className="flex items-center justify-center h-full min-h-[520px]">
-                <div className="h-10 w-10 rounded-full border-4 border-primary/20 border-t-primary animate-spin" />
-              </div>
-            ) : (
-              <MapContainer
-                center={defaultCenter}
-                zoom={5}
-                style={{ height: '520px', width: '100%' }}
-                scrollWheelZoom={true}
-              >
-                <TileLayer
-                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                />
+          <Card className="lg:col-span-3 overflow-hidden flex flex-col">
+            <CardContent className="p-0 flex-1">
+              <div className="h-full min-h-130 relative">
+                {loadingFarms ? (
+                  <div className="flex items-center justify-center h-full">
+                    <div className="h-10 w-10 rounded-full border-4 border-primary/20 border-t-primary animate-spin" />
+                  </div>
+                ) : (
+                  <MapContainer
+                    center={defaultCenter}
+                    zoom={5}
+                    style={{ height: '100%', width: '100%' }}
+                    scrollWheelZoom={true}
+                    attributionControl={false}
+                  >
+                    <TileLayer
+                      url={tileUrl}
+                      attribution={tileAttribution}
+                      maxZoom={20}
+                    />
 
                 {/* Overview mode: fit all farm markers */}
                 {!selectedFarm && overviewBounds && overviewBounds.length > 0 && (
@@ -246,10 +262,10 @@ export default function HerdWatch() {
                       <Popup>
                         <div className="text-center">
                           <p className="font-bold">{farm.name}</p>
-                          <p className="text-xs text-gray-500">{farm.location}</p>
+                          <p className="text-xs text-muted-foreground">{farm.location}</p>
                           <p className="text-xs mt-1">{farm.animalCount} animal{farm.animalCount !== 1 ? 's' : ''}</p>
                           <button
-                            className="mt-2 text-xs px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
+                            className="mt-2 text-xs px-3 py-1 bg-primary text-primary-foreground rounded hover:opacity-90"
                             onClick={() => handleFarmClick(farm)}
                           >
                             View Paths
@@ -264,21 +280,22 @@ export default function HerdWatch() {
                 {selectedFarm && farmData && (
                   <FlyTo
                     center={[farmData.coordinates.lat, farmData.coordinates.lng]}
-                    zoom={16}
+                    zoom={15}
+                    onDone={() => setShowBoundary(true)}
                   />
                 )}
 
-                {/* Drilled-in mode: farm boundary circle */}
-                {selectedFarm && farmData && (
+                {/* Drilled-in mode: farm boundary circle (shown after fly animation) */}
+                {selectedFarm && farmData && showBoundary && (
                   <Circle
                     center={[farmData.coordinates.lat, farmData.coordinates.lng]}
                     radius={farmData.herdWatchRadius}
                     pathOptions={{
                       color: '#22c55e',
-                      weight: 2,
-                      dashArray: '8 4',
+                      weight: 1.5,
+                      dashArray: '6 6',
                       fillColor: '#22c55e',
-                      fillOpacity: 0.06,
+                      fillOpacity: 0.03,
                     }}
                   >
                     <Tooltip direction="top" permanent>
@@ -352,11 +369,13 @@ export default function HerdWatch() {
                   );
                 })}
               </MapContainer>
-            )}
-          </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Side panel */}
-          <div className="lg:w-80 space-y-3">
+          <div className="space-y-4">
             {!selectedFarm ? (
               /* Overview: Farm list */
               <Card>
@@ -402,7 +421,7 @@ export default function HerdWatch() {
                       Animals ({paths.length})
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-2 max-h-[440px] overflow-y-auto">
+                  <CardContent className="space-y-2 max-h-110 overflow-y-auto">
                     {loadingPaths ? (
                       <div className="flex justify-center py-6">
                         <div className="h-8 w-8 rounded-full border-4 border-primary/20 border-t-primary animate-spin" />
