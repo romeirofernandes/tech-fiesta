@@ -101,7 +101,7 @@ npm run dev
 The web dashboard will be available at `http://localhost:5173`.
 
 
-### 4. Mobile App (React - Native)
+### 4. Mobile App (React-Native)
 
 ```bash
 cd app
@@ -118,23 +118,6 @@ Scan the QR code with the Expo Go app on your phone.
 - **`app/`**: A cross-platform mobile application providing on-the-go access to key features like alerts and profile viewing.
 - **`arduino code/`**: Contains firmware (`iotcode.ino`) for the hardware modules, reading from sensors like RFID (MFRC522), Heart Rate (MAX30105), and Temp/Humidity (DHT11).
 
-## API Endpoints (Snapshot)
-
-**Authentication:**
-
-- `POST /api/auth/register` - Register a new farmer
-- `POST /api/auth/login` - Login
-
-**Livestock:**
-
-- `GET /api/animals/:id` - Get animal details
-- `POST /api/animals` - Register a new animal
-
-**Marketplace:**
-
-- `GET /api/marketplace/listings` - View cattle for sale
-
-_(Check `backend/routes/` and `rest_backend/urls.py` for full API documentation)_
 
 ## Support
 
