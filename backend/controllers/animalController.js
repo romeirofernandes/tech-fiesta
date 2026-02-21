@@ -732,3 +732,72 @@ exports.monitorFarm = async (req, res) => {
         res.status(500).json({ message: 'Server Error during monitoring', error: error.message });
     }
 };
+
+/**
+ * Get animal details for public sharing (no auth required).
+ * Returns animal info, farm info, vaccination history, and health snapshot.
+ * GET /api/animals/:id/public
+ */
+exports.getAnimalPublic = async (req, res) => {
+    try {
+        const animal = await Animal.findById(req.params.id)
+            .populate('farmId', 'name location imageUrl')
+            .lean();
+
+        if (!animal) {
+            return res.status(404).json({ message: 'Animal not found' });
+        }
+
+        // Get vaccination events
+        const vaccinationEvents = await VaccinationEvent.find({ animalId: req.params.id })
+            .sort({ date: 1 })
+            .lean();
+
+        // Get latest IoT reading + history for this animal if available
+        let latestVitals = null;
+        let vitalsHistory = [];
+        try {
+            const IotSensorReading = require('../models/IotSensorReading');
+            const orFilters = [];
+            if (animal?._id) orFilters.push({ animalId: animal._id });
+            if (animal?.rfid) orFilters.push({ rfidTag: animal.rfid });
+
+            if (orFilters.length > 0) {
+                const filter = { $or: orFilters };
+
+                latestVitals = await IotSensorReading.findOne(filter)
+                    .sort({ timestamp: -1 })
+                    .select('temperature humidity heartRate timestamp deviceId rfidTag')
+                    .lean();
+
+                const recent = await IotSensorReading.find(filter)
+                    .sort({ timestamp: -1 })
+                    .limit(120)
+                    .select('temperature humidity heartRate timestamp deviceId rfidTag')
+                    .lean();
+
+                vitalsHistory = Array.isArray(recent) ? recent.reverse() : [];
+            }
+        } catch (err) {
+            // IoT data not available
+        }
+
+        // Get owner name (but not contact details for privacy)
+        let ownerName = null;
+        if (animal.farmId) {
+            const Farmer = require('../models/Farmer');
+            const farmer = await Farmer.findOne({ farms: animal.farmId._id }).select('fullName').lean();
+            if (farmer) ownerName = farmer.fullName;
+        }
+
+        res.status(200).json({
+            animal,
+            vaccinationEvents,
+            latestVitals,
+            vitalsHistory,
+            ownerName,
+        });
+    } catch (error) {
+        res.status(500).json({ message: 'Server Error', error: error.message });
+    }
+};

@@ -4,6 +4,7 @@ const Animal = require('../models/Animal');
 const Farmer = require('../models/Farmer');
 const AnimalGpsPath = require('../models/AnimalGpsPath');
 const Farm = require('../models/Farm');
+const { sendWhatsAppAlert } = require('../utils/whatsappSender');
 
 /**
  * Haversine distance in meters between two lat/lng points
@@ -67,12 +68,13 @@ async function checkAnimalStraying(farmerFarmIds) {
             existingAlert.createdAt = new Date();
             await existingAlert.save();
           } else {
-            await Alert.create({
+            const newAlert = await Alert.create({
               animalId: animalIdVal,
               type: 'geofence',
               severity: 'high',
               message: `${animalName} has strayed ${Math.round(dist)}m from ${farm.name} (boundary: ${radius}m)`
             });
+            sendWhatsAppAlert(newAlert).catch(console.error);
           }
         } else {
           // Animal is INSIDE the boundary — auto-resolve any open geofence alerts
@@ -136,12 +138,13 @@ async function checkMissedVaccinations() {
 
         if (!existingAlert) {
             const daysPastDue = Math.floor((now - event.date) / (1000 * 60 * 60 * 24));
-            await Alert.create({
+            const newAlert = await Alert.create({
                 animalId: animalIdVal,
                 type: 'vaccination',
                 severity: daysPastDue > 30 ? 'high' : 'medium',
                 message
             });
+            sendWhatsAppAlert(newAlert).catch(console.error);
         }
     }
 }
@@ -157,6 +160,7 @@ exports.createAlert = async (req, res) => {
       message
     });
 
+    sendWhatsAppAlert(alert).catch(console.error);
     res.status(201).json(alert);
   } catch (error) {
     res.status(400).json({ message: error.message });

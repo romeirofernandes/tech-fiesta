@@ -84,6 +84,7 @@ exports.updateFarmer = async (req, res) => {
 
    if (imageUrl !== undefined) farmer.imageUrl = imageUrl;
    if (req.body.farms !== undefined) farmer.farms = req.body.farms;
+   if (req.body.preferredLanguage !== undefined) farmer.preferredLanguage = req.body.preferredLanguage;
 
     await farmer.save();
     await farmer.populate('farms', 'name location');
