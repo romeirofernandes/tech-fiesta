@@ -4,7 +4,7 @@ const Animal = require('../models/Animal');
 const Farmer = require('../models/Farmer');
 const AnimalGpsPath = require('../models/AnimalGpsPath');
 const Farm = require('../models/Farm');
-const { sendWhatsAppAlert } = require('../utils/whatsappSender');
+// Notifications are sent via the Alert post-save hook — no direct imports needed here
 
 /**
  * Haversine distance in meters between two lat/lng points
@@ -63,18 +63,21 @@ async function checkAnimalStraying(farmerFarmIds) {
           });
 
           if (existingAlert) {
-            // Update existing alert's timestamp and message instead of creating a new one
-            existingAlert.message = `${animalName} has strayed ${Math.round(dist)}m from ${farm.name} (boundary: ${radius}m)`;
-            existingAlert.createdAt = new Date();
-            await existingAlert.save();
+            // Use findByIdAndUpdate to bypass the post-save hook (no re-notification)
+            await Alert.findByIdAndUpdate(existingAlert._id, {
+              $set: {
+                message: `${animalName} has strayed ${Math.round(dist)}m from ${farm.name} (boundary: ${radius}m)`,
+                createdAt: new Date()
+              }
+            });
           } else {
-            const newAlert = await Alert.create({
+            // Alert.create triggers post-save hook which sends all notifications
+            await Alert.create({
               animalId: animalIdVal,
               type: 'geofence',
               severity: 'high',
               message: `${animalName} has strayed ${Math.round(dist)}m from ${farm.name} (boundary: ${radius}m)`
             });
-            sendWhatsAppAlert(newAlert).catch(console.error);
           }
         } else {
           // Animal is INSIDE the boundary — auto-resolve any open geofence alerts
@@ -138,13 +141,13 @@ async function checkMissedVaccinations() {
 
         if (!existingAlert) {
             const daysPastDue = Math.floor((now - event.date) / (1000 * 60 * 60 * 24));
-            const newAlert = await Alert.create({
+            // Alert.create triggers post-save hook which sends all notifications
+            await Alert.create({
                 animalId: animalIdVal,
                 type: 'vaccination',
                 severity: daysPastDue > 30 ? 'high' : 'medium',
                 message
             });
-            sendWhatsAppAlert(newAlert).catch(console.error);
         }
     }
 }
@@ -160,7 +163,7 @@ exports.createAlert = async (req, res) => {
       message
     });
 
-    sendWhatsAppAlert(alert).catch(console.error);
+    // Alert.create triggers post-save hook which sends all notifications once
     res.status(201).json(alert);
   } catch (error) {
     res.status(400).json({ message: error.message });

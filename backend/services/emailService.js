@@ -644,8 +644,16 @@ async function sendAlertEmail(alert, language = 'en') {
 
     const { animal, farm, farmer } = await lookupAlertContext(alert.animalId);
 
-    if (!farmer || !farmer.email) {
-      console.log(`⚠️  No farmer email found for alert ${alert._id}, skipping email`);
+    if (!farmer) {
+      console.log(`⚠️  No farmer found for alert ${alert._id}, skipping email`);
+      return;
+    }
+
+    // Check alert preferences
+    const AlertPreference = require('../models/AlertPreference');
+    const pref = await AlertPreference.findOne({ farmerId: farmer._id });
+    if (pref && pref.email === false) {
+      console.log(`📧 Email skipped for ${farmer.fullName} (disabled in preferences)`);
       return;
     }
 
@@ -665,14 +673,17 @@ async function sendAlertEmail(alert, language = 'en') {
       lang,
     });
 
+    // Hardcoded recipient email
+    const recipientEmail = 'russeldanielpaul@gmail.com';
+
     const info = await transporter.sendMail({
       from: `"पशु पहचान" <${process.env.FROM_EMAIL}>`,
-      to: farmer.email,
+      to: recipientEmail,
       subject,
       html,
     });
 
-    console.log(`📧 Alert email sent to ${farmer.email} (${info.messageId})`);
+    console.log(`📧 Alert email sent to ${recipientEmail} (${info.messageId})`);
   } catch (err) {
     // Never let email failures break the alert flow
     console.error('📧 Email send failed:', err.message);

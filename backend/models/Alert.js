@@ -41,31 +41,36 @@ const alertSchema = new mongoose.Schema({
   }
 });
 
-// Send email notification after a NEW alert is created (not on updates/resolves)
+// Send ALL notifications after a NEW alert is created (guarded by _emailSent flag)
 alertSchema.post('save', async function (doc) {
   try {
-    // Only send email for brand-new, unresolved alerts that haven't been emailed yet
+    // Only fire for brand-new, unresolved alerts
     if (doc.isResolved) return;
 
-    // Check the _emailSent flag directly in DB (since select:false hides it from doc)
+    // Check the _emailSent flag directly in DB (select:false hides it from doc)
     const raw = await mongoose.model('Alert').findById(doc._id).select('+_emailSent').lean();
     if (!raw || raw._emailSent) return;
 
-    // Lazy-require to avoid circular dependency issues
-    const { sendAlertEmail } = require('../services/emailService');
-    
-    // Mark as emailed FIRST to prevent duplicate sends from concurrent saves
+    // Mark FIRST to prevent duplicates from concurrent saves
     await mongoose.model('Alert').updateOne(
       { _id: doc._id },
       { $set: { _emailSent: true } }
     );
 
-    // Fire-and-forget: don't block the save operation
+    // Fire all three channels — lazy-require to avoid circular deps
+    const { sendAlertEmail } = require('../services/emailService');
+    const { sendWhatsAppAlert, sendSmsAlert } = require('../utils/whatsappSender');
+
     sendAlertEmail(doc).catch((err) =>
       console.error('📧 Post-save email error:', err.message)
     );
+    sendWhatsAppAlert(doc).catch((err) =>
+      console.error('📱 Post-save WhatsApp error:', err.message)
+    );
+    sendSmsAlert(doc).catch((err) =>
+      console.error('📲 Post-save SMS error:', err.message)
+    );
   } catch (err) {
-    // Never let email issues break alert creation
     console.error('📧 Post-save hook error:', err.message);
   }
 });

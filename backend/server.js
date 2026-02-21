@@ -61,6 +61,7 @@ app.use('/api/disease-detect', require('./routes/aiDiseaseRoutes'));
 app.use('/api/insights', require('./routes/insightRoutes'));
 app.use('/api/admin', adminRoutes);
 app.use('/api/whatsapp', require('./routes/whatsappRoutes'));
+app.use('/api/alert-preferences', require('./routes/alertPreferenceRoutes'));
 
 const port = process.env.PORT;
 
