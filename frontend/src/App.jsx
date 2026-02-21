@@ -38,6 +38,7 @@ import MySales from './pages/MySales';
 import AnimalIdentification from './pages/AnimalIdentification';
 import FarmMonitoring from './pages/FarmMonitoring';
 import Emergency from './pages/Emergency';
+import FakeHeartrate from './pages/FakeHeartrate';
 import AdminProtectedRoute from './components/AdminProtectedRoute';
 
 const ProtectedRoute = ({ children }) => {
@@ -240,6 +241,9 @@ function App() {
             </ProtectedRoute>
           } />
           <Route path="*" element={<NotFound />} />
+
+          {/* Hidden fake heartrate console */}
+          <Route path="/fake-hr" element={<FakeHeartrate />} />
         </Routes>
       </Router>
     </UserProvider>
