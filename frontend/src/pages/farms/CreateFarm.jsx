@@ -5,14 +5,24 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Upload, Loader2, Image as ImageIcon, LocateFixed } from "lucide-react";
+import { ArrowLeft, Upload, Loader2, Image as ImageIcon, LocateFixed, Search } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import axios from "axios";
-import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from "react-leaflet";
 import L from "leaflet";
 import { useTheme } from "@/context/ThemeContext";
 import { getMapTile } from "@/lib/mapTiles";
+
+function MapController({ coordinates }) {
+  const map = useMap();
+  useEffect(() => {
+    if (coordinates) {
+      map.flyTo(coordinates, 14, { animate: true, duration: 1 });
+    }
+  }, [coordinates, map]);
+  return null;
+}
 
 export default function CreateFarm() {
   const { theme } = useTheme();
@@ -22,7 +32,13 @@ export default function CreateFarm() {
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [coordinates, setCoordinates] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [suggestions, setSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [searching, setSearching] = useState(false);
   const fileInputRef = useRef(null);
+  const searchTimeout = useRef(null);
+  const suggestionsRef = useRef(null);
   const navigate = useNavigate();
   const { mongoUser } = useUser();
 
@@ -30,6 +46,53 @@ export default function CreateFarm() {
     name: "",
     location: "",
   });
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (suggestionsRef.current && !suggestionsRef.current.contains(e.target)) {
+        setShowSuggestions(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleAddressSearch = (value) => {
+    setSearchQuery(value);
+    if (searchTimeout.current) clearTimeout(searchTimeout.current);
+    if (!value.trim()) {
+      setSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+    searchTimeout.current = setTimeout(async () => {
+      setSearching(true);
+      try {
+        const res = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(value)}&addressdetails=1&limit=5&countrycodes=in`
+        );
+        const data = await res.json();
+        setSuggestions(data);
+        setShowSuggestions(data.length > 0);
+      } catch {
+        // silent
+      } finally {
+        setSearching(false);
+      }
+    }, 400);
+  };
+
+  const selectSuggestion = (item) => {
+    const coords = [parseFloat(item.lat), parseFloat(item.lon)];
+    setCoordinates(coords);
+    setFormData((prev) => ({
+      ...prev,
+      location: `${coords[0].toFixed(5)}, ${coords[1].toFixed(5)}`,
+    }));
+    setSearchQuery(item.display_name);
+    setSuggestions([]);
+    setShowSuggestions(false);
+  };
 
   const markerIcon = new L.Icon({
     iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
@@ -197,7 +260,7 @@ export default function CreateFarm() {
 
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <Label>Your Farm Location (tap on map) *</Label>
+                  <Label>Your Farm Location *</Label>
                   <Button
                     type="button"
                     variant="outline"
@@ -213,6 +276,41 @@ export default function CreateFarm() {
                     {locating ? 'Locating…' : 'Use Current Location'}
                   </Button>
                 </div>
+
+                {/* Address search */}
+                <div className="relative" ref={suggestionsRef}>
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                    {searching && (
+                      <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground pointer-events-none" />
+                    )}
+                    <Input
+                      value={searchQuery}
+                      onChange={(e) => handleAddressSearch(e.target.value)}
+                      placeholder="Search address or village name…"
+                      className="pl-9"
+                    />
+                  </div>
+                  {showSuggestions && suggestions.length > 0 && (
+                    <ul className="absolute z-[9999] mt-1 w-full bg-background border rounded-md shadow-lg max-h-60 overflow-y-auto">
+                      {suggestions.map((item) => (
+                        <li
+                          key={item.place_id}
+                          className="px-3 py-2 text-sm cursor-pointer hover:bg-accent hover:text-accent-foreground border-b last:border-b-0"
+                          onMouseDown={() => selectSuggestion(item)}
+                        >
+                          <span className="font-medium">
+                            {item.address?.village || item.address?.town || item.address?.city || item.address?.county || item.name}
+                          </span>
+                          <span className="block text-xs text-muted-foreground truncate">{item.display_name}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+
+                <p className="text-xs text-muted-foreground">Or tap directly on the map to pin your location</p>
+
                 <div className="rounded-lg overflow-hidden border" style={{ height: 300 }}>
                   <MapContainer
                     center={coordinates || [20.5937, 78.9629]}
@@ -225,6 +323,7 @@ export default function CreateFarm() {
                       url={tileUrl}
                       maxZoom={20}
                     />
+                    <MapController coordinates={coordinates} />
                     <LocationMarker />
                   </MapContainer>
                 </div>

@@ -56,6 +56,7 @@ app.use('/api/radar', radarRoutes);
 app.use('/api/herd-watch', require('./routes/herdWatchRoutes'));
 app.use('/api/emergency', require('./routes/emergencyRoutes'));
 app.use('/api/summary', require('./routes/summaryRoutes'));
+app.use('/api/disease-detect', require('./routes/aiDiseaseRoutes'));
 app.use('/api/admin', adminRoutes);
 
 const port = process.env.PORT;

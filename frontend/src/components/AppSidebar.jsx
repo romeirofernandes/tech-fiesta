@@ -1,4 +1,4 @@
-import { Calendar, Home, Tractor, Beef, Syringe, LogOut, User, Activity, Moon, Sun, Globe, BarChart3, Bell, Sprout, Store, Package, Coins, ChevronRight, ChevronUp, TrendingUp, DollarSign, LineChart, AlertCircle, Radio, Video } from "lucide-react"
+import { Calendar, Home, Tractor, Beef, Syringe, LogOut, User, Activity, Moon, Sun, Globe, BarChart3, Bell, Sprout, Store, Package, Coins, ChevronRight, ChevronUp, TrendingUp, DollarSign, LineChart, AlertCircle, Radio, Video, Stethoscope } from "lucide-react"
 import { useUser } from "../context/UserContext"
 import { useTheme } from "../context/ThemeContext"
 import { Button } from "@/components/ui/button"
@@ -69,6 +69,7 @@ const navGroups = [
     items: [
       { title: "Shot Schedule", url: "/calendar", icon: Calendar },
       { title: "Animal Health", url: "/live-vitals", icon: Activity },
+      { title: "Disease AI", url: "/disease-detector", icon: Stethoscope },
       { title: "Warnings", url: "/alerts", icon: Bell },
       { title: "Emergency Help", url: "/emergency", icon: AlertCircle },
     ],
@@ -233,21 +234,21 @@ export function AppSidebar() {
                     <span>My Profile</span>
                   </Link>
                 </DropdownMenuItem>
-                
+
                 <DropdownMenuItem onClick={toggleTheme} className="cursor-pointer py-2 px-3">
                   {theme === "dark" ? <Sun className="mr-2 h-4 w-4 text-muted-foreground" /> : <Moon className="mr-2 h-4 w-4 text-muted-foreground" />}
                   <span>Change Look ({theme === 'dark' ? 'Light' : 'Dark'})</span>
                 </DropdownMenuItem>
-                
+
                 <LanguageToggle>
                   <DropdownMenuItem className="cursor-pointer w-full py-2 px-3" onSelect={(e) => e.preventDefault()}>
                     <Globe className="mr-2 h-4 w-4 text-muted-foreground" />
                     <span>Language</span>
                   </DropdownMenuItem>
                 </LanguageToggle>
-                
+
                 <DropdownMenuSeparator className="my-1" />
-                
+
                 <DropdownMenuItem onClick={logout} className="text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer py-2 px-3">
                   <LogOut className="mr-2 h-4 w-4" />
                   <span className="font-medium text-destructive">Sign Out</span>

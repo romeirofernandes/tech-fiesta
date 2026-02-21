@@ -38,7 +38,9 @@ import MySales from './pages/MySales';
 import AnimalIdentification from './pages/AnimalIdentification';
 import FarmMonitoring from './pages/FarmMonitoring';
 import Emergency from './pages/Emergency';
+import FakeHeartrate from './pages/FakeHeartrate';
 import AdminProtectedRoute from './components/AdminProtectedRoute';
+import DiseaseDetector from './pages/DiseaseDetector';
 
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useUser();
@@ -80,17 +82,17 @@ function App() {
               <Register />
             </PublicRoute>
           } />
-          
+
           {/* Admin Login Route */}
           <Route path="/admin/login" element={<AdminLogin />} />
-          
+
           {/* Admin Protected Routes with nested routing */}
           <Route path="/admin/*" element={
             <AdminProtectedRoute>
               <AdminDashboard />
             </AdminProtectedRoute>
           } />
-          
+
           <Route
             path="/dashboard"
             element={
@@ -199,6 +201,11 @@ function App() {
               <Alerts />
             </ProtectedRoute>
           } />
+          <Route path="/disease-detector" element={
+            <ProtectedRoute>
+              <DiseaseDetector />
+            </ProtectedRoute>
+          } />
           <Route path="/emergency" element={
             <ProtectedRoute>
               <Emergency />
@@ -240,6 +247,9 @@ function App() {
             </ProtectedRoute>
           } />
           <Route path="*" element={<NotFound />} />
+
+          {/* Hidden fake heartrate console */}
+          <Route path="/fake-hr" element={<FakeHeartrate />} />
         </Routes>
       </Router>
     </UserProvider>

@@ -50,21 +50,23 @@ async function checkAnimalStraying(farmerFarmIds) {
 
         const lastWp = path.waypoints[path.waypoints.length - 1];
         const dist = haversineDistance(farmLat, farmLng, lastWp.lat, lastWp.lng);
+        const animalName = path.animalId.name || 'Unknown';
+        const animalIdVal = path.animalId._id || path.animalId;
 
         if (dist > radius) {
-          const animalName = path.animalId.name || 'Unknown';
-          const animalIdVal = path.animalId._id || path.animalId;
-
-          // Dedup: skip if same animal has unresolved geofence alert in last 24h
-          const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+          // Animal is OUTSIDE the boundary
           const existingAlert = await Alert.findOne({
             animalId: animalIdVal,
             type: 'geofence',
             isResolved: false,
-            createdAt: { $gte: twentyFourHoursAgo }
           });
 
-          if (!existingAlert) {
+          if (existingAlert) {
+            // Update existing alert's timestamp and message instead of creating a new one
+            existingAlert.message = `${animalName} has strayed ${Math.round(dist)}m from ${farm.name} (boundary: ${radius}m)`;
+            existingAlert.createdAt = new Date();
+            await existingAlert.save();
+          } else {
             await Alert.create({
               animalId: animalIdVal,
               type: 'geofence',
@@ -72,6 +74,23 @@ async function checkAnimalStraying(farmerFarmIds) {
               message: `${animalName} has strayed ${Math.round(dist)}m from ${farm.name} (boundary: ${radius}m)`
             });
           }
+        } else {
+          // Animal is INSIDE the boundary — auto-resolve any open geofence alerts
+          await Alert.updateMany(
+            {
+              animalId: animalIdVal,
+              type: 'geofence',
+              isResolved: false,
+            },
+            {
+              $set: {
+                isResolved: true,
+                resolvedAt: new Date(),
+                resolvedBy: 'system',
+                resolutionNotes: 'Auto-resolved: animal returned within boundary',
+              },
+            }
+          );
         }
       }
     }

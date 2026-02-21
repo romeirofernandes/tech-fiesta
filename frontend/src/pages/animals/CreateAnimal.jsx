@@ -25,6 +25,8 @@ export default function CreateAnimal() {
   const [farms, setFarms] = useState([]);
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
+  const [dueVaccines, setDueVaccines] = useState([]);
+  const [selectedAdministeredVaccines, setSelectedAdministeredVaccines] = useState([]);
   const fileInputRef = useRef(null);
   const navigate = useNavigate();
 
@@ -51,6 +53,40 @@ export default function CreateAnimal() {
   useEffect(() => {
     fetchFarms();
   }, []);
+
+  // Fetch age-appropriate vaccines when species, age, or gender changes
+  useEffect(() => {
+    if (formData.species && formData.age) {
+      fetchDueVaccines();
+    }
+  }, [formData.species, formData.age, formData.ageUnit, formData.gender]);
+
+  const fetchDueVaccines = async () => {
+    try {
+      const params = new URLSearchParams({
+        species: formData.species,
+        age: formData.age,
+        ageUnit: formData.ageUnit || 'months',
+      });
+      if (formData.gender) params.append('gender', formData.gender);
+      
+      const response = await axios.get(
+        `${import.meta.env.VITE_API_BASE_URL}/api/vaccination-schedules/due-before?${params}`
+      );
+      setDueVaccines(Array.isArray(response.data) ? response.data : []);
+    } catch (error) {
+      console.error('Failed to fetch due vaccines:', error);
+      setDueVaccines([]);
+    }
+  };
+
+  const toggleAdministeredVaccine = (vaccineName) => {
+    setSelectedAdministeredVaccines(prev => 
+      prev.includes(vaccineName)
+        ? prev.filter(v => v !== vaccineName)
+        : [...prev, vaccineName]
+    );
+  };
 
   const fetchFarms = async () => {
     try {
@@ -330,8 +366,8 @@ Return ONLY valid JSON, no markdown formatting or code blocks.`;
           answer: answers.lastVaccinationDate || "Not applicable",
         },
         {
-          question: "What was the last vaccination for?",
-          answer: answers.lastVaccineName || "Not applicable",
+          question: "Which administered vaccines has this animal received?",
+          answer: JSON.stringify(selectedAdministeredVaccines),
         },
         {
           question: "What is the current health status of the animal?",
@@ -649,16 +685,48 @@ Return ONLY valid JSON, no markdown formatting or code blocks.`;
                     />
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="lastVaccineName">
-                      What was the shot for?
+                  <div className="space-y-3">
+                    <Label>
+                      Which vaccines has this animal already received?
                     </Label>
-                    <Input
-                      id="lastVaccineName"
-                      value={answers.lastVaccineName}
-                      onChange={(e) => handleAnswerChange("lastVaccineName", e.target.value)}
-                      placeholder="e.g., FMD, Brucellosis, etc."
-                    />
+                    <p className="text-xs text-muted-foreground">
+                      Select all vaccines that have been given before. These are vaccines due before the animal's current age ({formData.age} {formData.ageUnit}).
+                    </p>
+                    {dueVaccines.length > 0 ? (
+                      <div className="border rounded-lg p-3 max-h-60 overflow-y-auto space-y-2">
+                        {dueVaccines.map((vaccine) => (
+                          <label
+                            key={vaccine._id}
+                            className="flex items-start gap-3 p-2 rounded-md hover:bg-muted/50 cursor-pointer"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={selectedAdministeredVaccines.includes(vaccine.displayName)}
+                              onChange={() => toggleAdministeredVaccine(vaccine.displayName)}
+                              className="mt-1 h-4 w-4 rounded border-gray-300"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium">{vaccine.displayName}</p>
+                              <p className="text-xs text-muted-foreground">
+                                Due at: {vaccine.primaryVaccinationAge}
+                                {vaccine.doseAndRoute && vaccine.doseAndRoute !== '—' && ` • ${vaccine.doseAndRoute}`}
+                              </p>
+                            </div>
+                          </label>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground italic">
+                        {formData.species 
+                          ? "No vaccines found for this animal type and age." 
+                          : "Please fill in the animal details first to see applicable vaccines."}
+                      </p>
+                    )}
+                    {selectedAdministeredVaccines.length > 0 && (
+                      <p className="text-xs text-green-600">
+                        {selectedAdministeredVaccines.length} vaccine(s) marked as already given
+                      </p>
+                    )}
                   </div>
                 </>
               )}
