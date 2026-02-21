@@ -10,6 +10,19 @@ const DETAIL_CACHE_DURATION = 1000 * 60 * 60 * 24 * 7; // 7 days
 // Simple in-memory cache for details
 const detailCache = {};
 
+const CORE_SCHEME_LINKS = {
+    'Pradhan_Mantri_Kisan_Samman_Nidhi': 'https://pmkisan.gov.in/',
+    'Pradhan_Mantri_Fasal_Bima_Yojana': 'https://pmfby.gov.in/',
+    'Pradhan_Mantri_Krishi_Sinchayee_Yojana': 'https://pmksy.gov.in/',
+    'Soil_Health_Card_Scheme': 'https://soilhealth.dac.gov.in/',
+    'Paramparagat_Krishi_Vikas_Yojana': 'https://pgsindia-ncof.gov.in/',
+    'National_Agriculture_Market': 'https://enam.gov.in/',
+    'Pradhan_Mantri_Matsya_Sampada_Yojana': 'https://pmmsy.dof.gov.in/',
+    'Kisan_Credit_Card': 'https://myscheme.gov.in/schemes/kcc',
+    'National_Food_Security_Mission': 'https://nfsm.gov.in/',
+    'Rashtriya_Krishi_Vikas_Yojana': 'https://rkvy.nic.in/'
+};
+
 const fetchSchemes = async () => {
     try {
         // Fetch all schemes directly from MongoDB
@@ -19,16 +32,20 @@ const fetchSchemes = async () => {
         console.log(`Found ${schemes.length} schemes in database`);
 
         // Return schemes with proper structure for frontend
-        return schemes.map(s => ({
-            id: s.slug,
-            _id: s.slug,
-            slug: s.slug,
-            title: s.title,
-            link: s.source || `https://en.wikipedia.org/wiki/${s.slug}`,
-            ministry: 'Ministry of Agriculture & Farmers Welfare',
-            description: s.description?.substring(0, 150) + '...' || 'Government scheme for farmers',
-            tags: s.tags || ['Agriculture', 'Government Scheme']
-        }));
+        return schemes.map(s => {
+            const authoritativeLink = CORE_SCHEME_LINKS[s.slug] || s.official_link || s.source || `https://en.wikipedia.org/wiki/${s.slug}`;
+            return {
+                id: s.slug,
+                _id: s.slug,
+                slug: s.slug,
+                title: s.title,
+                link: authoritativeLink,
+                official_link: CORE_SCHEME_LINKS[s.slug] || s.official_link,
+                ministry: 'Ministry of Agriculture & Farmers Welfare',
+                description: s.description?.substring(0, 150) + '...' || 'Government scheme for farmers',
+                tags: s.tags || ['Agriculture', 'Government Scheme']
+            };
+        });
 
     } catch (error) {
         console.error('Error in schemeService:', error.message);
@@ -51,7 +68,12 @@ const fetchSchemeDetails = async (slug) => {
         let scheme = await Scheme.findOne({ slug });
         if (scheme) {
             console.log(`Serving scheme details from DB: ${slug}`);
-            console.log('DB Data:', JSON.stringify(scheme, null, 2));
+            // Force core links if missing
+            if (CORE_SCHEME_LINKS[slug] && !scheme.official_link) {
+                scheme.official_link = CORE_SCHEME_LINKS[slug];
+            } else if (CORE_SCHEME_LINKS[slug]) {
+                scheme.official_link = CORE_SCHEME_LINKS[slug];
+            }
             return scheme;
         }
 
@@ -147,7 +169,7 @@ const fetchSchemeDetails = async (slug) => {
                     financial_aid: clean(aiResponse.financial_aid) || "Check locally",
                     duration: clean(aiResponse.duration) || "Ongoing",
                     how_to_apply: clean(aiResponse.how_to_apply) || "Contact Gram Panchayat",
-                    official_link: clean(aiResponse.official_link) || "",
+                    official_link: CORE_SCHEME_LINKS[slug] || clean(aiResponse.official_link) || "",
                     applicationProcess: Array.isArray(aiResponse.applicationProcess) ? aiResponse.applicationProcess.filter(s => clean(s)) : []
                 };
             }
