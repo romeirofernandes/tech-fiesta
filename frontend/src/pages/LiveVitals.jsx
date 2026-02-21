@@ -102,14 +102,12 @@ const VitalChart = ({ data, dataKey, title, color, unit, yDomain, timeRange }) =
           <LineChart data={data} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
             <XAxis
-              dataKey="timestamp"
-              type="number"
-              domain={['dataMin', 'dataMax']}
-              tickFormatter={(unixTime) => format(new Date(unixTime), timeRange === '7d' || timeRange === 'all' ? 'MM/dd HH:mm' : 'HH:mm:ss')}
+              dataKey="time"
               tick={{ fontSize: 11 }}
               tickLine={false}
               axisLine={false}
               className="text-muted-foreground"
+              interval="preserveStartEnd"
             />
             <YAxis
               domain={yDomain || ["auto", "auto"]}
@@ -188,7 +186,7 @@ export default function LiveVitals() {
       .map((reading) => ({
         time: format(
           new Date(reading.timestamp),
-          timeRange === "7d" || timeRange === "all" ? "MM/dd HH:mm" : "HH:mm"
+          timeRange === "7d" || timeRange === "all" ? "MM/dd HH:mm" : "HH:mm:ss"
         ),
         timestamp: new Date(reading.timestamp).getTime(),
         temperature: reading.temperature != null ? parseFloat(reading.temperature) : 0,

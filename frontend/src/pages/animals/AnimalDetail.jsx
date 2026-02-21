@@ -126,7 +126,7 @@ export default function AnimalDetail() {
       .map((reading) => ({
         time: format(
           new Date(reading.timestamp),
-          timeRange === "7d" || timeRange === "all" ? "MM/dd HH:mm" : "HH:mm"
+          timeRange === "7d" || timeRange === "all" ? "MM/dd HH:mm" : "HH:mm:ss"
         ),
         timestamp: new Date(reading.timestamp).getTime(),
         temperature: reading.temperature != null ? parseFloat(reading.temperature) : 0,
@@ -476,15 +476,13 @@ export default function AnimalDetail() {
                           <LineChart data={historicalData} margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
                             <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                             <XAxis 
-                              dataKey="timestamp" 
-                              type="number" 
-                              domain={['dataMin', 'dataMax']} 
-                              tickFormatter={(unixTime) => format(new Date(unixTime), timeRange === '7d' || timeRange === 'all' ? 'MM/dd HH:mm' : 'HH:mm:ss')} 
+                              dataKey="time" 
                               tick={{ fontSize: 10 }} 
                               tickLine={false} 
+                              interval="preserveStartEnd"
                             />
                             <YAxis tick={{ fontSize: 10 }} tickFormatter={v => `${v}°C`} />
-                            <RechartsTooltip labelFormatter={(label) => typeof label === 'number' ? format(new Date(label), timeRange === '7d' || timeRange === 'all' ? 'MM/dd HH:mm:ss' : 'HH:mm:ss') : label} />
+                            <RechartsTooltip />
                             <Line type="monotone" dataKey="temperature" stroke="#ef4444" strokeWidth={2} dot={false} name="Temp (°C)" isAnimationActive={true} animationDuration={500} />
                           </LineChart>
                         </ResponsiveContainer>
@@ -503,15 +501,13 @@ export default function AnimalDetail() {
                           <LineChart data={historicalData} margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
                             <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                             <XAxis 
-                              dataKey="timestamp" 
-                              type="number" 
-                              domain={['dataMin', 'dataMax']} 
-                              tickFormatter={(unixTime) => format(new Date(unixTime), timeRange === '7d' || timeRange === 'all' ? 'MM/dd HH:mm' : 'HH:mm:ss')} 
+                              dataKey="time" 
                               tick={{ fontSize: 10 }} 
                               tickLine={false} 
+                              interval="preserveStartEnd"
                             />
                             <YAxis tick={{ fontSize: 10 }} tickFormatter={v => `${v}%`} />
-                            <RechartsTooltip labelFormatter={(label) => typeof label === 'number' ? format(new Date(label), timeRange === '7d' || timeRange === 'all' ? 'MM/dd HH:mm:ss' : 'HH:mm:ss') : label} />
+                            <RechartsTooltip />
                             <Line type="monotone" dataKey="humidity" stroke="#3b82f6" strokeWidth={2} dot={false} name="Humidity (%)" isAnimationActive={true} animationDuration={500} />
                           </LineChart>
                         </ResponsiveContainer>
@@ -530,15 +526,13 @@ export default function AnimalDetail() {
                           <LineChart data={historicalData} margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
                             <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                             <XAxis 
-                              dataKey="timestamp" 
-                              type="number" 
-                              domain={['dataMin', 'dataMax']} 
-                              tickFormatter={(unixTime) => format(new Date(unixTime), timeRange === '7d' || timeRange === 'all' ? 'MM/dd HH:mm' : 'HH:mm:ss')} 
+                              dataKey="time" 
                               tick={{ fontSize: 10 }} 
                               tickLine={false} 
+                              interval="preserveStartEnd"
                             />
                             <YAxis tick={{ fontSize: 10 }} tickFormatter={v => `${v}`} />
-                            <RechartsTooltip labelFormatter={(label) => typeof label === 'number' ? format(new Date(label), timeRange === '7d' || timeRange === 'all' ? 'MM/dd HH:mm:ss' : 'HH:mm:ss') : label} />
+                            <RechartsTooltip />
                             <Line type="monotone" dataKey="heart_rate" stroke="#ec4899" strokeWidth={2} dot={false} name="HR (bpm)" isAnimationActive={true} animationDuration={500} />
                           </LineChart>
                         </ResponsiveContainer>
