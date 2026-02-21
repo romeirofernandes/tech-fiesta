@@ -753,13 +753,31 @@ exports.getAnimalPublic = async (req, res) => {
             .sort({ date: 1 })
             .lean();
 
-        // Get latest IoT reading if available
+        // Get latest IoT reading + history for this animal if available
         let latestVitals = null;
+        let vitalsHistory = [];
         try {
             const IotSensorReading = require('../models/IotSensorReading');
-            latestVitals = await IotSensorReading.findOne({})
-                .sort({ timestamp: -1 })
-                .lean();
+            const orFilters = [];
+            if (animal?._id) orFilters.push({ animalId: animal._id });
+            if (animal?.rfid) orFilters.push({ rfidTag: animal.rfid });
+
+            if (orFilters.length > 0) {
+                const filter = { $or: orFilters };
+
+                latestVitals = await IotSensorReading.findOne(filter)
+                    .sort({ timestamp: -1 })
+                    .select('temperature humidity heartRate timestamp deviceId rfidTag')
+                    .lean();
+
+                const recent = await IotSensorReading.find(filter)
+                    .sort({ timestamp: -1 })
+                    .limit(120)
+                    .select('temperature humidity heartRate timestamp deviceId rfidTag')
+                    .lean();
+
+                vitalsHistory = Array.isArray(recent) ? recent.reverse() : [];
+            }
         } catch (err) {
             // IoT data not available
         }
@@ -776,6 +794,7 @@ exports.getAnimalPublic = async (req, res) => {
             animal,
             vaccinationEvents,
             latestVitals,
+            vitalsHistory,
             ownerName,
         });
     } catch (error) {

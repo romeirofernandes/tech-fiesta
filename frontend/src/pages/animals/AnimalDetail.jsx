@@ -42,6 +42,7 @@ import { EditVaccinationEventDialog } from "@/components/EditVaccinationEventDia
 import { AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from "@/components/ui/alert-dialog";
 import { VaccinationCalendarViews } from "@/components/VaccinationCalendarViews";
 import { useIotPolling } from "@/hooks/useIotPolling";
+import { useTheme } from "@/context/ThemeContext";
 
 const TODAY = Date.now();
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
@@ -56,6 +57,7 @@ const TIME_RANGES = {
 };
 
 export default function AnimalDetail() {
+  const { theme } = useTheme();
   const [animal, setAnimal] = useState(null);
   const [vaccinationEvents, setVaccinationEvents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -67,6 +69,7 @@ export default function AnimalDetail() {
   const [reportDeathOpen, setReportDeathOpen] = useState(false);
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
+  const [qrFgColor, setQrFgColor] = useState("#000000");
   const [currentMonth, setCurrentMonth] = useState(startOfMonth(TODAY));
   const [view, setView] = useState("list"); // list, 2col, month, week
   const [timeRange, setTimeRange] = useState(() => {
@@ -240,6 +243,14 @@ export default function AnimalDetail() {
 
   const shareUrl = `${window.location.origin}/animal/${id}/share`;
 
+  useEffect(() => {
+    if (!shareDialogOpen) return;
+    const primary = getComputedStyle(document.documentElement)
+      .getPropertyValue("--primary")
+      .trim();
+    if (primary) setQrFgColor(primary);
+  }, [theme, shareDialogOpen]);
+
   const handleCopyLink = async () => {
     try {
       await navigator.clipboard.writeText(shareUrl);
@@ -314,27 +325,21 @@ export default function AnimalDetail() {
                   Share
                 </Button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-md">
+              <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle className="flex items-center gap-2">
-                    <QrCode className="h-5 w-5 text-green-700" />
+                    <QrCode className="h-5 w-5 text-primary" />
                     Share {animal?.name}
                   </DialogTitle>
                 </DialogHeader>
-                <div className="flex flex-col items-center gap-6 py-4">
-                  <div className="bg-white p-4 rounded-xl border-2 border-green-100 shadow-sm">
+                <div className="flex flex-col items-center gap-4 py-2">
+                  <div className="bg-white p-3 rounded-xl border shadow-sm">
                     <QRCodeSVG
                       value={shareUrl}
-                      size={220}
+                      size={180}
                       level="H"
                       includeMargin={true}
-                      fgColor="#1B5E20"
-                      imageSettings={{
-                        src: "/logo.png",
-                        height: 30,
-                        width: 30,
-                        excavate: true,
-                      }}
+                      fgColor={qrFgColor}
                     />
                   </div>
                   <p className="text-sm text-muted-foreground text-center">
@@ -342,10 +347,10 @@ export default function AnimalDetail() {
                     Anyone with this link can view the animal's details without logging in.
                   </p>
                   <div className="flex w-full items-center gap-2">
-                    <div className="flex-1 rounded-md border bg-muted/50 px-3 py-2 text-sm truncate">
+                    <div className="flex-1 min-w-0 rounded-md border bg-muted/50 px-3 py-2 text-sm truncate">
                       {shareUrl}
                     </div>
-                    <Button size="sm" variant="outline" onClick={handleCopyLink}>
+                    <Button size="sm" variant="outline" className="shrink-0" onClick={handleCopyLink}>
                       {linkCopied ? (
                         <><Check className="mr-1 h-4 w-4 text-green-600" /> Copied</>
                       ) : (
