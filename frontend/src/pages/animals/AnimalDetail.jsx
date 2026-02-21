@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ArrowLeft, Edit2, MapPin, Plus, Thermometer, Droplets, Heart, Activity } from "lucide-react";
+import { ArrowLeft, Edit2, MapPin, Plus, Thermometer, Droplets, Heart, Activity, RefreshCw, Loader2 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { getSpeciesIcon } from "@/lib/animalIcons";
 import { toast } from "sonner";
@@ -45,17 +45,19 @@ const TODAY = Date.now();
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 const TIME_RANGES = {
-  "1h":  { label: "1 Hour",  minutes: 60 },
-  "6h":  { label: "6 Hours", minutes: 360 },
+  "1h":  { label: "1 Hour",   minutes: 60 },
+  "6h":  { label: "6 Hours",  minutes: 360 },
   "24h": { label: "24 Hours", minutes: 1440 },
-  "7d":  { label: "7 Days",  minutes: 10080 },
+  "7d":  { label: "7 Days",   minutes: 10080 },
   "all": { label: "All Data", minutes: Infinity },
+  "tail": { label: "Last Entry", minutes: -1 },
 };
 
 export default function AnimalDetail() {
   const [animal, setAnimal] = useState(null);
   const [vaccinationEvents, setVaccinationEvents] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshingVaccinations, setRefreshingVaccinations] = useState(false);
   const [editingEvent, setEditingEvent] = useState(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editDialogMode, setEditDialogMode] = useState("edit"); // "edit" or "add"
@@ -63,7 +65,15 @@ export default function AnimalDetail() {
   const [reportDeathOpen, setReportDeathOpen] = useState(false);
   const [currentMonth, setCurrentMonth] = useState(startOfMonth(TODAY));
   const [view, setView] = useState("list"); // list, 2col, month, week
-  const [timeRange, setTimeRange] = useState("24h");
+  const [timeRange, setTimeRange] = useState(() => {
+    return localStorage.getItem("animalDetailTimeRange") || "24h";
+  });
+
+  // Save timeRange to local storage whenever it changes
+  useEffect(() => {
+    localStorage.setItem("animalDetailTimeRange", timeRange);
+  }, [timeRange]);
+
   const navigate = useNavigate();
   const { id } = useParams();
 
@@ -75,7 +85,7 @@ export default function AnimalDetail() {
     lastUpdated,
     refetch 
   } = useIotPolling(API_BASE, {
-    pollInterval: 5000,
+    pollInterval: 1000, // Poll every 1 second
     rfid: animal?.rfid || null,
     limit: 500,
     enabled: !!animal?.rfid,
@@ -89,23 +99,42 @@ export default function AnimalDetail() {
   // Transform polling data for charts (filter by time range)
   const historicalData = useMemo(() => {
     if (!pollingData || pollingData.length === 0) return [];
-    
-    return pollingData
+
+    // "tail" = last 5 entries
+    if (timeRange === "tail") {
+      const sorted = [...pollingData].sort(
+        (a, b) => new Date(b.timestamp) - new Date(a.timestamp)
+      );
+      const lastFive = sorted.slice(0, 5).reverse(); // Get last 5, then reverse to chronological order
+      if (lastFive.length === 0) return [];
+      return lastFive.map(last => ({
+        time: format(new Date(last.timestamp), "HH:mm:ss"),
+        timestamp: new Date(last.timestamp).getTime(),
+        temperature: last.temperature != null ? parseFloat(last.temperature) : 0,
+        humidity: last.humidity != null ? parseFloat(last.humidity) : 0,
+        heart_rate: last.heartRate ?? last.heart_rate ?? 0,
+      }));
+    }
+
+    const filteredAndSorted = pollingData
       .filter((reading) => {
         if (timeRange === "all") return true;
         const cutoffTime = Date.now() - TIME_RANGES[timeRange].minutes * 60 * 1000;
         return new Date(reading.timestamp).getTime() > cutoffTime;
       })
+      .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp)) // Sort chronologically (oldest to newest)
       .map((reading) => ({
         time: format(
           new Date(reading.timestamp),
-          timeRange === "7d" || timeRange === "all" ? "MM/dd HH:mm" : "HH:mm"
+          timeRange === "7d" || timeRange === "all" ? "MM/dd HH:mm" : "HH:mm:ss"
         ),
         timestamp: new Date(reading.timestamp).getTime(),
-        temperature: reading.temperature ? parseFloat(reading.temperature) : null,
-        humidity: reading.humidity ? parseFloat(reading.humidity) : null,
-        heart_rate: reading.heartRate || reading.heart_rate,
+        temperature: reading.temperature != null ? parseFloat(reading.temperature) : 0,
+        humidity: reading.humidity != null ? parseFloat(reading.humidity) : 0,
+        heart_rate: reading.heartRate ?? reading.heart_rate ?? 0,
       }));
+      
+    return filteredAndSorted;
   }, [pollingData, timeRange]);
 
   // Get latest reading with normalized field names
@@ -170,7 +199,24 @@ export default function AnimalDetail() {
     setEditDialogOpen(true);
   };
 
-
+  const handleRefreshVaccinations = async () => {
+    setRefreshingVaccinations(true);
+    try {
+      const token = localStorage.getItem("token");
+      const response = await axios.post(
+        `${import.meta.env.VITE_API_BASE_URL}/api/animals/${id}/regenerate-vaccinations`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setVaccinationEvents(response.data.vaccinationEvents || []);
+      toast.success(response.data.message || "Vaccination schedule refreshed!");
+    } catch (error) {
+      console.error("Refresh error:", error);
+      toast.error("Failed to refresh vaccination schedule");
+    } finally {
+      setRefreshingVaccinations(false);
+    }
+  };
 
   const handleResolveEvent = async (event) => {
     try {
@@ -376,35 +422,49 @@ export default function AnimalDetail() {
             </CardHeader>
             <CardContent>
               {/* Latest Readings */}
-              {latestReading && (
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
                   <div className="flex items-center gap-3 p-3 rounded-lg border bg-muted/30">
                     <Thermometer className="h-8 w-8 text-red-500" />
                     <div>
                       <p className="text-xs text-muted-foreground">Temperature</p>
-                      <p className="text-xl font-bold">{latestReading.temperature ? `${parseFloat(latestReading.temperature).toFixed(1)}°C` : "—"}</p>
+                      <p className="text-xl font-bold">
+                        {latestReading?.temperature != null
+                          ? `${parseFloat(latestReading.temperature).toFixed(1)}°C`
+                          : "0°C"}
+                      </p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3 p-3 rounded-lg border bg-muted/30">
                     <Droplets className="h-8 w-8 text-blue-500" />
                     <div>
                       <p className="text-xs text-muted-foreground">Humidity</p>
-                      <p className="text-xl font-bold">{latestReading.humidity ? `${parseFloat(latestReading.humidity).toFixed(1)}%` : "—"}</p>
+                      <p className="text-xl font-bold">
+                        {latestReading?.humidity != null
+                          ? `${parseFloat(latestReading.humidity).toFixed(1)}%`
+                          : "0%"}
+                      </p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3 p-3 rounded-lg border bg-muted/30">
                     <Heart className="h-8 w-8 text-pink-500" />
                     <div>
                       <p className="text-xs text-muted-foreground">Heart Rate</p>
-                      <p className="text-xl font-bold">{latestReading.heart_rate ? `${latestReading.heart_rate} bpm` : "—"}</p>
+                      <p className="text-xl font-bold">
+                        {latestReading?.heart_rate != null
+                          ? `${latestReading.heart_rate} bpm`
+                          : "0 bpm"}
+                      </p>
                     </div>
                   </div>
+                  {latestReading?.timestamp && (
+                    <div className="sm:col-span-3 text-xs text-muted-foreground mt-1">
+                      Last reading: {format(new Date(latestReading.timestamp), "PPpp")}
+                    </div>
+                  )}
                 </div>
-              )}
 
               {/* Charts */}
-              {historicalData.length > 0 ? (
-                <div className="grid gap-4 grid-cols-1 lg:grid-cols-3">
+              <div className="grid gap-4 grid-cols-1 lg:grid-cols-3">
                   {/* Temperature Chart */}
                   <Card>
                     <CardHeader className="pb-2">
@@ -415,10 +475,15 @@ export default function AnimalDetail() {
                         <ResponsiveContainer width="100%" height="100%">
                           <LineChart data={historicalData} margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
                             <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                            <XAxis dataKey="time" tick={{ fontSize: 10 }} tickLine={false} />
+                            <XAxis 
+                              dataKey="time" 
+                              tick={{ fontSize: 10 }} 
+                              tickLine={false} 
+                              interval="preserveStartEnd"
+                            />
                             <YAxis tick={{ fontSize: 10 }} tickFormatter={v => `${v}°C`} />
                             <RechartsTooltip />
-                            <Line type="monotone" dataKey="temperature" stroke="#ef4444" strokeWidth={2} dot={false} name="Temp (°C)" />
+                            <Line type="monotone" dataKey="temperature" stroke="#ef4444" strokeWidth={2} dot={false} name="Temp (°C)" isAnimationActive={true} animationDuration={500} />
                           </LineChart>
                         </ResponsiveContainer>
                       </div>
@@ -435,10 +500,15 @@ export default function AnimalDetail() {
                         <ResponsiveContainer width="100%" height="100%">
                           <LineChart data={historicalData} margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
                             <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                            <XAxis dataKey="time" tick={{ fontSize: 10 }} tickLine={false} />
+                            <XAxis 
+                              dataKey="time" 
+                              tick={{ fontSize: 10 }} 
+                              tickLine={false} 
+                              interval="preserveStartEnd"
+                            />
                             <YAxis tick={{ fontSize: 10 }} tickFormatter={v => `${v}%`} />
                             <RechartsTooltip />
-                            <Line type="monotone" dataKey="humidity" stroke="#3b82f6" strokeWidth={2} dot={false} name="Humidity (%)" />
+                            <Line type="monotone" dataKey="humidity" stroke="#3b82f6" strokeWidth={2} dot={false} name="Humidity (%)" isAnimationActive={true} animationDuration={500} />
                           </LineChart>
                         </ResponsiveContainer>
                       </div>
@@ -455,22 +525,21 @@ export default function AnimalDetail() {
                         <ResponsiveContainer width="100%" height="100%">
                           <LineChart data={historicalData} margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
                             <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                            <XAxis dataKey="time" tick={{ fontSize: 10 }} tickLine={false} />
+                            <XAxis 
+                              dataKey="time" 
+                              tick={{ fontSize: 10 }} 
+                              tickLine={false} 
+                              interval="preserveStartEnd"
+                            />
                             <YAxis tick={{ fontSize: 10 }} tickFormatter={v => `${v}`} />
                             <RechartsTooltip />
-                            <Line type="monotone" dataKey="heart_rate" stroke="#ec4899" strokeWidth={2} dot={false} name="HR (bpm)" />
+                            <Line type="monotone" dataKey="heart_rate" stroke="#ec4899" strokeWidth={2} dot={false} name="HR (bpm)" isAnimationActive={true} animationDuration={500} />
                           </LineChart>
                         </ResponsiveContainer>
                       </div>
                     </CardContent>
                   </Card>
                 </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center h-40 text-muted-foreground">
-                  <Activity className="h-8 w-8 mb-2 opacity-50" />
-                  <p className="text-sm">{status === "error" ? "Failed to load sensor data" : "No sensor data available yet"}</p>
-                </div>
-              )}
             </CardContent>
           </Card>
         )}
@@ -489,10 +558,25 @@ export default function AnimalDetail() {
           onEditEvent={handleEditEvent}
           onResolveEvent={handleResolveEvent}
           extraControls={
-            <Button variant="outline" size="sm" onClick={handleAddEvent}>
-              <Plus className="mr-2 h-4 w-4" />
-              Add Event
-            </Button>
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleRefreshVaccinations}
+                disabled={refreshingVaccinations}
+              >
+                {refreshingVaccinations ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <RefreshCw className="mr-2 h-4 w-4" />
+                )}
+                Refresh Schedule
+              </Button>
+              <Button variant="outline" size="sm" onClick={handleAddEvent}>
+                <Plus className="mr-2 h-4 w-4" />
+                Add Event
+              </Button>
+            </div>
           }
         />
 

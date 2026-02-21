@@ -8,7 +8,8 @@ const iotSensorReadingSchema = new mongoose.Schema({
   },
   rfidTag: {
     type: String,
-    required: true,
+    required: false,
+    default: null,
     index: true
   },
   temperature: {

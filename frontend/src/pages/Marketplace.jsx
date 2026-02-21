@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Tractor, MapPin, CheckCircle2, Store, ArrowRight, Lock, Phone, Search, Thermometer, Droplets, HeartPulse, Syringe, ChevronLeft, ChevronRight } from "lucide-react";
+import { Tractor, MapPin, CheckCircle2, Store, ArrowRight, Lock, Phone, Search, Thermometer, Droplets, HeartPulse, Syringe, ChevronLeft, ChevronRight, TrendingUp, Package } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { SpeciesIcon, speciesOptions } from "@/lib/animalIcons";
 import { Label } from "@/components/ui/label";
@@ -384,6 +384,20 @@ export default function Marketplace() {
                                         )}
                                     </div>
 
+                                    {/* Production & Potential Earnings */}
+                                    {item.type === 'cattle' && item.productionStats && item.productionStats.products.length > 0 && (
+                                        <div className="flex items-center gap-2 text-xs bg-emerald-500/5 border border-emerald-500/10 rounded-lg px-3 py-2">
+                                            <Package className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+                                            <span className="text-foreground truncate">
+                                                {item.productionStats.products.map(p => `${p.totalQuantity} ${p.unit} ${p.productType.replace(/_/g, ' ')}`).join(', ')}
+                                            </span>
+                                            <span className="ml-auto shrink-0 font-semibold text-emerald-600 flex items-center gap-0.5">
+                                                <TrendingUp className="h-3 w-3" />
+                                                ₹{item.productionStats.totalEarnings.toLocaleString()}
+                                            </span>
+                                        </div>
+                                    )}
+
                                     <div className="flex items-center justify-between pt-3 border-t border-border">
                                         <div>
                                             <span className="text-lg font-semibold">₹{item.price.toLocaleString()}</span>
@@ -581,6 +595,43 @@ export default function Marketplace() {
                                             </div>
                                         );
                                     })()}
+
+                                    {/* Production & Potential Earnings Detail */}
+                                    {selectedItemForView.type === 'cattle' && selectedItemForView.productionStats && selectedItemForView.productionStats.products.length > 0 && (
+                                        <div>
+                                            <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold mb-2">
+                                                Production & Potential Earnings
+                                            </p>
+                                            <div className="border rounded-lg overflow-hidden">
+                                                <table className="w-full text-sm">
+                                                    <thead>
+                                                        <tr className="bg-muted/50 text-left">
+                                                            <th className="px-3 py-2 font-medium">Product</th>
+                                                            <th className="px-3 py-2 font-medium text-right">Total Produced</th>
+                                                            <th className="px-3 py-2 font-medium text-right">Rate</th>
+                                                            <th className="px-3 py-2 font-medium text-right">Potential</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {selectedItemForView.productionStats.products.map((p, i) => (
+                                                            <tr key={i} className="border-t border-border">
+                                                                <td className="px-3 py-2 capitalize">{p.productType.replace(/_/g, ' ')}</td>
+                                                                <td className="px-3 py-2 text-right">{p.totalQuantity} {p.unit}</td>
+                                                                <td className="px-3 py-2 text-right text-muted-foreground">{p.pricePerUnit ? `₹${p.pricePerUnit.toLocaleString()}/${p.unit === 'units' ? 'pc' : p.unit.replace('litres', 'L')}` : '—'}</td>
+                                                                <td className="px-3 py-2 text-right font-semibold text-emerald-600">₹{p.earnings.toLocaleString()}</td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                    <tfoot>
+                                                        <tr className="border-t bg-emerald-500/5">
+                                                            <td colSpan={3} className="px-3 py-2 font-medium text-right">Total Potential Earnings</td>
+                                                            <td className="px-3 py-2 text-right font-bold text-emerald-600">₹{selectedItemForView.productionStats.totalEarnings.toLocaleString()}</td>
+                                                        </tr>
+                                                    </tfoot>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    )}
 
                                     {/* Loading state for extras */}
                                     {selectedItemForView.type === 'cattle' && loadingExtras && (
