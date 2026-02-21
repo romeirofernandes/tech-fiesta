@@ -21,6 +21,8 @@ import {
   List,
   Shield,
   RefreshCw,
+  Stethoscope,
+  BarChart3,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
@@ -220,13 +222,17 @@ export default function WhatsApp() {
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center gap-2">
-                  <List className="h-4 w-4" /> Other Commands
+                  <List className="h-4 w-4" /> All Commands
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-2 text-sm">
                 {[
+                  { cmd: "1", label: "Login", desc: "Link your WhatsApp account" },
+                  { cmd: "2", label: "Add Animal", desc: "Add via text, photo, or voice" },
                   { cmd: "3", label: "My Animals", desc: "View all registered animals" },
                   { cmd: "4", label: "Logout", desc: "Unlink WhatsApp account" },
+                  { cmd: "5", label: "Disease Check", desc: "AI health check from photo" },
+                  { cmd: "6", label: "Farm Report", desc: "Quick farm summary" },
                   { cmd: "help", label: "Help", desc: "Show the command menu" },
                   { cmd: "0", label: "Cancel", desc: "Cancel any ongoing operation" },
                 ].map(({ cmd, label, desc }) => (
@@ -242,94 +248,113 @@ export default function WhatsApp() {
             </Card>
           </div>
 
-          {/* ── Right column: 3 Add Animal methods ── */}
-          <div className="lg:col-span-2 space-y-4">
-            <div className="flex items-center gap-2">
-              <PawPrint className="h-5 w-5 text-orange-500" />
-              <h2 className="text-lg font-semibold">Add Animal — 3 Ways</h2>
-              <Badge variant="secondary" className="text-xs">Send *2* to start</Badge>
+          {/* ── Right column: Bot Features ── */}
+          <div className="lg:col-span-2 space-y-6">
+
+            {/* Add Animal */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <PawPrint className="h-4 w-4 text-muted-foreground" />
+                <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Add Animal</h2>
+                <Badge variant="secondary" className="text-[10px]">Send 2</Badge>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {[
+                  {
+                    icon: FileText,
+                    title: "Text",
+                    cmd: "2 → 1",
+                    desc: "Step-by-step form — name, species, breed, gender, age",
+                  },
+                  {
+                    icon: Camera,
+                    title: "Photo",
+                    cmd: "2 → 2",
+                    desc: "Send a photo — AI detects species, breed & estimates details",
+                  },
+                  {
+                    icon: Mic,
+                    title: "Voice",
+                    cmd: "2 → 3",
+                    desc: "Record a voice note describing the animal in any language",
+                  },
+                ].map(({ icon: Icon, title, cmd, desc }) => (
+                  <Card key={title}>
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-2.5 mb-2">
+                        <div className="h-8 w-8 rounded-lg bg-muted flex items-center justify-center shrink-0">
+                          <Icon className="h-4 w-4 text-muted-foreground" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold">{title}</p>
+                          <Badge variant="outline" className="text-[10px] font-mono">{cmd}</Badge>
+                        </div>
+                      </div>
+                      <p className="text-xs text-muted-foreground leading-relaxed">{desc}</p>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+
+              <p className="text-xs text-muted-foreground">
+                Photo and Voice methods show detected details for confirmation before saving. Send <b>0</b> anytime to cancel.
+              </p>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              {/* Text */}
-              <Card className="border-blue-500/20 bg-blue-500/5">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm flex items-center gap-2 text-blue-600 dark:text-blue-400">
-                    <div className="w-8 h-8 rounded-full bg-blue-500/10 flex items-center justify-center">
-                      <FileText className="h-4 w-4" />
-                    </div>
-                    Option 1 — Text
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="text-sm space-y-2">
-                  <p className="text-muted-foreground">Step-by-step form. Answer questions one by one.</p>
-                  <ul className="text-xs text-muted-foreground space-y-1 pl-2">
-                    <li>→ Name</li>
-                    <li>→ Species</li>
-                    <li>→ Breed</li>
-                    <li>→ Gender</li>
-                    <li>→ Age</li>
-                    <li>→ Optional photo</li>
-                  </ul>
-                  <Badge variant="outline" className="text-xs">Send *2* then *1*</Badge>
-                </CardContent>
-              </Card>
+            {/* Disease Check */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <Stethoscope className="h-4 w-4 text-muted-foreground" />
+                <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Disease Check</h2>
+                <Badge variant="secondary" className="text-[10px]">Send 5</Badge>
+              </div>
 
-              {/* Image / AI */}
-              <Card className="border-purple-500/20 bg-purple-500/5">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm flex items-center gap-2 text-purple-600 dark:text-purple-400">
-                    <div className="w-8 h-8 rounded-full bg-purple-500/10 flex items-center justify-center">
-                      <Camera className="h-4 w-4" />
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex items-start gap-3">
+                    <div className="h-8 w-8 rounded-lg bg-muted flex items-center justify-center shrink-0 mt-0.5">
+                      <Stethoscope className="h-4 w-4 text-muted-foreground" />
                     </div>
-                    Option 2 — Photo
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="text-sm space-y-2">
-                  <p className="text-muted-foreground">Send a photo and Gemini AI detects everything automatically.</p>
-                  <ul className="text-xs text-muted-foreground space-y-1 pl-2">
-                    <li>AI detects species & breed</li>
-                    <li>Suggests Indian name</li>
-                    <li>Estimates age & gender</li>
-                    <li>Photo saved to cloud</li>
-                  </ul>
-                  <Badge variant="outline" className="text-xs">Send *2* then *2*</Badge>
-                </CardContent>
-              </Card>
-
-              {/* Voice */}
-              <Card className="border-green-500/20 bg-green-500/5">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm flex items-center gap-2 text-green-600 dark:text-green-400">
-                    <div className="w-8 h-8 rounded-full bg-green-500/10 flex items-center justify-center">
-                      <Mic className="h-4 w-4" />
+                    <div className="space-y-1.5">
+                      <p className="text-sm font-semibold">AI Health Check</p>
+                      <p className="text-xs text-muted-foreground leading-relaxed">
+                        Send a photo of the affected area. The AI provides a preliminary assessment with the suspected condition, severity, and confidence level.
+                      </p>
+                      <p className="text-[11px] text-muted-foreground/70 italic">
+                        Disclaimer: AI-based only — not a substitute for professional veterinary care. Always consult a vet.
+                      </p>
                     </div>
-                    Option 3 — Voice
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="text-sm space-y-2">
-                  <p className="text-muted-foreground">Record a voice note describing the animal.</p>
-                  <div className="text-xs bg-muted/50 rounded p-2 text-muted-foreground italic">
-                    "My animal's name is Ganga. It is a cow of Gir breed, female, 24 months old."
                   </div>
-                  <ul className="text-xs text-muted-foreground space-y-1 pl-2">
-                    <li>Whisper transcribes audio</li>
-                    <li>AI extracts animal details</li>
-                    <li>Confirm and save</li>
-                  </ul>
-                  <Badge variant="outline" className="text-xs">Send *2* then *3*</Badge>
                 </CardContent>
               </Card>
             </div>
 
-            {/* All confirm before saving */}
-            <Card>
-              <CardContent className="pt-4 pb-3">
-                <p className="text-sm text-muted-foreground">
-                  For <b>Photo</b> and <b>Voice</b> methods, the bot shows detected details and asks you to type <b>ok</b> to confirm before saving. Send <b>0</b> at any time to cancel.
-                </p>
-              </CardContent>
-            </Card>
+            {/* Farm Report */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <BarChart3 className="h-4 w-4 text-muted-foreground" />
+                <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Farm Report</h2>
+                <Badge variant="secondary" className="text-[10px]">Send 6</Badge>
+              </div>
+
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex items-start gap-3">
+                    <div className="h-8 w-8 rounded-lg bg-muted flex items-center justify-center shrink-0 mt-0.5">
+                      <BarChart3 className="h-4 w-4 text-muted-foreground" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <p className="text-sm font-semibold">Quick Farm Summary</p>
+                      <p className="text-xs text-muted-foreground leading-relaxed">
+                        Get a text-based summary of your farm — livestock count, species breakdown, production, revenue, expenses, vaccinations, and health alerts from the last 30 days.
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
           </div>
         </div>
       </div>

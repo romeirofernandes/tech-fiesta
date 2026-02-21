@@ -1,7 +1,8 @@
 /**
  * PashuPalak WhatsApp Bot Service
  *
- * Commands: 1-login, 2-add animal (text/image/voice), 3-my animals, 4-logout, help, 0-cancel
+ * Commands: 1-login, 2-add animal (text/image/voice), 3-my animals, 4-logout,
+ *           5-disease check, 6-farm summary, help, 0-cancel
  */
 
 const twilio = require('twilio');
@@ -11,8 +12,15 @@ const WhatsappUser = require('../models/WhatsappUser');
 const Animal = require('../models/Animal');
 const Farm = require('../models/Farm');
 const Farmer = require('../models/Farmer');
+const ProductionRecord = require('../models/ProductionRecord');
+const SaleTransaction = require('../models/SaleTransaction');
+const Expense = require('../models/Expense');
+const VaccinationEvent = require('../models/VaccinationEvent');
+const HealthSnapshot = require('../models/HealthSnapshot');
 const cloudinary = require('../config/cloudinary');
 const { analyzeAnimalImage } = require('./geminiAnimalService');
+const { detectDisease } = require('./aiDiseaseService');
+const mongoose = require('mongoose');
 const stream = require('stream');
 
 // ─── Clients ─────────────────────────────────────────────
@@ -52,6 +60,8 @@ Commands:
 *2* or *add animal* - Add a new animal
 *3* or *my animals* - View your animals
 *4* or *logout* - Logout
+*5* or *disease* - Quick health check (photo)
+*6* or *report* - Farm summary report
 *help* - Show this menu
 *0* or *cancel* - Cancel current operation`;
 
@@ -204,6 +214,12 @@ async function handleIncomingMessage(from, body, mediaUrl, mediaContentType) {
         await handleAddVoiceFlow(chatId, text, mediaUrl, mediaContentType, convo, wu);
         return;
       }
+      case 'disease_check': {
+        const wu = await WhatsappUser.findOne({ chat_id: chatId, verified: true });
+        if (!wu) { clearConvo(chatId); await sendMessage(chatId, LOGIN_REQUIRED); return; }
+        await handleDiseaseFlow(chatId, text, mediaUrl, mediaContentType, convo, wu);
+        return;
+      }
     }
   }
 
@@ -243,6 +259,21 @@ async function handleIncomingMessage(from, body, mediaUrl, mediaContentType) {
     await WhatsappUser.findOneAndDelete({ chat_id: chatId });
     clearConvo(chatId);
     await sendMessage(chatId, `Logged out${farmer?.fullName ? ' (' + farmer.fullName + ')' : ''}. Send *1* to login again.`);
+    return;
+  }
+
+  if (is(text, '5', 'disease', 'health', 'healthcheck', 'health check', 'check', 'sick', 'bimari', 'bimar')) {
+    const waUser = await WhatsappUser.findOne({ chat_id: chatId, verified: true });
+    if (!waUser) { await sendMessage(chatId, LOGIN_REQUIRED); return; }
+    setConvo(chatId, { flow: 'disease_check', step: 'awaiting_photo', data: {} });
+    await sendMessage(chatId, '*Quick Health Check*\n\nSend a photo of your animal showing the affected area.\n\n⚠️ _This is an AI-based preliminary check only. Always consult a veterinarian._\n\n*0* to cancel.');
+    return;
+  }
+
+  if (is(text, '6', 'report', 'summary', 'reports', 'farm report', 'farmreport')) {
+    const waUser = await WhatsappUser.findOne({ chat_id: chatId, verified: true });
+    if (!waUser) { await sendMessage(chatId, LOGIN_REQUIRED); return; }
+    await handleFarmSummary(chatId, waUser);
     return;
   }
 
@@ -514,6 +545,148 @@ Rules: if not mentioned — use Indian name based on species, breed=Mixed, gende
     ageUnit: ['days', 'months', 'years'].includes(parsed.ageUnit) ? parsed.ageUnit : 'months',
     imageUrl: null,
   };
+}
+
+// ─── Disease Check flow ───────────────────────────────────
+
+async function handleDiseaseFlow(chatId, text, mediaUrl, mediaContentType, convo, waUser) {
+  const { step } = convo;
+
+  if (step === 'awaiting_photo') {
+    if (!mediaUrl || !isImage(mediaContentType)) {
+      await sendMessage(chatId, 'Please send a photo of the animal showing symptoms.\n\n*0* to cancel.');
+      return;
+    }
+    await sendMessage(chatId, 'Analyzing image... please wait.');
+    try {
+      const { buffer, mimeType } = await downloadMedia(mediaUrl, mediaContentType);
+
+      // Create a file-like object compatible with aiDiseaseService
+      const imageFile = { buffer, mimetype: mimeType };
+      const result = await detectDisease(imageFile, null, null);
+
+      if (result.success && result.data) {
+        const d = result.data;
+        const severityEmoji = d.severity === 'Critical' ? '🔴' : d.severity === 'High' ? '🟠' : d.severity === 'Medium' ? '🟡' : '🟢';
+        const symptoms = d.symptoms_identified?.slice(0, 3).join('\n') || 'No specific symptoms identified';
+        const actions = d.immediate_actions?.slice(0, 3).map((a, i) => `${i + 1}. ${a}`).join('\n') || 'Consult a veterinarian';
+        
+        const msg = `⚕️ *Health Check Result*\n\n` +
+          `*${d.diagnosis || 'Unknown Condition'}*\n` +
+          `${severityEmoji} Severity: ${d.severity || 'N/A'} | Confidence: ${d.confidence || 'N/A'}\n` +
+          (d.vet_needed ? '\n🏥 *Vet visit needed*\n' : '\n') +
+          `*Symptoms:*\n${symptoms}\n\n` +
+          `*What to do:*\n${actions}\n\n` +
+          `_Disclaimer: AI assessment only. Always consult a vet. Not a medical diagnosis._\n\n` + HELP_MENU;
+        await sendMessage(chatId, msg);
+      } else {
+        await sendMessage(chatId, 'Could not analyze the image. Please try with a clearer photo or consult a vet directly.\n\n' + HELP_MENU);
+      }
+      clearConvo(chatId);
+    } catch (err) {
+      console.error('[WA disease flow]', err.message);
+      await sendMessage(chatId, 'Analysis failed. Please try again or consult a veterinarian.\n\n' + HELP_MENU);
+      clearConvo(chatId);
+    }
+    return;
+  }
+}
+
+// ─── Farm Summary ─────────────────────────────────────────
+
+async function handleFarmSummary(chatId, waUser) {
+  try {
+    const farmer = await Farmer.findById(waUser.mongo_id).select('farms fullName');
+    if (!farmer) {
+      await sendMessage(chatId, 'Account not found. Please login again.\n\n' + HELP_MENU);
+      return;
+    }
+
+    const farmIds = (farmer.farms || []).map(id => new mongoose.Types.ObjectId(id));
+    if (farmIds.length === 0) {
+      await sendMessage(chatId, 'No farms found. Create one on the web app first.\n\n' + HELP_MENU);
+      return;
+    }
+
+    await sendMessage(chatId, 'Generating your farm report... please wait.');
+
+    const farms = await Farm.find({ _id: { $in: farmIds } });
+    const animals = await Animal.find({ farmId: { $in: farmIds } });
+    const animalCount = animals.length;
+
+    const speciesBreakdown = {};
+    let maleCount = 0, femaleCount = 0;
+    animals.forEach(a => {
+      speciesBreakdown[a.species] = (speciesBreakdown[a.species] || 0) + 1;
+      if (a.gender === 'male') maleCount++;
+      else femaleCount++;
+    });
+
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    let production = [];
+    try {
+      production = await ProductionRecord.aggregate([
+        { $match: { farmId: { $in: farmIds }, date: { $gte: thirtyDaysAgo } } },
+        { $group: { _id: '$productType', totalQuantity: { $sum: '$quantity' }, unit: { $first: '$unit' } } }
+      ]);
+    } catch (e) { /* skip */ }
+
+    let revenue = 0, expenseTotal = 0;
+    try {
+      const sales = await SaleTransaction.aggregate([
+        { $match: { farmId: { $in: farmIds }, date: { $gte: thirtyDaysAgo } } },
+        { $group: { _id: null, total: { $sum: '$totalAmount' } } }
+      ]);
+      revenue = sales[0]?.total || 0;
+    } catch (e) { /* skip */ }
+
+    try {
+      const expenses = await Expense.aggregate([
+        { $match: { farmId: { $in: farmIds }, date: { $gte: thirtyDaysAgo } } },
+        { $group: { _id: null, total: { $sum: '$amount' } } }
+      ]);
+      expenseTotal = expenses[0]?.total || 0;
+    } catch (e) { /* skip */ }
+
+    const animalIds = animals.map(a => a._id);
+    let vaccCount = 0;
+    try { vaccCount = await VaccinationEvent.countDocuments({ animalId: { $in: animalIds }, date: { $gte: thirtyDaysAgo } }); } catch (e) { /* skip */ }
+
+    let healthAlerts = 0;
+    try { healthAlerts = await HealthSnapshot.countDocuments({ animalId: { $in: animalIds }, score: { $lt: 50 }, calculatedOn: { $gte: thirtyDaysAgo } }); } catch (e) { /* skip */ }
+
+    const profit = revenue - expenseTotal;
+    const speciesStr = Object.entries(speciesBreakdown).map(([s, c]) => `  ${s}: ${c}`).join('\n');
+    const prodStr = production.length > 0
+      ? production.map(p => `  ${p._id}: ${p.totalQuantity} ${p.unit || ''}`).join('\n')
+      : '  No records';
+
+    const dateStr = new Date().toLocaleDateString('en-IN', { year: 'numeric', month: 'short', day: 'numeric' });
+
+    const msg = `📊 *Farm Report — ${dateStr}*\n` +
+      `Farmer: *${farmer.fullName}*\n` +
+      `Farms: ${farms.length}\n\n` +
+      `🐄 *Livestock (${animalCount})*\n` +
+      `  Male: ${maleCount} | Female: ${femaleCount}\n` +
+      (speciesStr ? speciesStr + '\n' : '') +
+      `\n📦 *Production (30 days)*\n` +
+      prodStr + '\n' +
+      `\n💰 *Finance (30 days)*\n` +
+      `  Revenue: ₹${revenue.toLocaleString('en-IN')}\n` +
+      `  Expenses: ₹${expenseTotal.toLocaleString('en-IN')}\n` +
+      `  ${profit >= 0 ? 'Profit' : 'Loss'}: ₹${Math.abs(profit).toLocaleString('en-IN')}\n` +
+      `\n💉 *Health (30 days)*\n` +
+      `  Vaccinations: ${vaccCount}\n` +
+      `  Health alerts: ${healthAlerts}\n\n` +
+      HELP_MENU;
+
+    await sendMessage(chatId, msg);
+  } catch (err) {
+    console.error('[WA farmSummary]', err.message);
+    await sendMessage(chatId, 'Error generating report. Please try again.\n\n' + HELP_MENU);
+  }
 }
 
 // ─── Show Animals ─────────────────────────────────────────

@@ -44,6 +44,7 @@ import DiseaseDetector from './pages/DiseaseDetector';
 import PublicAnimalProfile from './pages/animals/PublicAnimalProfile';
 import FarmInsights from './pages/FarmInsights';
 import WhatsAppPage from './pages/WhatsApp';
+import Reports from './pages/Reports';
 
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useUser();
@@ -215,6 +216,11 @@ function App() {
           <Route path="/disease-detector" element={
             <ProtectedRoute>
               <DiseaseDetector />
+            </ProtectedRoute>
+          } />
+          <Route path="/reports" element={
+            <ProtectedRoute>
+              <Reports />
             </ProtectedRoute>
           } />
           <Route path="/insights" element={
