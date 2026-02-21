@@ -100,10 +100,15 @@ exports.reportDeath = async (req, res) => {
  * Computes proper dates based on the animal's actual age (derived from createdAt + age/ageUnit).
  * Skips vaccines that already have a VaccinationEvent for this animal.
  * Past-due vaccinations are marked as 'missed', future ones as 'scheduled'.
+ * Previously administered vaccines (from questionnaire) are marked as 'administered'.
+ * @param {Object} animal - The animal document
+ * @param {string[]} administeredVaccineNames - List of vaccine names already given to this animal
  */
-async function generateVaccinationEventsForAnimal(animal) {
+async function generateVaccinationEventsForAnimal(animal, administeredVaccineNames = []) {
     const speciesLower = (animal.species || '').toLowerCase();
-    const searchSpecies = (speciesLower === 'cattle') ? 'cow' : speciesLower;
+    // Map common alternative names to the seed species values
+    const speciesMap = { 'cattle': 'cow', 'bull': 'cow', 'calf': 'cow', 'heifer': 'cow', 'water buffalo': 'buffalo', 'hen': 'chicken', 'rooster': 'chicken', 'swine': 'pig', 'boar': 'pig', 'piglet': 'pig', 'lamb': 'sheep', 'ram': 'sheep', 'ewe': 'sheep', 'mare': 'horse', 'stallion': 'horse', 'pony': 'horse', 'equine': 'horse' };
+    const searchSpecies = speciesMap[speciesLower] || speciesLower;
     const gender = (animal.gender || 'female').toLowerCase();
 
     const filter = {
@@ -114,11 +119,20 @@ async function generateVaccinationEventsForAnimal(animal) {
         ]
     };
     const schedules = await VaccinationSchedule.find(filter);
-    if (schedules.length === 0) return [];
+    if (schedules.length === 0) {
+        console.log(`[VaccGen] No schedules found for species="${searchSpecies}", gender="${gender}"`);
+        return [];
+    }
+    console.log(`[VaccGen] Found ${schedules.length} schedules for species="${searchSpecies}", gender="${gender}"`);
 
     // Get existing vaccination events for this animal to avoid duplicates
     const existingEvents = await VaccinationEvent.find({ animalId: animal._id });
     const existingVaccineNames = new Set(existingEvents.map(e => e.vaccineName));
+
+    // Normalize administered vaccine names for matching
+    const administeredNormalized = new Set(
+        administeredVaccineNames.map(n => n.toLowerCase().trim())
+    );
 
     const eventsToCreate = [];
 
@@ -141,6 +155,17 @@ async function generateVaccinationEventsForAnimal(animal) {
             // Can't parse age — default to scheduled for today
             targetDate = new Date();
             eventType = 'scheduled';
+        }
+
+        // Check if this vaccine was already administered (reported by farmer in questionnaire)
+        const isAdministered = administeredNormalized.has(vaccineName.toLowerCase()) ||
+            administeredNormalized.has(schedule.disease.toLowerCase()) ||
+            [...administeredNormalized].some(name => 
+                vaccineName.toLowerCase().includes(name) || name.includes(schedule.disease.toLowerCase())
+            );
+
+        if (isAdministered) {
+            eventType = 'administered';
         }
 
         const notes = [
@@ -254,10 +279,37 @@ exports.createAnimal = async (req, res) => {
 
         await newAnimal.save();
 
+        // Parse questionsAnswers to find previously administered vaccines
+        let administeredVaccineNames = [];
+        try {
+            const qa = typeof questionsAnswers === 'string' ? JSON.parse(questionsAnswers) : questionsAnswers;
+            if (Array.isArray(qa)) {
+                const hasVaccinations = qa.find(q => q.question && q.question.includes('vaccinations previously'));
+                if (hasVaccinations && hasVaccinations.answer === 'yes') {
+                    // Look for the administered vaccines list
+                    const administeredQ = qa.find(q => q.question && q.question.includes('administered vaccines'));
+                    if (administeredQ && administeredQ.answer) {
+                        try {
+                            administeredVaccineNames = typeof administeredQ.answer === 'string' 
+                                ? JSON.parse(administeredQ.answer) 
+                                : administeredQ.answer;
+                        } catch (e) {
+                            // If it's a comma-separated string
+                            if (typeof administeredQ.answer === 'string') {
+                                administeredVaccineNames = administeredQ.answer.split(',').map(v => v.trim()).filter(Boolean);
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (e) {
+            console.error('Error parsing questionsAnswers:', e);
+        }
+
         // Generate vaccination events from static schedule data
         let vaccinationEvents = [];
         try {
-            vaccinationEvents = await generateVaccinationEventsForAnimal(newAnimal);
+            vaccinationEvents = await generateVaccinationEventsForAnimal(newAnimal, administeredVaccineNames);
 
             // Generate embedding if image exists
             if (imageUrl) {
@@ -285,8 +337,6 @@ exports.createAnimal = async (req, res) => {
                 warning: 'Animal created but vaccination schedule generation failed'
             });
         }
-
-        res.status(201).json({ animal: newAnimal, vaccinationEvents: [] });
     } catch (error) {
         res.status(500).json({ message: 'Server Error', error: error.message });
     }
@@ -357,6 +407,49 @@ exports.getAnimalById = async (req, res) => {
         
         res.status(200).json({ animal, vaccinationEvents });
     } catch (error) {
+        res.status(500).json({ message: 'Server Error', error: error.message });
+    }
+};
+
+/**
+ * Regenerate vaccination events for an animal.
+ * Deletes all existing non-administered events and recreates from schedule.
+ * Keeps manually added / administered / blockchain-verified events.
+ * POST /api/animals/:id/regenerate-vaccinations
+ */
+exports.regenerateVaccinationEvents = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const animal = await Animal.findById(id);
+        if (!animal) {
+            return res.status(404).json({ message: 'Animal not found' });
+        }
+
+        // Delete only auto-generated events (scheduled/missed without blockchain or certificate)
+        // Keep manually added (administered with certificate/blockchain) events
+        await VaccinationEvent.deleteMany({
+            animalId: id,
+            eventType: { $in: ['scheduled', 'missed'] },
+            certificateUrl: { $in: [null, undefined, ''] },
+            'blockchain.txHash': { $in: [null, undefined, ''] }
+        });
+
+        // Also delete related unresolved vaccination alerts
+        await Alert.deleteMany({
+            animalId: id,
+            type: 'vaccination',
+            isResolved: false
+        });
+
+        // Regenerate from schedules
+        const vaccinationEvents = await generateVaccinationEventsForAnimal(animal);
+
+        res.status(200).json({ 
+            message: `Regenerated vaccination schedule for ${animal.name}`,
+            vaccinationEvents 
+        });
+    } catch (error) {
+        console.error('Regenerate Vaccinations Error:', error);
         res.status(500).json({ message: 'Server Error', error: error.message });
     }
 };

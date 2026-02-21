@@ -51,11 +51,14 @@ const TIME_RANGES = {
 };
 
 // Custom tooltip for charts
-const CustomTooltip = ({ active, payload, label }) => {
+const CustomTooltip = ({ active, payload, label, timeRange }) => {
   if (active && payload && payload.length) {
+    const formattedLabel = typeof label === 'number' 
+      ? format(new Date(label), timeRange === '7d' || timeRange === 'all' ? 'MM/dd HH:mm:ss' : 'HH:mm:ss')
+      : label;
     return (
       <div className="bg-background border rounded-lg shadow-lg p-3">
-        <p className="text-sm text-muted-foreground">{label}</p>
+        <p className="text-sm text-muted-foreground">{formattedLabel}</p>
         {payload.map((entry, index) => (
           <p key={index} className="text-sm font-medium" style={{ color: entry.color }}>
             {entry.name}: {entry.value?.toFixed(1)} {entry.unit || ""}
@@ -87,7 +90,7 @@ const StatCard = ({ title, value, unit, icon: Icon, color, trend }) => (
 );
 
 // Chart Component
-const VitalChart = ({ data, dataKey, title, color, unit, yDomain }) => (
+const VitalChart = ({ data, dataKey, title, color, unit, yDomain, timeRange }) => (
   <Card className="col-span-1">
     <CardHeader className="pb-2">
       <CardTitle className="text-lg">{title}</CardTitle>
@@ -99,7 +102,10 @@ const VitalChart = ({ data, dataKey, title, color, unit, yDomain }) => (
           <LineChart data={data} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
             <XAxis
-              dataKey="time"
+              dataKey="timestamp"
+              type="number"
+              domain={['dataMin', 'dataMax']}
+              tickFormatter={(unixTime) => format(new Date(unixTime), timeRange === '7d' || timeRange === 'all' ? 'MM/dd HH:mm' : 'HH:mm:ss')}
               tick={{ fontSize: 11 }}
               tickLine={false}
               axisLine={false}
@@ -113,7 +119,7 @@ const VitalChart = ({ data, dataKey, title, color, unit, yDomain }) => (
               className="text-muted-foreground"
               tickFormatter={(value) => `${value}${unit}`}
             />
-            <Tooltip content={<CustomTooltip />} />
+            <Tooltip content={<CustomTooltip timeRange={timeRange} />} />
             <Legend />
             <Line
               type="monotone"
@@ -124,6 +130,8 @@ const VitalChart = ({ data, dataKey, title, color, unit, yDomain }) => (
               dot={false}
               activeDot={{ r: 4 }}
               unit={unit}
+              isAnimationActive={true}
+              animationDuration={500}
             />
           </LineChart>
         </ResponsiveContainer>
@@ -136,10 +144,17 @@ export default function LiveVitals() {
   // State
   const [animals, setAnimals] = useState([]);
   const [selectedAnimal, setSelectedAnimal] = useState("all");
-  const [timeRange, setTimeRange] = useState("1h");
+  const [timeRange, setTimeRange] = useState(() => {
+    return localStorage.getItem("liveVitalsTimeRange") || "1h";
+  });
   const [timeSinceData, setTimeSinceData] = useState("");
   const [isolationAlerts, setIsolationAlerts] = useState([]);
   const [loadingAlerts, setLoadingAlerts] = useState(false);
+
+  // Save timeRange to local storage whenever it changes
+  useEffect(() => {
+    localStorage.setItem("liveVitalsTimeRange", timeRange);
+  }, [timeRange]);
 
   // Long polling for IoT sensor data — no RFID filter, always show latest
   const { 
@@ -150,7 +165,7 @@ export default function LiveVitals() {
     lastUpdated,
     refetch 
   } = useIotPolling(API_BASE, {
-    pollInterval: 3000, // Poll every 3 seconds for snappier updates
+    pollInterval: 1000, // Poll every 1 second for snappier updates
     rfid: null,         // No filter — show all readings from the device
     limit: 500,
     enabled: true,
@@ -169,15 +184,16 @@ export default function LiveVitals() {
         const cutoffTime = Date.now() - TIME_RANGES[timeRange].minutes * 60 * 1000;
         return new Date(reading.timestamp).getTime() > cutoffTime;
       })
+      .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp)) // Sort chronologically (oldest to newest)
       .map((reading) => ({
         time: format(
           new Date(reading.timestamp),
           timeRange === "7d" || timeRange === "all" ? "MM/dd HH:mm" : "HH:mm"
         ),
         timestamp: new Date(reading.timestamp).getTime(),
-        temperature: reading.temperature ? parseFloat(reading.temperature) : null,
-        humidity: reading.humidity ? parseFloat(reading.humidity) : null,
-        heart_rate: reading.heartRate || reading.heart_rate,
+        temperature: reading.temperature != null ? parseFloat(reading.temperature) : 0,
+        humidity: reading.humidity != null ? parseFloat(reading.humidity) : 0,
+        heart_rate: reading.heartRate ?? reading.heart_rate ?? 0,
       }));
   }, [pollingData, timeRange]);
 
@@ -440,7 +456,7 @@ export default function LiveVitals() {
             unit="°C"
             icon={Thermometer}
             color="text-orange-500"
-            trend={latestReading ? `Updates every 5 seconds` : null}
+            trend={latestReading ? `Updates every 1 second` : null}
           />
           <StatCard
             title="Moisture in Air"
@@ -448,7 +464,7 @@ export default function LiveVitals() {
             unit="%"
             icon={Droplets}
             color="text-blue-500"
-            trend={latestReading ? `Updates every 5 seconds` : null}
+            trend={latestReading ? `Updates every 1 second` : null}
           />
           <StatCard
             title="Heartbeat"
@@ -456,7 +472,7 @@ export default function LiveVitals() {
             unit="BPM"
             icon={Heart}
             color="text-red-500"
-            trend={latestReading ? `Updates every 5 seconds` : null}
+            trend={latestReading ? `Updates every 1 second` : null}
           />
         </div>
 
@@ -476,6 +492,7 @@ export default function LiveVitals() {
               color="hsl(24, 95%, 53%)"
               unit="°C"
               yDomain={[20, 45]}
+              timeRange={timeRange}
             />
             <VitalChart
               data={chartData}
@@ -484,6 +501,7 @@ export default function LiveVitals() {
               color="hsl(210, 100%, 50%)"
               unit="%"
               yDomain={[0, 100]}
+              timeRange={timeRange}
             />
             <VitalChart
               data={chartData}
@@ -492,6 +510,7 @@ export default function LiveVitals() {
               color="hsl(0, 84%, 60%)"
               unit=" BPM"
               yDomain={[40, 120]}
+              timeRange={timeRange}
             />
           </div>
         ) : (

@@ -312,6 +312,7 @@ export default function FakeHeartrate() {
       <div
         style={{
           display: "flex",
+          flexDirection: "column",
           alignItems: "center",
           gap: "12px",
           padding: "16px 32px",
@@ -322,25 +323,50 @@ export default function FakeHeartrate() {
           transition: "all 0.3s",
         }}
       >
-        <div
+        <button
+          onMouseDown={() => {
+            spaceRef.current = true;
+            setSpaceHeld(true);
+          }}
+          onMouseUp={() => {
+            spaceRef.current = false;
+            setSpaceHeld(false);
+          }}
+          onMouseLeave={() => {
+            spaceRef.current = false;
+            setSpaceHeld(false);
+          }}
+          onTouchStart={(e) => {
+            e.preventDefault();
+            spaceRef.current = true;
+            setSpaceHeld(true);
+          }}
+          onTouchEnd={(e) => {
+            e.preventDefault();
+            spaceRef.current = false;
+            setSpaceHeld(false);
+          }}
           style={{
-            padding: "6px 24px",
+            padding: "12px 32px",
             background: spaceHeld ? "#ff3333" : "#222",
-            borderRadius: "6px",
-            fontSize: "12px",
+            borderRadius: "8px",
+            fontSize: "14px",
             fontWeight: "700",
             letterSpacing: "2px",
             color: spaceHeld ? "#fff" : "#666",
             border: `1px solid ${spaceHeld ? "#ff3333" : "#333"}`,
             transition: "all 0.15s",
-            minWidth: "120px",
+            minWidth: "160px",
             textAlign: "center",
+            cursor: "pointer",
+            userSelect: "none",
+            WebkitUserSelect: "none",
           }}
         >
-          SPACE
-        </div>
-        <span style={{ fontSize: "13px", color: "#888" }}>
-          {spaceHeld ? "Release to flatline" : "Hold to send heartbeats"}
+          HOLD TO SEND
+        </button>
+        <span style={{ fontSize: "13px", color: "#888", textAlign: "center" }}>
+          {spaceHeld ? "Release to flatline" : "Hold button or SPACEBAR to send heartbeats"}
         </span>
       </div>
 

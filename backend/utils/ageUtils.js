@@ -50,7 +50,9 @@ function getCurrentAgeInMonths(animal) {
 function parseVaccinationAgeToMonths(primaryVaccinationAge) {
     if (!primaryVaccinationAge) return null;
     
-    const match = primaryVaccinationAge.match(/(\d+)\s*(month|day|week|year)/i);
+    // Handle ordinal numbers like "6th week", "8th week", "12-14 days"
+    // Also handle "At 3 months of age", "3 months & above", "0 day"
+    const match = primaryVaccinationAge.match(/(\d+)(?:st|nd|rd|th)?[\s-]*(month|day|week|year)/i);
     if (!match) return null;
     
     const value = parseInt(match[1]);

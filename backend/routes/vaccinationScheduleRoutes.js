@@ -4,9 +4,11 @@ const {
     getSchedulesBySpecies,
     getAllSchedules,
     createSchedule,
-    bulkCreateSchedules
+    bulkCreateSchedules,
+    getDueBeforeAge
 } = require('../controllers/vaccinationScheduleController');
 
+router.get('/due-before', getDueBeforeAge);
 router.get('/', getSchedulesBySpecies);
 router.get('/all', getAllSchedules);
 router.post('/', createSchedule);
