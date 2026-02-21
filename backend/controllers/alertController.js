@@ -172,13 +172,6 @@ exports.createAlert = async (req, res) => {
 
 exports.getAlerts = async (req, res) => {
   try {
-    // Auto-detect missed vaccinations and create alerts before fetching
-    try {
-      await checkMissedVaccinations();
-    } catch (err) {
-      console.error('Missed vaccination check failed:', err);
-    }
-
     const { animalId, type, severity, isResolved, search, startDate, endDate, page, limit, farmerId } = req.query;
     
     const filter = {};
@@ -191,19 +184,12 @@ exports.getAlerts = async (req, res) => {
         farmerFarmIds = farmer.farms.map(id => id.toString());
         const animals = await Animal.find({ farmId: { $in: farmer.farms } }).select('_id');
         const animalIds = animals.map(a => a._id);
-        filter.animalId = { $in: animalIds };
-      } else {
-        filter.animalId = { $in: [] };
+        if (animalIds.length > 0) {
+          filter.animalId = { $in: animalIds };
+        }
+        // If farmer has farms but no animals yet, show all alerts (don't restrict to empty set)
       }
-    }
-
-    // Auto-detect straying animals and create geofence alerts
-    try {
-      if (farmerFarmIds.length > 0) {
-        await checkAnimalStraying(farmerFarmIds);
-      }
-    } catch (err) {
-      console.error('Straying check failed:', err);
+      // If farmer has no farms, show all alerts
     }
     if (animalId) filter.animalId = animalId;
     if (type) filter.type = type;
@@ -253,6 +239,44 @@ exports.getAlerts = async (req, res) => {
       .sort({ createdAt: -1 });
     
     res.status(200).json(alerts);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.checkNewAlerts = async (req, res) => {
+  try {
+    // Explicitly trigger checks for missed vaccinations and straying animals
+    // Only call this endpoint intentionally, not on every page load
+    const results = {};
+    
+    try {
+      await checkMissedVaccinations();
+      results.vaccinations = 'checked';
+    } catch (err) {
+      console.error('Missed vaccination check failed:', err);
+      results.vaccinations = `error: ${err.message}`;
+    }
+
+    try {
+      const { farmerId } = req.query;
+      if (farmerId) {
+        const farmer = await Farmer.findById(farmerId);
+        if (farmer && farmer.farms && farmer.farms.length > 0) {
+          await checkAnimalStraying(farmer.farms.map(id => id.toString()));
+          results.straying = 'checked';
+        } else {
+          results.straying = 'no farms for farmer';
+        }
+      } else {
+        results.straying = 'farmerId required';
+      }
+    } catch (err) {
+      console.error('Straying check failed:', err);
+      results.straying = `error: ${err.message}`;
+    }
+
+    res.status(200).json({ message: 'Alert checks completed', results });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
