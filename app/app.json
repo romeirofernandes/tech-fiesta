@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "पशु पहचान",
-    "slug": "पशु पहचान",
+    "slug": "pashu-pehchan",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -19,8 +19,6 @@
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "permissions": [
-        "android.permission.READ_CALENDAR",
-        "android.permission.WRITE_CALENDAR",
         "android.permission.READ_CALENDAR",
         "android.permission.WRITE_CALENDAR"
       ],
@@ -55,6 +53,12 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "4600081a-db97-4be8-9b6d-6c7dffa44d50"
+      }
     }
   }
 }

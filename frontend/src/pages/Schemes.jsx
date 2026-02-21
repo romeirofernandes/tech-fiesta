@@ -119,7 +119,7 @@ export default function Schemes() {
                                             </div>
                                             {scheme.link && (
                                                 <a
-                                                    href={scheme.link}
+                                                    href={scheme.link.startsWith('http') ? scheme.link : `https://${scheme.link}`}
                                                     target="_blank"
                                                     rel="noreferrer"
                                                     className="text-muted-foreground hover:text-primary transition-colors"

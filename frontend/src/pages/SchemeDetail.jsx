@@ -96,7 +96,12 @@ export default function SchemeDetail() {
                             {scheme?.official_link && (
                                 <Button
                                     size="lg"
-                                    onClick={() => window.open(scheme.official_link, '_blank')}
+                                    onClick={() => {
+                                        const url = scheme.official_link.startsWith('http')
+                                            ? scheme.official_link
+                                            : `https://${scheme.official_link}`;
+                                        window.open(url, '_blank');
+                                    }}
                                     className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold px-8 py-6 text-base rounded-2xl shadow-lg hover:shadow-xl transition-all"
                                 >
                                     Apply Online Now <ExternalLink className="ml-2 h-5 w-5" />
