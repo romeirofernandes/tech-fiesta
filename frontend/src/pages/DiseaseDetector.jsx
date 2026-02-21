@@ -1,9 +1,37 @@
 import { useState, useRef, useEffect } from "react";
 import { Layout } from "@/components/Layout";
 import { useUser } from "@/context/UserContext";
-import { Card, CardContent } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Stethoscope, Upload, Mic, Square, Loader2, Image as ImageIcon, AlertTriangle, CheckCircle2, AlertCircle } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Stethoscope,
+  Mic,
+  Square,
+  Image as ImageIcon,
+  AlertTriangle,
+  CheckCircle2,
+  AlertCircle,
+  HeartPulse,
+  X,
+  ShieldCheck,
+  Loader2,
+  Upload,
+} from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import axios from "axios";
 
@@ -26,11 +54,8 @@ export default function DiseaseDetector() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
 
-  // Fetch only this farmer's animals
   useEffect(() => {
-    if (mongoUser?._id) {
-      fetchAnimals();
-    }
+    if (mongoUser?._id) fetchAnimals();
   }, [mongoUser]);
 
   const fetchAnimals = async () => {
@@ -48,16 +73,20 @@ export default function DiseaseDetector() {
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
-    if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        toast.error("Image must be under 5MB");
-        return;
-      }
-      setImageFile(file);
-      const reader = new FileReader();
-      reader.onloadend = () => setImagePreview(reader.result);
-      reader.readAsDataURL(file);
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image must be under 5MB");
+      return;
     }
+    setImageFile(file);
+    const reader = new FileReader();
+    reader.onloadend = () => setImagePreview(reader.result);
+    reader.readAsDataURL(file);
+  };
+
+  const clearImage = () => {
+    setImageFile(null);
+    setImagePreview(null);
   };
 
   const startRecording = async () => {
@@ -65,23 +94,22 @@ export default function DiseaseDetector() {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       mediaRecorderRef.current = new MediaRecorder(stream);
       audioChunksRef.current = [];
-
       mediaRecorderRef.current.ondataavailable = (e) => {
         if (e.data.size > 0) audioChunksRef.current.push(e.data);
       };
-
       mediaRecorderRef.current.onstop = () => {
-        const blob = new Blob(audioChunksRef.current, { type: "audio/webm" });
-        setAudioBlob(blob);
-        stream.getTracks().forEach(t => t.stop());
+        setAudioBlob(new Blob(audioChunksRef.current, { type: "audio/webm" }));
+        stream.getTracks().forEach((t) => t.stop());
       };
-
       mediaRecorderRef.current.start();
       setIsRecording(true);
       setRecordingTime(0);
-      timerRef.current = setInterval(() => setRecordingTime(p => p + 1), 1000);
-    } catch (err) {
-      toast.error("Microphone access denied. Check browser permissions.");
+      timerRef.current = setInterval(
+        () => setRecordingTime((p) => p + 1),
+        1000
+      );
+    } catch {
+      toast.error("Microphone access denied.");
     }
   };
 
@@ -95,271 +123,408 @@ export default function DiseaseDetector() {
 
   const handleAnalyze = async () => {
     if (!imageFile && !audioBlob) {
-      toast.error("Upload a photo or record symptoms to continue.");
+      toast.error("Upload a photo or record symptoms first.");
       return;
     }
-
     setLoading(true);
     setResult(null);
-
     try {
       const formData = new FormData();
       if (imageFile) formData.append("image", imageFile);
       if (audioBlob) formData.append("audio", audioBlob, "symptoms.webm");
-
-      if (selectedAnimalId) {
-        const animal = animals.find(a => a._id === selectedAnimalId);
+      if (selectedAnimalId && selectedAnimalId !== "none") {
+        const animal = animals.find((a) => a._id === selectedAnimalId);
         if (animal) formData.append("animalData", JSON.stringify(animal));
       }
-
       const token = localStorage.getItem("token");
       const res = await axios.post(
         `${import.meta.env.VITE_API_BASE_URL}/api/disease-detect/analyze`,
         formData,
-        { headers: { Authorization: `Bearer ${token}`, "Content-Type": "multipart/form-data" } }
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "multipart/form-data",
+          },
+        }
       );
-
       if (res.data.success) {
         setResult(res.data);
-        toast.success("Diagnosis Ready!");
+        toast.success("Diagnosis ready!");
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || "Analysis failed. Check API keys.");
+      toast.error(error.response?.data?.message || "Analysis failed.");
     } finally {
       setLoading(false);
     }
   };
 
-  const formatTime = (s) => `${Math.floor(s / 60).toString().padStart(2, "0")}:${(s % 60).toString().padStart(2, "0")}`;
+  const formatTime = (s) =>
+    `${Math.floor(s / 60).toString().padStart(2, "0")}:${(s % 60)
+      .toString()
+      .padStart(2, "0")}`;
 
-  const diagnosisData = result?.data;
+  const d = result?.data;
 
   return (
     <Layout>
-      <div className="max-w-6xl mx-auto p-4 md:p-8 space-y-8">
-
+      <div className="space-y-6 px-4 md:px-6 lg:px-8 py-6">
         {/* Header */}
-        <div className="space-y-2">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 text-primary border border-primary/20">
-            <Stethoscope className="h-4 w-4" />
-            <span className="text-xs font-bold uppercase tracking-wider">AI Veterinarian</span>
-          </div>
-          <h1 className="text-3xl font-bold tracking-tight">Disease Detector</h1>
-          <p className="text-muted-foreground max-w-2xl">
-            Upload a photo <strong>or</strong> describe symptoms in Hindi, Marathi, or English using your voice. You can use both together for even better results.
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
+            {/* <Stethoscope className="h-8 w-8 text-primary" /> */}
+            <span>Disease Detector</span>
+          </h1>
+          <p className="text-muted-foreground mt-2">
+            Upload a photo or describe symptoms in Hindi, Marathi, or English.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+          {/* ── LEFT: Input Form ── */}
+          <Card className="lg:col-span-1">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg">Input</CardTitle>
+              <CardDescription>
+                Provide a photo and / or voice symptoms
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Animal */}
+              <div className="space-y-1.5">
+                <Label>Animal (Optional)</Label>
+                <Select
+                  value={selectedAnimalId}
+                  onValueChange={setSelectedAnimalId}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select an animal..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">General Diagnosis</SelectItem>
+                    {animals.map((a) => (
+                      <SelectItem key={a._id} value={a._id}>
+                        {a.name || a.rfid || a.species || "Animal"} (
+                        {a.gender || "N/A"})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-          {/* LEFT: Inputs */}
-          <div className="lg:col-span-5 space-y-6">
-
-            {/* Animal Selector */}
-            <div className="space-y-2">
-              <label className="text-sm font-semibold">Select Your Animal (Optional)</label>
-              <select
-                className="w-full p-3 rounded-xl border border-input bg-background focus:ring-2 focus:ring-primary/50 transition-all font-medium"
-                value={selectedAnimalId}
-                onChange={(e) => setSelectedAnimalId(e.target.value)}
-              >
-                <option value="">-- General Diagnosis --</option>
-                {animals.map(animal => (
-                  <option key={animal._id} value={animal._id}>
-                    {animal.name || animal.rfid || animal.species || "Animal"} — {animal.species} ({animal.gender || "N/A"})
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Image Upload */}
-            <div className="space-y-2">
-              <label className="text-sm font-semibold flex items-center justify-between">
-                <span>Photo of Affected Area</span>
-                {imageFile && <span className="text-xs text-primary font-medium">✓ Photo Added</span>}
-              </label>
-              <div
-                className={`relative group h-56 w-full rounded-2xl overflow-hidden border-2 transition-all cursor-pointer shadow-sm
-                  ${imagePreview ? "border-primary border-solid" : "border-dashed border-primary/20 hover:border-primary/50 bg-muted/50"}`}
-                onClick={() => fileInputRef.current?.click()}
-              >
-                {imagePreview ? (
-                  <img src={imagePreview} alt="Preview" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                ) : (
-                  <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center">
-                    <div className="p-4 bg-primary/10 rounded-full mb-3 group-hover:scale-110 transition-transform text-primary">
-                      <ImageIcon className="w-8 h-8" />
+              {/* Image Upload — large visible area */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <Label>Photo of Affected Area</Label>
+                  {imageFile && (
+                    <button
+                      onClick={clearImage}
+                      className="text-xs text-destructive hover:underline flex items-center gap-0.5"
+                    >
+                      <X className="h-3 w-3" /> Remove
+                    </button>
+                  )}
+                </div>
+                <div
+                  className={`relative w-full rounded-lg overflow-hidden cursor-pointer border-2 transition-colors ${imagePreview
+                    ? "border-primary"
+                    : "border-dashed border-border hover:border-primary/50"
+                    }`}
+                  style={{ height: "200px" }}
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  {imagePreview ? (
+                    <>
+                      <img
+                        src={imagePreview}
+                        alt="Uploaded symptom"
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <div className="flex items-center gap-2 bg-background/90 rounded-lg px-3 py-1.5 text-sm font-medium">
+                          <Upload className="h-4 w-4" /> Change Photo
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="w-full h-full flex flex-col items-center justify-center gap-2 bg-muted/20">
+                      <div className="p-3 rounded-full bg-muted">
+                        <ImageIcon className="h-6 w-6 text-muted-foreground/60" />
+                      </div>
+                      <p className="text-sm font-medium text-foreground">
+                        Click to upload photo
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        JPG, PNG up to 5MB
+                      </p>
                     </div>
-                    <p className="text-sm font-medium text-foreground">Click to upload photo</p>
-                    <p className="text-xs text-muted-foreground mt-1">Clear photos give better results</p>
-                  </div>
-                )}
-                {imagePreview && (
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                    <Button variant="secondary" size="sm" className="rounded-full shadow-lg">
-                      <Upload className="mr-2 h-4 w-4" /> Change Photo
-                    </Button>
-                  </div>
-                )}
-              </div>
-              <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
-            </div>
-
-            {/* Voice Input */}
-            <div className="space-y-3 p-5 rounded-2xl border border-blue-200 bg-blue-50/50 dark:border-blue-900 dark:bg-blue-950/20">
-              <div className="flex justify-between items-start">
-                <div className="space-y-1">
-                  <label className="text-sm font-semibold text-blue-900 dark:text-blue-100 flex items-center gap-2">
-                    <Mic className="h-4 w-4" /> Describe Symptoms
-                  </label>
-                  <p className="text-xs text-blue-700/70 dark:text-blue-300">Speak in Hindi, Marathi, or English</p>
+                  )}
                 </div>
-                {audioBlob && !isRecording && (
-                  <span className="text-xs bg-green-100 text-green-700 font-bold px-2 py-1 rounded-full flex items-center gap-1">
-                    <CheckCircle2 className="h-3 w-3" /> Recorded
-                  </span>
-                )}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageChange}
+                  className="hidden"
+                />
               </div>
-              <div className="flex items-center gap-4 justify-center py-3">
-                {isRecording ? (
-                  <Button onClick={stopRecording} variant="destructive" className="h-16 w-16 rounded-full animate-pulse shadow-lg shadow-destructive/20">
-                    <Square className="h-6 w-6" fill="currentColor" />
-                  </Button>
+
+              {/* Voice Recording */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <Label>Describe Symptoms (Voice)</Label>
+                  {audioBlob && !isRecording && (
+                    <button
+                      onClick={() => {
+                        setAudioBlob(null);
+                        setRecordingTime(0);
+                      }}
+                      className="text-xs text-destructive hover:underline flex items-center gap-0.5"
+                    >
+                      <X className="h-3 w-3" /> Remove
+                    </button>
+                  )}
+                </div>
+                <div className="flex items-center justify-between gap-3 p-3 rounded-lg border border-border bg-muted/20">
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    {isRecording ? (
+                      <button
+                        onClick={stopRecording}
+                        className="h-9 w-9 rounded-full bg-destructive flex items-center justify-center animate-pulse shrink-0"
+                      >
+                        <Square
+                          className="h-3.5 w-3.5 text-destructive-foreground"
+                          fill="currentColor"
+                        />
+                      </button>
+                    ) : (
+                      <button
+                        onClick={startRecording}
+                        className="h-9 w-9 rounded-full bg-primary flex items-center justify-center hover:bg-primary/80 transition-colors shrink-0"
+                      >
+                        <Mic className="h-4 w-4 text-primary-foreground" />
+                      </button>
+                    )}
+                    <div className="min-w-0">
+                      {isRecording ? (
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono text-sm font-bold text-destructive">
+                            {formatTime(recordingTime)}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            Recording...
+                          </span>
+                        </div>
+                      ) : audioBlob ? (
+                        <div className="flex items-center gap-1.5">
+                          <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
+                          <span className="text-sm font-medium text-primary">
+                            Recorded ({formatTime(recordingTime)})
+                          </span>
+                        </div>
+                      ) : (
+                        <div>
+                          <p className="text-sm font-medium">Tap to record</p>
+                          <p className="text-xs text-muted-foreground">
+                            Hindi / Marathi / English
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Submit */}
+              <Button
+                className="w-full h-11 font-semibold gap-2"
+                onClick={handleAnalyze}
+                disabled={loading || (!imageFile && !audioBlob)}
+              >
+                {loading ? (
+                  <>
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
+                    Analyzing...
+                  </>
                 ) : (
-                  <Button onClick={startRecording} className="h-16 w-16 rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-600/20 transition-transform hover:scale-105">
-                    <Mic className="h-8 w-8" />
-                  </Button>
+                  <>
+                    <HeartPulse className="h-4 w-4" /> Run Diagnosis
+                  </>
                 )}
-                {isRecording && <div className="text-blue-600 font-mono text-xl font-bold">{formatTime(recordingTime)}</div>}
-              </div>
-            </div>
+              </Button>
+            </CardContent>
+          </Card>
 
-            {/* Submit */}
-            <Button
-              onClick={handleAnalyze}
-              disabled={loading || (!imageFile && !audioBlob)}
-              className="w-full h-14 text-lg rounded-xl shadow-lg shadow-primary/20 transition-all font-bold"
-            >
-              {loading ? (
-                <><Loader2 className="mr-2 h-6 w-6 animate-spin" /> Analyzing...</>
-              ) : (
-                "Run Disease Diagnosis"
-              )}
-            </Button>
-          </div>
-
-          {/* RIGHT: Results */}
-          <div className="lg:col-span-7">
-            {!diagnosisData && !loading && (
-              <div className="h-full min-h-[400px] border-2 border-dashed border-border rounded-2xl flex flex-col items-center justify-center text-center p-8 bg-muted/20">
-                <div className="p-5 bg-background rounded-full mb-4 shadow-sm border border-border">
-                  <Stethoscope className="h-12 w-12 text-muted-foreground/50" />
-                </div>
-                <h3 className="text-lg font-bold text-foreground mb-2">Awaiting Inputs</h3>
-                <p className="text-muted-foreground text-sm max-w-md mx-auto">
-                  Upload a photo or speak into the mic to describe the problem. The AI will give you advice here.
-                </p>
-              </div>
-            )}
-
+          {/* ── RIGHT: Results (2 cols wide) ── */}
+          <div className="lg:col-span-2 space-y-4">
+            {/* Loading */}
             {loading && (
-              <div className="h-full min-h-[400px] rounded-2xl flex flex-col items-center justify-center text-center p-8 bg-primary/5 border border-primary/10">
-                <Loader2 className="h-12 w-12 text-primary animate-spin mb-4" />
-                <h3 className="text-lg font-bold text-foreground mb-2 animate-pulse">Analyzing...</h3>
-                <p className="text-muted-foreground text-sm max-w-sm mx-auto">
-                  Processing your inputs through AI vision and language models.
-                </p>
-              </div>
+              <Card>
+                <CardContent className="flex flex-col items-center justify-center text-center py-20">
+                  <Loader2 className="h-8 w-8 text-primary animate-spin mb-3" />
+                  <p className="text-base font-semibold animate-pulse">
+                    Analyzing...
+                  </p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Processing with Gemini Vision & Whisper
+                  </p>
+                </CardContent>
+              </Card>
             )}
 
-            {diagnosisData && !loading && (
-              <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            {/* Empty State */}
+            {!d && !loading && (
+              <Card className="border-2 border-dashed border-border">
+                <CardContent className="flex flex-col items-center justify-center text-center py-20">
+                  <div className="p-4 bg-muted rounded-full mb-3">
+                    <Stethoscope className="h-8 w-8 text-muted-foreground/40" />
+                  </div>
+                  <p className="text-base font-semibold text-muted-foreground">
+                    Awaiting Diagnosis
+                  </p>
+                  <p className="text-sm text-muted-foreground/60 mt-1 max-w-xs">
+                    Upload a photo or record symptoms on the left, then click
+                    "Run Diagnosis".
+                  </p>
+                </CardContent>
+              </Card>
+            )}
 
-                {/* Transcription Display (if voice was used) */}
+            {/* Results */}
+            {d && !loading && (
+              <div className="space-y-4">
+                {/* Transcription */}
                 {result?.transcription && (
-                  <Card className="border border-blue-200 bg-blue-50/50 dark:bg-blue-950/20">
-                    <CardContent className="p-4">
-                      <p className="text-xs font-bold uppercase tracking-wider text-blue-600 mb-1">Your Voice (Transcribed)</p>
-                      <p className="text-sm text-foreground/80 italic">"{result.transcription}"</p>
-                    </CardContent>
-                  </Card>
+                  <div className="bg-card border border-border rounded-xl p-3 flex items-start gap-3">
+                    <div className="bg-muted p-2 rounded-lg shrink-0">
+                      <Mic className="h-4 w-4 text-muted-foreground" />
+                    </div>
+                    <div>
+                      <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">
+                        Your Voice (Transcribed)
+                      </p>
+                      <p className="text-sm text-foreground/80 italic mt-0.5">
+                        "{result.transcription}"
+                      </p>
+                    </div>
+                  </div>
                 )}
 
-                {/* Primary Diagnosis */}
-                <Card className={`overflow-hidden border-2 ${diagnosisData.severity === "Critical" ? "border-red-500 shadow-red-500/10" :
-                    diagnosisData.severity === "High" ? "border-orange-500 shadow-orange-500/10" :
-                      diagnosisData.severity === "Medium" ? "border-yellow-500 shadow-yellow-500/10" :
-                        "border-green-500 shadow-green-500/10"
-                  }`}>
-                  <div className={`p-6 ${diagnosisData.severity === "Critical" ? "bg-red-50 dark:bg-red-950/20" :
-                      diagnosisData.severity === "High" ? "bg-orange-50 dark:bg-orange-950/20" :
-                        diagnosisData.severity === "Medium" ? "bg-yellow-50 dark:bg-yellow-950/20" :
-                          "bg-green-50 dark:bg-green-950/20"
-                    }`}>
-                    <div className="flex justify-between items-start mb-4">
-                      <div className="space-y-1">
-                        <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground block">Suspected Condition</span>
-                        <h2 className="text-3xl font-black text-foreground">{diagnosisData.diagnosis}</h2>
+                {/* Diagnosis card */}
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <div className="bg-primary/10 p-2.5 rounded-lg shrink-0">
+                          <Stethoscope className="h-5 w-5 text-primary" />
+                        </div>
+                        <div>
+                          <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">
+                            Suspected Condition
+                          </p>
+                          <h2 className="text-xl font-bold text-foreground">
+                            {d.diagnosis}
+                          </h2>
+                        </div>
                       </div>
-                      <div className="bg-background px-3 py-1 rounded-full border text-xs font-bold shadow-sm">
-                        Confidence: {diagnosisData.confidence}
+                      <div className="flex flex-wrap items-center gap-2 sm:shrink-0">
+                        <Badge
+                          variant="outline"
+                          className="text-[10px] font-bold"
+                        >
+                          {d.confidence} confidence
+                        </Badge>
+                        <Badge
+                          variant={
+                            d.severity === "Critical" || d.severity === "High"
+                              ? "destructive"
+                              : "secondary"
+                          }
+                          className="text-[10px] font-bold"
+                        >
+                          {d.severity} severity
+                        </Badge>
+                        <Badge
+                          variant={d.vet_needed ? "destructive" : "secondary"}
+                          className="text-[10px] font-bold"
+                        >
+                          Vet {d.vet_needed ? "Needed" : "Not Needed"}
+                        </Badge>
                       </div>
                     </div>
-                    {diagnosisData.vet_needed && (
-                      <div className="mt-4 flex items-center gap-3 bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-200 p-4 rounded-xl border border-red-200 dark:border-red-800">
-                        <AlertTriangle className="h-6 w-6 shrink-0" />
-                        <p className="text-sm font-bold">Call a veterinarian immediately. This condition needs professional help.</p>
+                    {d.vet_needed && (
+                      <div className="flex items-center gap-3 bg-destructive/10 text-destructive p-3 rounded-lg mt-3 border border-destructive/20">
+                        <AlertTriangle className="h-4 w-4 shrink-0" />
+                        <p className="text-sm font-semibold">
+                          Call a veterinarian immediately. This condition needs
+                          professional help.
+                        </p>
                       </div>
                     )}
-                  </div>
+                  </CardContent>
                 </Card>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Immediate Actions */}
+                {/* Symptoms + Actions */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <Card>
-                    <CardContent className="p-6">
-                      <h3 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
-                        <AlertCircle className="h-5 w-5 text-amber-500" /> What To Do Now
-                      </h3>
-                      <ul className="space-y-3">
-                        {diagnosisData.immediate_actions?.map((action, idx) => (
-                          <li key={idx} className="flex items-start gap-3">
-                            <span className="flex-shrink-0 h-5 w-5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 flex items-center justify-center text-xs font-bold mt-0.5">{idx + 1}</span>
-                            <span className="text-sm text-foreground/90">{action}</span>
-                          </li>
-                        ))}
-                      </ul>
+                    <CardHeader className="pb-2 pt-4 px-4">
+                      <CardTitle className="text-sm flex items-center gap-2">
+                        <AlertCircle className="h-4 w-4 text-muted-foreground" />{" "}
+                        Symptoms Identified
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="px-4 pb-4 space-y-1.5">
+                      {d.symptoms_identified?.map((s, i) => (
+                        <div
+                          key={i}
+                          className="flex items-center gap-2 text-sm text-foreground/80"
+                        >
+                          <div className="h-1.5 w-1.5 rounded-full bg-primary shrink-0" />
+                          {s}
+                        </div>
+                      ))}
                     </CardContent>
                   </Card>
 
-                  {/* Symptoms Identified */}
                   <Card>
-                    <CardContent className="p-6">
-                      <h3 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
-                        <Stethoscope className="h-5 w-5 text-blue-500" /> Symptoms Found
-                      </h3>
-                      <ul className="space-y-2">
-                        {diagnosisData.symptoms_identified?.map((s, idx) => (
-                          <li key={idx} className="flex items-center gap-2 text-sm text-foreground/80">
-                            <div className="h-1.5 w-1.5 rounded-full bg-blue-500" />
-                            {s}
-                          </li>
-                        ))}
-                      </ul>
+                    <CardHeader className="pb-2 pt-4 px-4">
+                      <CardTitle className="text-sm flex items-center gap-2">
+                        <ShieldCheck className="h-4 w-4 text-muted-foreground" />{" "}
+                        What To Do Now
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="px-4 pb-4 space-y-2">
+                      {d.immediate_actions?.map((action, i) => (
+                        <div key={i} className="flex items-start gap-2.5">
+                          <span className="flex-shrink-0 h-5 w-5 rounded-full bg-secondary text-secondary-foreground flex items-center justify-center text-[10px] font-bold mt-0.5">
+                            {i + 1}
+                          </span>
+                          <span className="text-sm text-foreground/90">
+                            {action}
+                          </span>
+                        </div>
+                      ))}
                     </CardContent>
                   </Card>
                 </div>
 
-                {/* Preventative Measures */}
-                {diagnosisData.preventative_measures?.length > 0 && (
+                {/* Prevention */}
+                {d.preventative_measures?.length > 0 && (
                   <Card>
-                    <CardContent className="p-6">
-                      <h3 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
-                        <CheckCircle2 className="h-5 w-5 text-emerald-500" /> How To Prevent This
-                      </h3>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        {diagnosisData.preventative_measures.map((m, idx) => (
-                          <div key={idx} className="p-3 bg-muted/30 rounded-lg text-sm border">{m}</div>
+                    <CardHeader className="pb-2 pt-4 px-4">
+                      <CardTitle className="text-sm flex items-center gap-2">
+                        <CheckCircle2 className="h-4 w-4 text-muted-foreground" />{" "}
+                        Prevention Tips
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="px-4 pb-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {d.preventative_measures.map((m, i) => (
+                          <div
+                            key={i}
+                            className="p-2.5 bg-muted/30 rounded-lg text-sm border border-border"
+                          >
+                            {m}
+                          </div>
                         ))}
                       </div>
                     </CardContent>
