@@ -43,6 +43,7 @@ import AdminProtectedRoute from './components/AdminProtectedRoute';
 import DiseaseDetector from './pages/DiseaseDetector';
 import PublicAnimalProfile from './pages/animals/PublicAnimalProfile';
 import FarmInsights from './pages/FarmInsights';
+import WhatsAppPage from './pages/WhatsApp';
 
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useUser();
@@ -109,6 +110,11 @@ function App() {
           <Route path="/profile" element={
             <ProtectedRoute>
               <Profile />
+            </ProtectedRoute>
+          } />
+          <Route path="/whatsapp" element={
+            <ProtectedRoute>
+              <WhatsAppPage />
             </ProtectedRoute>
           } />
           <Route path="/animals" element={

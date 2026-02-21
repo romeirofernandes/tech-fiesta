@@ -30,6 +30,7 @@ app.use(cors(
     }
 ));
 app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
 
 connectDB();
 
@@ -59,6 +60,7 @@ app.use('/api/summary', require('./routes/summaryRoutes'));
 app.use('/api/disease-detect', require('./routes/aiDiseaseRoutes'));
 app.use('/api/insights', require('./routes/insightRoutes'));
 app.use('/api/admin', adminRoutes);
+app.use('/api/whatsapp', require('./routes/whatsappRoutes'));
 
 const port = process.env.PORT;
 

@@ -65,7 +65,7 @@ ${alert.message}
 
         await client.messages.create({
           body: messageBody,
-          from: 'whatsapp:+14155238886', // Standard Twilio Sandbox
+          from: process.env.TWILIO_WHATSAPP_NUMBER || 'whatsapp:+14155238886',
           to: finalWhatsappNumber
         });
         
