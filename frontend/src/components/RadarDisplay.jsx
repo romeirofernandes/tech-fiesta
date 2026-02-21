@@ -191,7 +191,7 @@ export function RadarDisplay({ sweepData = [], className = '' }) {
             {/* Detected objects */}
             {sweepData.map((point, idx) => {
               const pos = polarToCartesian(point.angle, point.distance);
-              const isCloseRange = point.distance < 10;
+              const isCloseRange = point.distance < 30 && point.distance > 0;
               const isWithinBoundary = point.distance <= maxDistance;
               
               if (!isWithinBoundary) return null;
@@ -259,11 +259,11 @@ export function RadarDisplay({ sweepData = [], className = '' }) {
           <div className="mt-4 flex items-center justify-center gap-6 text-xs font-mono">
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 rounded-full bg-primary"></div>
-              <span className="text-muted-foreground">Safe Range (&gt;10cm)</span>
+              <span className="text-muted-foreground">Safe Range (&gt;30cm)</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 rounded-full bg-destructive"></div>
-              <span className="text-muted-foreground">Alert (&lt;10cm)</span>
+              <span className="text-muted-foreground">Alert (&lt;30cm)</span>
             </div>
           </div>
         </div>

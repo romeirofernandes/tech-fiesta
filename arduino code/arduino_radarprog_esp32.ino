@@ -38,7 +38,7 @@
     // rotates the servo motor from 15 to 165 degrees
     for(int i=15;i<=165;i+=10){  
     myServo.write(i);
-    delay(30);
+    delay(60);
     distance = calculateDistance();// Calls a function for calculating the distance measured by the Ultrasonic sensor for each degree
     
     // Pause sweep and buzz until object clears
@@ -55,7 +55,7 @@
     // Repeats the previous lines from 165 to 15 degrees
     for(int i=165;i>15;i-=10){  
     myServo.write(i);
-    delay(30);
+    delay(60);
     distance = calculateDistance();
     
     // Pause sweep and buzz until object clears

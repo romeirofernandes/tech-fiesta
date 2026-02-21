@@ -1,10 +1,66 @@
 const RadarReading = require('../models/RadarReading');
 const MovementAlert = require('../models/MovementAlert');
+const twilio = require('twilio');
+
+// ── Twilio WhatsApp config ───────────────────────────────────
+const twilioClient =
+  process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN
+    ? twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN)
+    : null;
+
+if (twilioClient) {
+  console.log('[Radar WhatsApp] Twilio client initialized ✓');
+} else {
+  console.log('[Radar WhatsApp] Twilio client NOT initialized — check TWILIO_ACCOUNT_SID / TWILIO_AUTH_TOKEN in .env');
+}
+const TWILIO_FROM = process.env.TWILIO_WHATSAPP_NUMBER || 'whatsapp:+14155238886';
+const ALERT_PHONE = 'whatsapp:+918097996263'; // hardcoded recipient
+
+// Debounce: only send one WhatsApp per cooldown period
+let lastWhatsAppSentAt = 0;
+const WHATSAPP_COOLDOWN_MS = 60_000; // 60 seconds between messages
+
+async function sendRadarWhatsApp(angle, distance) {
+  if (!twilioClient) {
+    console.log('[Radar WhatsApp] skipped — Twilio creds missing');
+    return;
+  }
+  const now = Date.now();
+  if (now - lastWhatsAppSentAt < WHATSAPP_COOLDOWN_MS) {
+    return; // still in cooldown
+  }
+  lastWhatsAppSentAt = now;
+
+  const body = `🚨 *GEOFENCE BREACH DETECTED* 🚨
+
+⚠️ An animal has been detected near the boundary!
+
+📍 *Angle:* ${angle}°
+📏 *Distance:* ${distance.toFixed(1)} cm
+
+🔔 Buzzer is ringing to scare the animal back to the farm.
+
+🕒 *Time:* ${new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}
+
+Please check the radar dashboard for live updates.`;
+
+  try {
+    await twilioClient.messages.create({
+      body,
+      from: TWILIO_FROM,
+      to: ALERT_PHONE
+    });
+    console.log(`[Radar WhatsApp] Alert sent → ${ALERT_PHONE}  (${angle}° / ${distance}cm)`);
+  } catch (err) {
+    console.error('[Radar WhatsApp] Failed:', err.message);
+  }
+}
+// ─────────────────────────────────────────────────────────────
 
 // ── In-memory live radar store (no DB writes) ────────────────
 // Keyed by angle so latest reading per angle is always kept
 const liveRadarStore = new Map(); // angle → { angle, distance, timestamp }
-const GEOFENCE_THRESHOLD = 30; // cm
+const GEOFENCE_THRESHOLD = 30; // cm — alert zone; Arduino hard-stops at 10cm
 
 // POST /api/radar/live — called by radarBridge for every reading
 exports.postLiveReading = (req, res) => {
@@ -13,12 +69,22 @@ exports.postLiveReading = (req, res) => {
     return res.status(400).json({ message: 'angle and distance required' });
   }
   updateRadarHeartbeat();
+
+  const isAlert = distance < GEOFENCE_THRESHOLD && distance > 0;
+
   liveRadarStore.set(angle, {
     angle,
     distance,
-    alert: distance < GEOFENCE_THRESHOLD && distance > 0,
+    alert: isAlert,
     timestamp: Date.now()
   });
+
+  // Fire-and-forget WhatsApp notification on alert (debounced)
+  if (isAlert) {
+    console.log(`[Radar WhatsApp] ALERT triggered: ${angle}° / ${distance}cm — sending WhatsApp...`);
+    sendRadarWhatsApp(angle, distance).catch(() => {});
+  }
+
   res.json({ ok: true });
 };
 
