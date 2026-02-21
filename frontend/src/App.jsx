@@ -40,6 +40,8 @@ import FarmMonitoring from './pages/FarmMonitoring';
 import Emergency from './pages/Emergency';
 import FakeHeartrate from './pages/FakeHeartrate';
 import AdminProtectedRoute from './components/AdminProtectedRoute';
+import DiseaseDetector from './pages/DiseaseDetector';
+import PublicAnimalProfile from './pages/animals/PublicAnimalProfile';
 
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useUser();
@@ -81,17 +83,20 @@ function App() {
               <Register />
             </PublicRoute>
           } />
-          
+
+          {/* Public animal share page (no auth) */}
+          <Route path="/animal/:id/share" element={<PublicAnimalProfile />} />
+
           {/* Admin Login Route */}
           <Route path="/admin/login" element={<AdminLogin />} />
-          
+
           {/* Admin Protected Routes with nested routing */}
           <Route path="/admin/*" element={
             <AdminProtectedRoute>
               <AdminDashboard />
             </AdminProtectedRoute>
           } />
-          
+
           <Route
             path="/dashboard"
             element={
@@ -198,6 +203,11 @@ function App() {
           <Route path="/alerts" element={
             <ProtectedRoute>
               <Alerts />
+            </ProtectedRoute>
+          } />
+          <Route path="/disease-detector" element={
+            <ProtectedRoute>
+              <DiseaseDetector />
             </ProtectedRoute>
           } />
           <Route path="/emergency" element={

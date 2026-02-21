@@ -33,6 +33,10 @@ import {
   ShieldAlert,
   AlertTriangle,
   CheckCircle,
+  Watch,
+  Cpu,
+  Zap,
+  CircuitBoard,
 } from "lucide-react";
 import { useIotPolling } from "@/hooks/useIotPolling";
 import { format } from "date-fns";
@@ -102,14 +106,12 @@ const VitalChart = ({ data, dataKey, title, color, unit, yDomain, timeRange }) =
           <LineChart data={data} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
             <XAxis
-              dataKey="timestamp"
-              type="number"
-              domain={['dataMin', 'dataMax']}
-              tickFormatter={(unixTime) => format(new Date(unixTime), timeRange === '7d' || timeRange === 'all' ? 'MM/dd HH:mm' : 'HH:mm:ss')}
+              dataKey="time"
               tick={{ fontSize: 11 }}
               tickLine={false}
               axisLine={false}
               className="text-muted-foreground"
+              interval="preserveStartEnd"
             />
             <YAxis
               domain={yDomain || ["auto", "auto"]}
@@ -139,6 +141,138 @@ const VitalChart = ({ data, dataKey, title, color, unit, yDomain, timeRange }) =
     </CardContent>
   </Card>
 );
+
+// ─── Neckband Lifespan Estimator ────────────────────────────────────
+// ESP32 + DHT11 + MAX30102 wired neckband on livestock typically lasts
+// 8-14 months depending on conditions. Component-level estimates:
+//   - ESP32 board:      ~3 years (durable silicon, but humidity degrades PCB)
+//   - DHT11 sensor:     ~2 years (humidity sensor drift over time)
+//   - MAX30102 (PPG):   ~18 months (LED degradation, animal sweat corrosion)
+//   - Wiring/housing:   ~10 months (animal movement, rain, UV exposure)
+//   - Battery/power:    ~8 months (rechargeable LiPo under constant use)
+// Bottleneck is the physical housing + battery → overall ~10 months.
+
+const NECKBAND_LIFESPAN_DAYS = 300; // ~10 months
+
+const componentLifespans = [
+  { name: "ESP32 Board",        icon: Cpu,          totalDays: 1095, color: "text-emerald-500",  bgColor: "bg-emerald-500" },
+  { name: "DHT11 Sensor",       icon: Thermometer,  totalDays: 730,  color: "text-blue-500",    bgColor: "bg-blue-500" },
+  { name: "MAX30102 (Heart)",   icon: Heart,         totalDays: 540,  color: "text-pink-500",    bgColor: "bg-pink-500" },
+  { name: "Wiring & Housing",   icon: CircuitBoard,  totalDays: 300,  color: "text-orange-500",  bgColor: "bg-orange-500" },
+  { name: "Battery Module",     icon: Zap,           totalDays: 240,  color: "text-yellow-500",  bgColor: "bg-yellow-500" },
+];
+
+function getLifespanStatus(daysRemaining, totalDays) {
+  const pct = (daysRemaining / totalDays) * 100;
+  if (pct > 60) return { label: "Good", color: "text-green-600 dark:text-green-400", bg: "bg-green-100 dark:bg-green-950/30" };
+  if (pct > 30) return { label: "Fair", color: "text-yellow-600 dark:text-yellow-400", bg: "bg-yellow-100 dark:bg-yellow-950/30" };
+  if (pct > 10) return { label: "Worn", color: "text-orange-600 dark:text-orange-400", bg: "bg-orange-100 dark:bg-orange-950/30" };
+  return { label: "Replace Soon", color: "text-red-600 dark:text-red-400", bg: "bg-red-100 dark:bg-red-950/30" };
+}
+
+const NeckbandLifespan = ({ animals }) => {
+  // Use the earliest animal createdAt as the neckband install date
+  const installDate = useMemo(() => {
+    if (!animals || animals.length === 0) return null;
+    // Find any animal that has a createdAt
+    const withDates = animals.filter(a => a.createdAt);
+    if (withDates.length === 0) return new Date(Date.now() - 90 * 24 * 60 * 60 * 1000); // fallback: 90 days ago
+    const earliest = withDates.reduce((min, a) => {
+      const d = new Date(a.createdAt);
+      return d < min ? d : min;
+    }, new Date());
+    return earliest;
+  }, [animals]);
+
+  if (!installDate) return null;
+
+  const daysSinceInstall = Math.floor((Date.now() - installDate.getTime()) / (1000 * 60 * 60 * 24));
+  const overallRemaining = Math.max(0, NECKBAND_LIFESPAN_DAYS - daysSinceInstall);
+  const overallPct = Math.max(0, Math.min(100, (overallRemaining / NECKBAND_LIFESPAN_DAYS) * 100));
+  const overallStatus = getLifespanStatus(overallRemaining, NECKBAND_LIFESPAN_DAYS);
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Watch className="h-6 w-6 text-primary" />
+            <div>
+              <CardTitle className="text-xl">Neckband Lifespan</CardTitle>
+              <CardDescription>
+                Estimated wear & replacement timeline for the IoT neckband
+              </CardDescription>
+            </div>
+          </div>
+          <Badge variant="outline" className={`${overallStatus.bg} ${overallStatus.color} font-semibold px-3 py-1`}>
+            {overallStatus.label}
+          </Badge>
+        </div>
+      </CardHeader>
+      <CardContent>
+        {/* Overall progress */}
+        <div className="mb-6">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-medium">Overall Neckband Health</span>
+            <span className={`text-sm font-bold ${overallStatus.color}`}>
+              {overallRemaining > 0 ? `Replace in ~${overallRemaining} days` : "Replace now!"}
+            </span>
+          </div>
+          <div className="h-3 bg-muted rounded-full overflow-hidden">
+            <div
+              className={`h-full rounded-full transition-all duration-500 ${
+                overallPct > 60 ? 'bg-green-500' :
+                overallPct > 30 ? 'bg-yellow-500' :
+                overallPct > 10 ? 'bg-orange-500' : 'bg-red-500'
+              }`}
+              style={{ width: `${overallPct}%` }}
+            />
+          </div>
+          <div className="flex justify-between mt-1">
+            <span className="text-xs text-muted-foreground">
+              Installed: {format(installDate, "dd MMM yyyy")}
+            </span>
+            <span className="text-xs text-muted-foreground">
+              {daysSinceInstall} days in use
+            </span>
+          </div>
+        </div>
+
+        {/* Component breakdown */}
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+          {componentLifespans.map((comp) => {
+            const remaining = Math.max(0, comp.totalDays - daysSinceInstall);
+            const pct = Math.max(0, Math.min(100, (remaining / comp.totalDays) * 100));
+            const status = getLifespanStatus(remaining, comp.totalDays);
+            const CompIcon = comp.icon;
+
+            return (
+              <div key={comp.name} className={`rounded-lg border p-3 ${status.bg}`}>
+                <div className="flex items-center gap-2 mb-2">
+                  <CompIcon className={`h-4 w-4 ${comp.color}`} />
+                  <span className="text-xs font-semibold truncate">{comp.name}</span>
+                </div>
+                <div className="h-1.5 bg-background/50 rounded-full overflow-hidden mb-2">
+                  <div
+                    className={`h-full rounded-full ${comp.bgColor}`}
+                    style={{ width: `${pct}%`, opacity: pct > 10 ? 1 : 0.5 }}
+                  />
+                </div>
+                <div className="text-xs font-medium">
+                  {remaining > 0 ? (
+                    <span className={status.color}>{remaining}d left</span>
+                  ) : (
+                    <span className="text-red-600 dark:text-red-400 font-bold">Replace!</span>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
 
 export default function LiveVitals() {
   // State
@@ -188,7 +322,7 @@ export default function LiveVitals() {
       .map((reading) => ({
         time: format(
           new Date(reading.timestamp),
-          timeRange === "7d" || timeRange === "all" ? "MM/dd HH:mm" : "HH:mm"
+          timeRange === "7d" || timeRange === "all" ? "MM/dd HH:mm" : "HH:mm:ss"
         ),
         timestamp: new Date(reading.timestamp).getTime(),
         temperature: reading.temperature != null ? parseFloat(reading.temperature) : 0,
@@ -236,7 +370,7 @@ export default function LiveVitals() {
         const response = await fetch(`${API_BASE}/api/animals`);
         if (response.ok) {
           const data = await response.json();
-          setAnimals(data.map(a => ({ id: a._id, name: a.name, species: a.species, rfid: a.rfid })));
+          setAnimals(data.map(a => ({ id: a._id, name: a.name, species: a.species, rfid: a.rfid, createdAt: a.createdAt })));
         }
       } catch (error) {
         console.error("Failed to fetch animals:", error);
@@ -475,6 +609,9 @@ export default function LiveVitals() {
             trend={latestReading ? `Updates every 1 second` : null}
           />
         </div>
+
+        {/* Neckband Lifespan Tracker */}
+        {animals.length > 0 && <NeckbandLifespan animals={animals} />}
 
         {/* Charts */}
         {loading ? (

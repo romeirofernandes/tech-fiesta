@@ -1,9 +1,29 @@
 import { createContext, useContext, useEffect, useState } from "react";
+import axios from "axios";
 
 const LanguageContext = createContext({
   language: "en",
   setLanguage: () => null,
 });
+
+/**
+ * Sync the selected language to the backend so alert emails use the right language.
+ */
+function syncLanguageToBackend(lang) {
+  try {
+    const saved = localStorage.getItem("mongoUser");
+    if (!saved) return;
+    const mongoUser = JSON.parse(saved);
+    if (!mongoUser?._id) return;
+
+    const base = import.meta.env.VITE_API_BASE_URL;
+    axios
+      .put(`${base}/api/farmers/${mongoUser._id}`, { preferredLanguage: lang })
+      .catch(() => {}); // fire-and-forget
+  } catch {
+    // ignore
+  }
+}
 
 export function LanguageProvider({
   children,
@@ -77,6 +97,7 @@ export function LanguageProvider({
     setLanguage: (lang) => {
       localStorage.setItem(storageKey, lang);
       setLanguage(lang);
+      syncLanguageToBackend(lang);
     },
   };
 

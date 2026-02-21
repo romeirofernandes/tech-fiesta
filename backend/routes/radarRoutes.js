@@ -8,6 +8,10 @@ router.get('/status', (req, res) => {
 });
 router.post('/heartbeat', radarController.heartbeat);
 
+// Live in-memory radar (no DB writes)
+router.post('/live', radarController.postLiveReading);
+router.get('/live', radarController.getLiveReadings);
+
 // Radar readings
 router.post('/reading', radarController.createReading);
 router.post('/reading/bulk', radarController.bulkCreateReadings);
