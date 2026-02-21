@@ -21,7 +21,8 @@ import {
   ArrowRight,
   Plus,
   QrCode,
-  FileText
+  FileText,
+  Stethoscope
 } from 'lucide-react-native';
 import { Colors } from '@/constants/theme';
 import { fetchAndSyncDashboardData, getLocalDashboardData, type DashboardData } from '@/lib/sync-dashboard';
@@ -166,6 +167,7 @@ export default function DashboardScreen() {
             {[
               { label: 'Add Animal', icon: Plus, route: '/animals/create', color: themeColors.primary, bg: 'bg-primary/10' },
               { label: 'Add Farm', icon: Tractor, route: '/farms/create', color: '#0ea5e9', bg: 'bg-sky-500/10' },
+              { label: 'AI Diagnosis', icon: Stethoscope, route: '/diagnosis', color: '#ec4899', bg: 'bg-pink-500/10' },
             ].map((action, i) => (
               <TouchableOpacity 
                 key={i} 
