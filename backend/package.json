@@ -28,6 +28,7 @@
     "nodemon": "^3.1.11",
     "razorpay": "^2.9.6",
     "serialport": "^13.0.0",
-    "sharp": "^0.32.6"
+    "sharp": "^0.32.6",
+    "twilio": "^5.12.2"
   }
 }
