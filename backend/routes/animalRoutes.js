@@ -11,6 +11,7 @@ router.put('/:id', upload.single('image'), animalController.updateAnimal);
 router.post('/identify', upload.single('image'), animalController.identifyAnimal);
 router.post('/monitor', upload.single('image'), animalController.monitorFarm);
 router.post('/:id/death', animalController.reportDeath);
+router.post('/:id/regenerate-vaccinations', animalController.regenerateVaccinationEvents);
 router.delete('/:id', animalController.deleteAnimal);
 
 module.exports = router;
