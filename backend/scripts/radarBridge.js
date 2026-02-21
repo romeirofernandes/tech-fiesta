@@ -15,12 +15,10 @@ const { ReadlineParser } = require('@serialport/parser-readline');
 const API_BASE_URL = process.env.API_URL || 'http://127.0.0.1:8000';
 const BAUD_RATE = 115200;
 const DEVICE_ID = 'radar_01';
-const GEOFENCE_THRESHOLD = 10; // cm - alert if object within this distance
-const SWEEP_BUFFER_SIZE = 180; // Store full sweep before posting
+const GEOFENCE_THRESHOLD = 30; // cm - alert if object within this distance
 const HEARTBEAT_INTERVAL_MS = 10000; // Send heartbeat every 10 seconds
 
 // State management
-let sweepBuffer = [];
 let lastAlertTime = {};
 const ALERT_COOLDOWN = 5000; // Don't re-alert same angle within 5 seconds
 
@@ -97,7 +95,7 @@ async function postData(endpoint, data) {
 // Parse radar data from serial output
 // Format: "angle,distance." (e.g., "45,23." or "90,5.67.")
 function parseRadarData(line) {
-  const match = line.match(/(\d+),(\d+\.?\d*)\./);
+  const match = line.match(/(\d+),(\d+\.?\d*)$/);
   if (match) {
     return {
       angle: parseInt(match[1]),
@@ -128,17 +126,16 @@ async function processLine(line) {
   
   if (radarData) {
     const { angle, distance } = radarData;
-    
-    console.log(`📡 Angle: ${angle}° | Distance: ${distance.toFixed(1)}cm`);
-    
-    // Add to sweep buffer
-    sweepBuffer.push({ angle, distance });
-    
-    // Check for geofence violation
-    if (isGeofenceViolation(distance) && shouldSendAlert(angle)) {
-      console.log(`⚠️  ALERT! Movement detected at ${angle}° (${distance.toFixed(1)}cm)`);
-      
-      // Create alert
+
+    const alert = distance < GEOFENCE_THRESHOLD && distance > 0;
+    process.stdout.write(`📡 ${angle}°→${distance.toFixed(0)}cm${alert ? ' 🚨' : ''}  \r`);
+
+    // POST directly to in-memory live endpoint — no DB writes
+    await postData('/api/radar/live', { angle, distance, deviceId: DEVICE_ID });
+
+    // Only persist an alert record if geofence violated (DB write kept minimal)
+    if (alert && shouldSendAlert(angle)) {
+      console.log(`\n⚠️  ALERT! Movement at ${angle}° (${distance.toFixed(1)}cm)`);
       await postData('/api/radar/alert', {
         deviceId: DEVICE_ID,
         angle,
@@ -146,21 +143,7 @@ async function processLine(line) {
         location: currentLocation,
         severity: distance < 5 ? 'high' : 'medium'
       });
-      
       lastAlertTime[angle] = Date.now();
-    }
-    
-    // If we've completed a sweep (reached 165° or buffer is full), post bulk data
-    if (angle >= 165 || sweepBuffer.length >= SWEEP_BUFFER_SIZE) {
-      if (sweepBuffer.length > 0) {
-        console.log(`\n📤 Posting sweep data (${sweepBuffer.length} points)...`);
-        await postData('/api/radar/reading/bulk', {
-          deviceId: DEVICE_ID,
-          readings: sweepBuffer,
-          location: currentLocation
-        });
-        sweepBuffer = [];
-      }
     }
   }
 }
@@ -225,7 +208,7 @@ async function main() {
     baudRate: BAUD_RATE
   });
 
-  const parser = port.pipe(new ReadlineParser({ delimiter: '\r\n' }));
+  const parser = port.pipe(new ReadlineParser({ delimiter: '.' }));
 
   // Handle connection open
   port.on('open', () => {
@@ -259,20 +242,7 @@ async function main() {
   // Handle graceful shutdown
   process.on('SIGINT', () => {
     console.log('\n\n👋 Shutting down...');
-    
-    // Post remaining buffer before closing
-    if (sweepBuffer.length > 0) {
-      console.log('📤 Posting final sweep data...');
-      postData('/api/radar/reading/bulk', {
-        deviceId: DEVICE_ID,
-        readings: sweepBuffer,
-        location: currentLocation
-      }).then(() => {
-        port.close();
-      });
-    } else {
-      port.close();
-    }
+    port.close();
   });
 }
 

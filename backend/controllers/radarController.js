@@ -1,6 +1,39 @@
 const RadarReading = require('../models/RadarReading');
 const MovementAlert = require('../models/MovementAlert');
 
+// ── In-memory live radar store (no DB writes) ────────────────
+// Keyed by angle so latest reading per angle is always kept
+const liveRadarStore = new Map(); // angle → { angle, distance, timestamp }
+const GEOFENCE_THRESHOLD = 30; // cm
+
+// POST /api/radar/live — called by radarBridge for every reading
+exports.postLiveReading = (req, res) => {
+  const { angle, distance, deviceId } = req.body;
+  if (angle === undefined || distance === undefined) {
+    return res.status(400).json({ message: 'angle and distance required' });
+  }
+  updateRadarHeartbeat();
+  liveRadarStore.set(angle, {
+    angle,
+    distance,
+    alert: distance < GEOFENCE_THRESHOLD && distance > 0,
+    timestamp: Date.now()
+  });
+  res.json({ ok: true });
+};
+
+// GET /api/radar/live — polled by frontend
+exports.getLiveReadings = (req, res) => {
+  const readings = Array.from(liveRadarStore.values())
+    .sort((a, b) => a.angle - b.angle);
+  res.json({
+    readings,
+    isConnected: isRadarConnected(),
+    threshold: GEOFENCE_THRESHOLD
+  });
+};
+// ─────────────────────────────────────────────────────────────
+
 // Radar device status tracking
 const radarDeviceStatus = {
   lastHeartbeat: null,
