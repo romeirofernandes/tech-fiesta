@@ -41,6 +41,7 @@ import Emergency from './pages/Emergency';
 import FakeHeartrate from './pages/FakeHeartrate';
 import AdminProtectedRoute from './components/AdminProtectedRoute';
 import DiseaseDetector from './pages/DiseaseDetector';
+import FarmInsights from './pages/FarmInsights';
 
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useUser();
@@ -204,6 +205,11 @@ function App() {
           <Route path="/disease-detector" element={
             <ProtectedRoute>
               <DiseaseDetector />
+            </ProtectedRoute>
+          } />
+          <Route path="/insights" element={
+            <ProtectedRoute>
+              <FarmInsights />
             </ProtectedRoute>
           } />
           <Route path="/emergency" element={

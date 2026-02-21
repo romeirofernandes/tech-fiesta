@@ -81,6 +81,7 @@ const navGroups = [
       { title: "My Orders", url: "/my-orders", icon: Package },
       { title: "My Sales", url: "/my-sales", icon: Coins },
       { title: "Govt. Help", url: "/schemes", icon: Sprout },
+      { title: "AI Insights", url: "/insights", icon: LineChart },
     ],
   },
   {
