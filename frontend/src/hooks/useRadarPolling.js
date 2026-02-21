@@ -65,8 +65,8 @@ export function useRadarPolling(apiBase, options = {}) {
     try {
       setStatus('polling');
       
-      // Build URL
-      const url = `${apiBase}/api/radar/latest?deviceId=${deviceId}&limit=${limit}`;
+      // Fetch from in-memory live endpoint (no DB)
+      const url = `${apiBase}/api/radar/live`;
 
       const response = await fetch(url);
       
@@ -74,7 +74,7 @@ export function useRadarPolling(apiBase, options = {}) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
-      const newData = await response.json();
+      const payload = await response.json();
 
       if (!mountedRef.current) return;
 
@@ -82,8 +82,9 @@ export function useRadarPolling(apiBase, options = {}) {
       setError(null);
       setLastUpdated(Date.now());
 
+      // payload = { readings: [...], isConnected: bool, threshold: 10 }
+      const newData = payload.readings || payload;
       if (newData && newData.length > 0) {
-        // Sort by angle for proper visualization
         const sortedData = [...newData].sort((a, b) => a.angle - b.angle);
         setSweepData(sortedData);
         
