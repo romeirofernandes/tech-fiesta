@@ -81,30 +81,25 @@ export default function FakeHeartrate() {
     }
   }, []);
 
-  // start / stop the sending interval based on space key
+  // Always-running 2s interval — sends real BPM when space held, 0 when not
   useEffect(() => {
-    if (spaceHeld) {
-      // send immediately
-      const bpm = randomInRange(rangeRef.current.min, rangeRef.current.max);
-      setCurrentBPM(bpm);
-      sendReading(bpm);
-      sendHeartbeat();
+    // Send one reading immediately on mount / spaceHeld change
+    const bpm = spaceHeld
+      ? randomInRange(rangeRef.current.min, rangeRef.current.max)
+      : 0;
+    setCurrentBPM(bpm);
+    sendReading(bpm);
+    if (spaceHeld) sendHeartbeat();
+    if (!spaceHeld) addLog("— flatline (0 BPM)");
 
-      // then every 2s
-      intervalRef.current = setInterval(() => {
-        const b = randomInRange(rangeRef.current.min, rangeRef.current.max);
-        setCurrentBPM(b);
-        sendReading(b);
-        sendHeartbeat();
-      }, 2000);
-    } else {
-      // flatline: send 0
-      setCurrentBPM(0);
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
-      sendReading(0);
-      addLog("— Space released → flatline (0 BPM)");
-    }
+    intervalRef.current = setInterval(() => {
+      const b = spaceRef.current
+        ? randomInRange(rangeRef.current.min, rangeRef.current.max)
+        : 0;
+      setCurrentBPM(b);
+      sendReading(b);
+      if (spaceRef.current) sendHeartbeat();
+    }, 2000);
 
     return () => {
       clearInterval(intervalRef.current);
