@@ -41,6 +41,7 @@ import Emergency from './pages/Emergency';
 import FakeHeartrate from './pages/FakeHeartrate';
 import AdminProtectedRoute from './components/AdminProtectedRoute';
 import DiseaseDetector from './pages/DiseaseDetector';
+import PublicAnimalProfile from './pages/animals/PublicAnimalProfile';
 
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useUser();
@@ -82,6 +83,9 @@ function App() {
               <Register />
             </PublicRoute>
           } />
+
+          {/* Public animal share page (no auth) */}
+          <Route path="/animal/:id/share" element={<PublicAnimalProfile />} />
 
           {/* Admin Login Route */}
           <Route path="/admin/login" element={<AdminLogin />} />

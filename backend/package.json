@@ -28,6 +28,7 @@
     "mongoose": "^9.0.2",
     "multer": "^2.0.2",
     "node-fetch": "^3.3.2",
+    "nodemailer": "^8.0.1",
     "nodemon": "^3.1.11",
     "razorpay": "^2.9.6",
     "serialport": "^13.0.0",

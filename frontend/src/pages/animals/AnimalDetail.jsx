@@ -12,7 +12,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ArrowLeft, Edit2, MapPin, Plus, Thermometer, Droplets, Heart, Activity, RefreshCw, Loader2 } from "lucide-react";
+import { ArrowLeft, Edit2, MapPin, Plus, Thermometer, Droplets, Heart, Activity, RefreshCw, Loader2, Share2, Copy, Check, QrCode } from "lucide-react";
+import { QRCodeSVG } from "qrcode.react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useNavigate, useParams } from "react-router-dom";
 import { getSpeciesIcon } from "@/lib/animalIcons";
 import { toast } from "sonner";
@@ -63,6 +65,8 @@ export default function AnimalDetail() {
   const [editDialogMode, setEditDialogMode] = useState("edit"); // "edit" or "add"
   const [vaccinationSchedules, setVaccinationSchedules] = useState([]);
   const [reportDeathOpen, setReportDeathOpen] = useState(false);
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
   const [currentMonth, setCurrentMonth] = useState(startOfMonth(TODAY));
   const [view, setView] = useState("list"); // list, 2col, month, week
   const [timeRange, setTimeRange] = useState(() => {
@@ -86,8 +90,8 @@ export default function AnimalDetail() {
     refetch 
   } = useIotPolling(API_BASE, {
     pollInterval: 1000, // Poll every 1 second
-    rfid: animal?.rfid || null,
-    limit: 500,
+    rfid: null,
+    limit: 60,
     enabled: !!animal?.rfid,
     onNewData: useCallback((newData) => {
       if (newData.length > 0) {
@@ -234,6 +238,19 @@ export default function AnimalDetail() {
 
   const getAnimalName = () => animal?.name || "Unknown";
 
+  const shareUrl = `${window.location.origin}/animal/${id}/share`;
+
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setLinkCopied(true);
+      toast.success("Link copied to clipboard!");
+      setTimeout(() => setLinkCopied(false), 2000);
+    } catch {
+      toast.error("Failed to copy link");
+    }
+  };
+
   // Calendar helpers
   const eventsByDate = useMemo(() => {
     const map = {};
@@ -290,6 +307,55 @@ export default function AnimalDetail() {
         <div className="flex items-center justify-between">
           <div />
           <div className="flex gap-2">
+            <Dialog open={shareDialogOpen} onOpenChange={setShareDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline">
+                  <Share2 className="mr-2 h-4 w-4" />
+                  Share
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2">
+                    <QrCode className="h-5 w-5 text-green-700" />
+                    Share {animal?.name}
+                  </DialogTitle>
+                </DialogHeader>
+                <div className="flex flex-col items-center gap-6 py-4">
+                  <div className="bg-white p-4 rounded-xl border-2 border-green-100 shadow-sm">
+                    <QRCodeSVG
+                      value={shareUrl}
+                      size={220}
+                      level="H"
+                      includeMargin={true}
+                      fgColor="#1B5E20"
+                      imageSettings={{
+                        src: "/logo.png",
+                        height: 30,
+                        width: 30,
+                        excavate: true,
+                      }}
+                    />
+                  </div>
+                  <p className="text-sm text-muted-foreground text-center">
+                    Scan this QR code to view <strong>{animal?.name}</strong>'s public profile.
+                    Anyone with this link can view the animal's details without logging in.
+                  </p>
+                  <div className="flex w-full items-center gap-2">
+                    <div className="flex-1 rounded-md border bg-muted/50 px-3 py-2 text-sm truncate">
+                      {shareUrl}
+                    </div>
+                    <Button size="sm" variant="outline" onClick={handleCopyLink}>
+                      {linkCopied ? (
+                        <><Check className="mr-1 h-4 w-4 text-green-600" /> Copied</>
+                      ) : (
+                        <><Copy className="mr-1 h-4 w-4" /> Copy</>
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
             <Button 
                 variant="destructive"
                 onClick={() => setReportDeathOpen(true)}

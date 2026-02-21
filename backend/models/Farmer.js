@@ -33,6 +33,10 @@ const farmerSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Farm',
   }],
+  preferredLanguage: {
+    type: String,
+    default: 'en'
+  },
   createdAt: {
     type: Date,
     default: Date.now
