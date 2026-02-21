@@ -12,7 +12,7 @@ const { SerialPort } = require('serialport');
 const { ReadlineParser } = require('@serialport/parser-readline');
 
 // Configuration
-const API_BASE_URL = process.env.API_URL || 'http://127.0.0.1:5000';
+const API_BASE_URL = process.env.API_URL || 'http://127.0.0.1:8000';
 const BAUD_RATE = 115200;
 const POST_INTERVAL_MS = 2000;      // Post every 2 s (matches ESP32 emit rate)
 const HEARTBEAT_INTERVAL_MS = 10000; // Send heartbeat every 10 seconds
@@ -197,7 +197,7 @@ async function main() {
     baudRate: BAUD_RATE
   });
 
-  const parser = port.pipe(new ReadlineParser({ delimiter: '\r\n' }));
+  const parser = port.pipe(new ReadlineParser({ delimiter: '\n' }));
 
   // Handle connection open
   port.on('open', () => {
