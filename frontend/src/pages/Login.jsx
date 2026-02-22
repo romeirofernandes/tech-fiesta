@@ -210,6 +210,13 @@ const Login = () => {
             Don't have an account? <Link to="/register" className="text-primary hover:underline">Sign Up</Link>
           </p>
           <Link 
+            to="/biz/login" 
+            className="text-xs text-muted-foreground hover:text-primary flex items-center gap-1 transition-colors"
+          >
+            <Shield className="h-4 w-4 text-primary" />
+            <span className="text-sm text-primary">Business Owner Login</span>
+          </Link>
+          <Link 
             to="/admin/login" 
             className="text-xs text-muted-foreground hover:text-primary flex items-center gap-1 transition-colors"
           >

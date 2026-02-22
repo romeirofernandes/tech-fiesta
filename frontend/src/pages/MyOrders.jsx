@@ -3,8 +3,7 @@ import { useUser } from "@/context/UserContext";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Copy, Package, Loader2, CheckCircle2 } from "lucide-react";
-import { toast } from "sonner";
+import { Package, Loader2, CheckCircle2 } from "lucide-react";
 import axios from "axios";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
@@ -22,18 +21,13 @@ export default function MyOrders() {
     const fetchOrders = async () => {
         try {
             const base = import.meta.env.VITE_API_BASE_URL;
-            const res = await axios.get(`${base}/api/payments/my-orders?buyerName=${mongoUser.fullName}`);
+            const res = await axios.get(`${base}/api/payments/my-orders?buyerId=${mongoUser._id}`);
             setOrders(res.data);
         } catch (err) {
             console.error("Error fetching orders:", err);
         } finally {
             setLoading(false);
         }
-    };
-
-    const copyCode = (code) => {
-        navigator.clipboard.writeText(code);
-        toast.success("Release code copied!");
     };
 
     return (
@@ -94,29 +88,12 @@ export default function MyOrders() {
                                                     <CheckCircle2 className="h-3 w-3" /> Complete
                                                 </Badge>
                                             ) : (
-                                                <Badge variant="outline" className="gap-1 text-chart-5 bg-chart-5/10 border-none">
-                                                    In Escrow
+                                                <Badge variant="outline" className="gap-1 text-chart-2 bg-chart-2/10 border-none">
+                                                    <Loader2 className="h-3 w-3 animate-spin" /> Processing
                                                 </Badge>
                                             )}
                                         </div>
                                     </div>
-
-                                    {/* Release code for escrow orders */}
-                                    {order.status === 'held_in_escrow' && (
-                                        <div className="mt-4 pt-4 border-t border-border flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                                            <p className="text-sm text-muted-foreground">
-                                                Share this code with the seller <b>after</b> you receive the item.
-                                            </p>
-                                            <div className="flex items-center gap-2">
-                                                <code className="font-mono font-bold text-lg tracking-widest bg-muted px-3 py-1.5 rounded-lg">
-                                                    {order.releaseCode}
-                                                </code>
-                                                <Button variant="ghost" size="icon" onClick={() => copyCode(order.releaseCode)}>
-                                                    <Copy className="h-4 w-4" />
-                                                </Button>
-                                            </div>
-                                        </div>
-                                    )}
                                 </CardContent>
                             </Card>
                         ))}

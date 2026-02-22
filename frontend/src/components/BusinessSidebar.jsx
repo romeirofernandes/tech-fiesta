@@ -1,7 +1,6 @@
-import { Calendar, Home, Tractor, Beef, Syringe, LogOut, User, Activity, Moon, Sun, Globe, Bell, Sprout, Store, Package, Coins, ChevronRight, ChevronUp, TrendingUp, DollarSign, LineChart, AlertCircle, Radio, Video, Stethoscope, Briefcase, Fingerprint } from "lucide-react"
+import { Home, Store, Package, Coins, BarChart3, TrendingUp, DollarSign, LineChart, LogOut, User, Moon, Sun, Globe, ChevronRight, ChevronUp, Tractor } from "lucide-react"
 import { useUser } from "../context/UserContext"
 import { useTheme } from "../context/ThemeContext"
-import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { useLocation, useNavigate, Link } from "react-router-dom"
 import { LanguageToggle } from "./LanguageToggle"
@@ -18,7 +17,6 @@ import {
   AvatarFallback,
   AvatarImage,
 } from "@/components/ui/avatar"
-
 import {
   Sidebar,
   SidebarContent,
@@ -35,62 +33,54 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar"
 
-// Simplified farmer navigation — no marketplace, orders, sales, or full reports
-const navGroups = [
+// Farmer's business mode nav (under /business/)
+const farmerBusinessNavGroups = [
   {
-    label: "My Farm",
+    label: "Business",
     items: [
-      { title: "Home", url: "/dashboard", icon: Home },
-      {
-        title: "Farms",
-        url: "/farms",
-        icon: Tractor,
-        subItems: [
-          { title: "My Farms", url: "/farms" },
-          { title: "Add a Farm", url: "/farms/create" },
-          { title: "Watch My Farm", url: "/farm-monitoring" },
-          { title: "Farm Boundary", url: "/geofencing", icon: Radio },
-          { title: "Herd Watch", url: "/herd-watch" },
-        ],
-      },
-      {
-        title: "Animals",
-        url: "/animals",
-        icon: Beef,
-        subItems: [
-          { title: "My Animals", url: "/animals" },
-          { title: "Add an Animal", url: "/animals/create" },
-        ],
-      },
+      { title: "Dashboard", url: "/business", icon: Home },
+      { title: "Marketplace", url: "/business/marketplace", icon: Store },
+      { title: "My Orders", url: "/business/orders", icon: Package },
+      { title: "My Sales", url: "/business/sales", icon: Coins },
     ],
   },
   {
-    label: "Health & Care",
+    label: "Reports & Analytics",
     items: [
-      { title: "Shot Schedule", url: "/calendar", icon: Calendar },
-      { title: "Animal Health", url: "/live-vitals", icon: Activity },
-      { title: "Disease AI", url: "/disease-detector", icon: Stethoscope },
-      { title: "Warnings", url: "/alerts", icon: Bell },
-      { title: "Emergency Help", url: "/emergency", icon: AlertCircle },
-    ],
-  },
-  {
-    label: "Help & Info",
-    items: [
-      // { title: "Aadhaar Verify", url: "/aadhaar-verify", icon: Fingerprint },
-      { title: "Govt. Help", url: "/schemes", icon: Sprout },
-      { title: "AI Insights", url: "/insights", icon: LineChart },
-      { title: "Video Report", url: "/video-summary", icon: Video },
+      { title: "Overview", url: "/business/reports", icon: BarChart3 },
+      { title: "Finance", url: "/business/reports/finance", icon: TrendingUp },
+      { title: "Market Prices", url: "/business/reports/prices", icon: DollarSign },
     ],
   },
 ];
 
-export function AppSidebar() {
-  const { user, mongoUser, logout, setIsBusinessMode } = useUser();
+// Independent business owner nav (under /biz/)
+const bizOwnerNavGroups = [
+  {
+    label: "Business",
+    items: [
+      { title: "Dashboard", url: "/biz/dashboard", icon: Home },
+      { title: "Marketplace", url: "/biz/marketplace", icon: Store },
+      { title: "My Orders", url: "/biz/orders", icon: Package },
+      { title: "My Sales", url: "/biz/sales", icon: Coins },
+    ],
+  },
+];
+
+export function BusinessSidebar() {
+  const { user, mongoUser, businessProfile, bizOwner, logout, bizLogout, setIsBusinessMode } = useUser();
   const { theme, setTheme } = useTheme();
   const { state } = useSidebar();
   const location = useLocation();
   const navigate = useNavigate();
+
+  // Detect if we're in independent biz owner mode
+  const isBizOwnerMode = location.pathname.startsWith('/biz/') || location.pathname === '/biz';
+  const navGroups = isBizOwnerMode ? bizOwnerNavGroups : farmerBusinessNavGroups;
+
+  const displayName = isBizOwnerMode
+    ? (bizOwner?.tradeName || bizOwner?.fullName || 'Business')
+    : (businessProfile?.tradeName || mongoUser?.fullName || 'पशु पहचान Business');
 
   const isActive = (url, hasChildren = false) => {
     if (location.pathname === url) return true;
@@ -114,7 +104,9 @@ export function AppSidebar() {
     <Sidebar collapsible="icon" className="[&_[data-sidebar=sidebar]]:scrollbar-thin [&_[data-sidebar=sidebar]]:scrollbar-track-transparent [&_[data-sidebar=sidebar]]:scrollbar-thumb-border/40 hover:[&_[data-sidebar=sidebar]]:scrollbar-thumb-border/60 [&_[data-sidebar=sidebar]]:scrollbar-thumb-rounded-full">
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel className="text-lg font-bold text-primary py-4 mb-2">पशु पहचान</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-lg font-bold text-primary py-4 mb-2">
+            {displayName}
+          </SidebarGroupLabel>
         </SidebarGroup>
         {navGroups.map((group) => (
           <SidebarGroup key={group.label}>
@@ -188,17 +180,23 @@ export function AppSidebar() {
                   className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground outline-none ring-0"
                 >
                   <Avatar className="h-8 w-8 rounded-full">
-                    <AvatarImage src={mongoUser?.imageUrl || user?.photoURL || user?.profilePicture || user?.avatar} alt={mongoUser?.fullName || user?.displayName || user?.name || "User"} />
+                    <AvatarImage
+                      src={isBizOwnerMode ? undefined : (mongoUser?.imageUrl || user?.photoURL)}
+                      alt={displayName}
+                    />
                     <AvatarFallback className="rounded-full">
                       <User className="h-4 w-4" />
                     </AvatarFallback>
                   </Avatar>
                   {state === "expanded" && (
                     <div className="grid flex-1 text-left text-sm leading-tight ml-2">
-                      <span className="truncate font-semibold">{mongoUser?.fullName || user?.displayName || user?.name || "My Account"}</span>
+                      <span className="truncate font-semibold">{displayName}</span>
+                      <span className="truncate text-xs text-muted-foreground">
+                        {isBizOwnerMode ? 'Business Owner' : 'Business Mode'}
+                      </span>
                     </div>
                   )}
-                  {state === "expanded" && <ChevronUp className="ml-auto h-4 w-4 shrink-0 transition-transform duration-200 group-data-[state=open]:rotate-180" />}
+                  {state === "expanded" && <ChevronUp className="ml-auto h-4 w-4 shrink-0" />}
                 </SidebarMenuButton>
               </DropdownMenuTrigger>
               <DropdownMenuContent
@@ -207,17 +205,21 @@ export function AppSidebar() {
                 align="end"
                 sideOffset={4}
               >
-                <DropdownMenuItem asChild>
-                  <Link to="/profile" className="flex items-center w-full cursor-pointer py-2 px-3">
-                    <User className="mr-2 h-4 w-4 text-muted-foreground" />
-                    <span>My Profile</span>
-                  </Link>
-                </DropdownMenuItem>
+                {!isBizOwnerMode && (
+                  <DropdownMenuItem asChild>
+                    <Link to="/profile" className="flex items-center w-full cursor-pointer py-2 px-3">
+                      <User className="mr-2 h-4 w-4 text-muted-foreground" />
+                      <span>My Profile</span>
+                    </Link>
+                  </DropdownMenuItem>
+                )}
 
-                <DropdownMenuItem onClick={() => { setIsBusinessMode(true); navigate('/business'); }} className="cursor-pointer py-2 px-3">
-                  <Briefcase className="mr-2 h-4 w-4 text-muted-foreground" />
-                  <span>Business Dashboard</span>
-                </DropdownMenuItem>
+                {!isBizOwnerMode && (
+                  <DropdownMenuItem onClick={() => { setIsBusinessMode(false); navigate('/dashboard'); }} className="cursor-pointer py-2 px-3">
+                    <Tractor className="mr-2 h-4 w-4 text-muted-foreground" />
+                    <span>Farmer Dashboard</span>
+                  </DropdownMenuItem>
+                )}
 
                 <DropdownMenuItem onClick={toggleTheme} className="cursor-pointer py-2 px-3">
                   {theme === "dark" ? <Sun className="mr-2 h-4 w-4 text-muted-foreground" /> : <Moon className="mr-2 h-4 w-4 text-muted-foreground" />}
@@ -233,7 +235,17 @@ export function AppSidebar() {
 
                 <DropdownMenuSeparator className="my-1" />
 
-                <DropdownMenuItem onClick={logout} className="text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer py-2 px-3">
+                <DropdownMenuItem
+                  onClick={() => {
+                    if (isBizOwnerMode) {
+                      bizLogout();
+                      navigate('/biz/login');
+                    } else {
+                      logout();
+                    }
+                  }}
+                  className="text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer py-2 px-3"
+                >
                   <LogOut className="mr-2 h-4 w-4" />
                   <span className="font-medium text-destructive">Sign Out</span>
                 </DropdownMenuItem>

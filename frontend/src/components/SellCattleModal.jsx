@@ -7,9 +7,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, Check } from "lucide-react";
+import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 
 export default function SellCattleModal({ onSuccess }) {
+    const navigate = useNavigate();
+    const location = useLocation();
+    const isBizOwnerMode = location.pathname.startsWith('/biz');
     const [open, setOpen] = useState(false);
     const [loading, setLoading] = useState(false);
     const [animals, setAnimals] = useState([]);
@@ -22,12 +26,11 @@ export default function SellCattleModal({ onSuccess }) {
         description: ''
     });
 
-    const { mongoUser } = useUser();
+    const { mongoUser, businessProfile } = useUser();
 
     useEffect(() => {
         if (open && mongoUser) {
             fetchAnimals();
-            console.log("MongoUser for Auto-fill:", mongoUser);
             // Auto-fill contact details
             setFormData(prev => ({
                 ...prev,
@@ -98,6 +101,7 @@ export default function SellCattleModal({ onSuccess }) {
                 </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[500px]">
+                <>
                 <DialogHeader>
                     <DialogTitle>
                         {step === 1 ? "Select Animal from Farm" : "Listing Details"}
@@ -176,6 +180,7 @@ export default function SellCattleModal({ onSuccess }) {
                         </Button>
                     </form>
                 )}
+                </>
             </DialogContent>
         </Dialog>
     );

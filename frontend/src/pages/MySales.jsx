@@ -28,7 +28,7 @@ export default function MySales() {
     };
 
     const totalEarned = sales.filter(s => s.status === 'released_to_seller').reduce((acc, curr) => acc + curr.amount, 0);
-    const pendingAmount = sales.filter(s => s.status === 'held_in_escrow').reduce((acc, curr) => acc + curr.amount, 0);
+    const pendingAmount = sales.filter(s => s.status !== 'released_to_seller').reduce((acc, curr) => acc + curr.amount, 0);
 
     return (
         <Layout loading={loading}>
@@ -57,7 +57,7 @@ export default function MySales() {
                                 <Coins className="h-5 w-5 text-chart-2" />
                             </div>
                             <div>
-                                <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">Pending in Escrow</p>
+                                <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">Processing</p>
                                 <p className="text-2xl font-semibold tracking-tight">₹{pendingAmount.toLocaleString()}</p>
                             </div>
                         </CardContent>
@@ -116,11 +116,11 @@ export default function MySales() {
                                                 <td className="p-4">
                                                     {sale.status === 'released_to_seller' ? (
                                                         <Badge variant="outline" className="gap-1 text-green-700 bg-green-500/10 border-none">
-                                                            <CheckCircle2 className="h-3 w-3" /> Released
+                                                            <CheckCircle2 className="h-3 w-3" /> Credited
                                                         </Badge>
                                                     ) : (
                                                         <Badge variant="outline" className="gap-1 text-chart-2 bg-chart-2/10 border-none">
-                                                            <Loader2 className="h-3 w-3 animate-spin" /> In Escrow
+                                                            <Loader2 className="h-3 w-3 animate-spin" /> Processing
                                                         </Badge>
                                                     )}
                                                 </td>

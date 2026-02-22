@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import { Layout } from "@/components/Layout";
+import { BusinessLayout } from "@/components/BusinessLayout";
+import { useLocation } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -27,6 +29,9 @@ import { format } from "date-fns";
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 export default function MarketPrices() {
+  const location = useLocation();
+  const isBusinessRoute = location.pathname.startsWith('/business');
+  const PageLayout = isBusinessRoute ? BusinessLayout : Layout;
   const [loading, setLoading] = useState(true);
   const [prices, setPrices] = useState([]);
   const [selectedCommodity, setSelectedCommodity] = useState("cow");
@@ -76,7 +81,7 @@ export default function MarketPrices() {
     : 0;
 
   return (
-    <Layout loading={loading}>
+    <PageLayout loading={loading}>
       <div className="space-y-6 max-w-full px-6 mx-auto p-4 md:p-6 lg:p-8">
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -230,6 +235,6 @@ export default function MarketPrices() {
           </CardContent>
         </Card>
       </div>
-    </Layout>
+    </PageLayout>
   );
 }

@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { Layout } from "@/components/Layout";
+import { BusinessLayout } from "@/components/BusinessLayout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -43,6 +44,7 @@ import {
 } from "recharts";
 import { Plus, Trash2, Receipt, DollarSign, ShoppingCart } from "lucide-react";
 import { useUser } from "@/context/UserContext";
+import { useLocation } from "react-router-dom";
 import axios from "axios";
 import { toast } from "sonner";
 import {
@@ -56,11 +58,16 @@ import {
   SELLABLE_SPECIES,
 } from "@/utils/biHelpers";
 import { format } from "date-fns";
+import { useVoiceInput } from "@/hooks/useVoiceInput";
+import { VoiceInputButton } from "@/components/VoiceInputButton";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 export default function FinanceTracking() {
   const { mongoUser } = useUser();
+  const location = useLocation();
+  const isBusinessRoute = location.pathname.startsWith('/business');
+  const PageLayout = isBusinessRoute ? BusinessLayout : Layout;
   const [loading, setLoading] = useState(true);
   const [farms, setFarms] = useState([]);
   const [animals, setAnimals] = useState([]);
@@ -86,6 +93,10 @@ export default function FinanceTracking() {
     date: new Date().toISOString().split("T")[0], notes: "",
   });
 
+  // Voice input hooks for sale and expense
+  const saleVoice = useVoiceInput('sale', { animals });
+  const expenseVoice = useVoiceInput('expense', { animals });
+
   /* ── Shared effects ──────────────────────────────── */
   useEffect(() => { fetchFarms(); }, []);
   useEffect(() => {
@@ -97,6 +108,39 @@ export default function FinanceTracking() {
       fetchMarketPrices();
     }
   }, [selectedFarm]);
+
+  // Auto-fill sale form from voice
+  useEffect(() => {
+    if (saleVoice.parsedData) {
+      const d = saleVoice.parsedData;
+      setSaleForm(prev => ({
+        animalId: d.animalId || prev.animalId,
+        productType: d.productType || prev.productType,
+        quantity: d.quantity ? String(d.quantity) : prev.quantity,
+        pricePerUnit: d.pricePerUnit ? String(d.pricePerUnit) : prev.pricePerUnit,
+        date: d.date || prev.date,
+        notes: d.notes || prev.notes,
+      }));
+      setSaleDialog(true);
+      toast.success('Voice input processed! Review and save.');
+    }
+  }, [saleVoice.parsedData]);
+
+  // Auto-fill expense form from voice
+  useEffect(() => {
+    if (expenseVoice.parsedData) {
+      const d = expenseVoice.parsedData;
+      setExpForm(prev => ({
+        animalId: d.animalId || prev.animalId,
+        category: d.category || prev.category,
+        amount: d.amount ? String(d.amount) : prev.amount,
+        description: d.description || prev.description,
+        date: d.date || prev.date,
+      }));
+      setExpenseDialog(true);
+      toast.success('Voice input processed! Review and save.');
+    }
+  }, [expenseVoice.parsedData]);
 
   /* ── Fetch helpers ───────────────────────────────── */
     const fetchFarms = async () => {
@@ -266,7 +310,7 @@ export default function FinanceTracking() {
   );
 
   return (
-    <Layout loading={loading}>
+    <PageLayout loading={loading}>
       <div className="space-y-6 max-w-full px-6 mx-auto p-4 md:p-6 lg:p-8">
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -305,6 +349,16 @@ export default function FinanceTracking() {
                       Enter sale details. Market price auto-fills when available.
                     </DialogDescription>
                   </DialogHeader>
+                  {/* Voice Input for Sales */}
+                  <VoiceInputButton
+                    isListening={saleVoice.isListening}
+                    isProcessing={saleVoice.isProcessing}
+                    isSupported={saleVoice.isSupported}
+                    transcript={saleVoice.transcript}
+                    error={saleVoice.error}
+                    onStart={saleVoice.startListening}
+                    onStop={saleVoice.stopListening}
+                  />
                   <div className="grid gap-4 py-4">
                     {/* Product Type */}
                     <div>
@@ -473,6 +527,16 @@ export default function FinanceTracking() {
                     <DialogTitle>Record Expense</DialogTitle>
                     <DialogDescription>Enter expense details in INR</DialogDescription>
                   </DialogHeader>
+                  {/* Voice Input for Expenses */}
+                  <VoiceInputButton
+                    isListening={expenseVoice.isListening}
+                    isProcessing={expenseVoice.isProcessing}
+                    isSupported={expenseVoice.isSupported}
+                    transcript={expenseVoice.transcript}
+                    error={expenseVoice.error}
+                    onStart={expenseVoice.startListening}
+                    onStop={expenseVoice.stopListening}
+                  />
                   <div className="grid gap-4 py-4">
                     <Select value={expForm.category} onValueChange={v => setExpForm({ ...expForm, category: v })}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
@@ -582,6 +646,6 @@ export default function FinanceTracking() {
           </TabsContent>
         </Tabs>
       </div>
-    </Layout>
+    </PageLayout>
   );
 }

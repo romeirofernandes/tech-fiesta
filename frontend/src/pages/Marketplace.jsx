@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Tractor, MapPin, CheckCircle2, Store, ArrowRight, Lock, Phone, Search, Thermometer, Droplets, HeartPulse, Syringe, ChevronLeft, ChevronRight, TrendingUp, Package } from "lucide-react";
+import { Tractor, MapPin, CheckCircle2, Store, ArrowRight, Phone, Search, Thermometer, Droplets, HeartPulse, Syringe, ChevronLeft, ChevronRight, TrendingUp, Package, CircleCheck, ShieldAlert } from "lucide-react";
+import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { SpeciesIcon, speciesOptions } from "@/lib/animalIcons";
 import { Label } from "@/components/ui/label";
@@ -16,7 +17,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from "react-router-dom";
 
 export default function Marketplace() {
-    const { mongoUser } = useUser();
+    const { mongoUser, businessProfile } = useUser();
     const navigate = useNavigate();
     const [items, setItems] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -100,6 +101,11 @@ export default function Marketplace() {
     const [selectedItemForRent, setSelectedItemForRent] = useState(null);
 
     const initiatePurchase = (item) => {
+        if (!businessProfile?.verified) {
+            toast.error('GST verification required to make purchases. Redirecting...');
+            navigate('/business/verify');
+            return;
+        }
         if (item.type === 'cattle') {
             setSelectedItemForPurchase(item);
             setShowFarmSelectDialog(true);
@@ -144,6 +150,7 @@ export default function Marketplace() {
             const payload = {
                 itemId: item._id,
                 amount: amount, // Send estimated amount, but backend recalculates for safety
+                buyerId: mongoUser?._id,
                 buyerName: mongoUser?.fullName || "Guest Farmer",
                 destinationFarmId: destinationFarmId,
                 rentalDuration: rentalDuration
@@ -155,8 +162,8 @@ export default function Marketplace() {
                 key: "rzp_test_RMleifw23PqSwe",
                 amount: orderRes.data.amount,
                 currency: orderRes.data.currency,
-                name: "Pashu Pehchan Escrow",
-                description: `Escrow for ${item.name}`,
+                name: "Pashu Pehchan",
+                description: `Payment for ${item.name}`,
                 image: "https://via.placeholder.com/150",
                 order_id: orderRes.data.id,
                 handler: async function (response) {
@@ -168,8 +175,7 @@ export default function Marketplace() {
                         });
 
                         setSuccessData({
-                            orderId: response.razorpay_order_id,
-                            releaseCode: verifyRes.data.releaseCode
+                            orderId: response.razorpay_order_id
                         });
 
                         fetchItems();
@@ -720,15 +726,15 @@ export default function Marketplace() {
                     <DialogContent className="sm:max-w-sm text-center">
                         <div className="flex flex-col items-center gap-4 py-4">
                             <div className="bg-green-500/10 p-3 rounded-full">
-                                <Lock className="h-6 w-6 text-green-600" />
+                                <CircleCheck className="h-6 w-6 text-green-600" />
                             </div>
                             <div>
-                                <DialogTitle className="text-lg">Payment Secured</DialogTitle>
+                                <DialogTitle className="text-lg">Payment Successful</DialogTitle>
                                 <p className="text-sm text-muted-foreground mt-2">
-                                    Funds are held in escrow. The admin will release them once you confirm receipt.
+                                    Amount has been transferred directly to the seller. The item will be delivered to your farm.
                                 </p>
                             </div>
-                            <Badge variant="outline" className="text-chart-5 bg-chart-5/10 border-none">Pending Admin Approval</Badge>
+                            <Badge variant="outline" className="text-green-700 bg-green-500/10 border-none">Completed</Badge>
                             <Button className="w-full mt-2" onClick={() => setSuccessData(null)}>Got It</Button>
                         </div>
                     </DialogContent>

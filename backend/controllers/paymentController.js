@@ -5,6 +5,7 @@ const MarketplaceItem = require('../models/MarketplaceItem');
 const SaleTransaction = require('../models/SaleTransaction');
 const Expense = require('../models/Expense');
 const Farmer = require('../models/Farmer');
+const BusinessProfile = require('../models/BusinessProfile');
 
 // Initialize Razorpay (only if keys are configured)
 let razorpay = null;
@@ -21,7 +22,7 @@ exports.createOrder = async (req, res) => {
         if (!razorpay) {
             return res.status(503).json({ message: 'Payment service not configured' });
         }
-        const { itemId, amount, buyerName, destinationFarmId, rentalDuration } = req.body;
+        const { itemId, amount, buyerName, buyerId, destinationFarmId, rentalDuration } = req.body;
 
         const item = await MarketplaceItem.findById(itemId);
         if (!item) return res.status(404).json({ message: 'Item not found' });
@@ -54,6 +55,7 @@ exports.createOrder = async (req, res) => {
             itemName: item.name,
             itemImage: item.imageUrl,
             amount: finalAmount,
+            buyerId: buyerId || undefined,
             buyerName,
             destinationFarmId, // Store where the animal should go
             sellerId: item.seller, // Store seller ID for easier querying
@@ -76,7 +78,7 @@ exports.createOrder = async (req, res) => {
     }
 };
 
-// 2. Verify Payment (Mark as Held in Escrow)
+// 2. Verify Payment — Direct transfer (no escrow hold)
 exports.verifyPayment = async (req, res) => {
     try {
         const {
@@ -94,29 +96,98 @@ exports.verifyPayment = async (req, res) => {
             return res.status(400).json({ msg: "Transaction not legit!" });
         }
 
-        // Update Transaction Status
+        // Update Transaction Status — directly mark as completed (no escrow)
         const transaction = await EscrowTransaction.findOneAndUpdate(
             { razorpayOrderId },
             {
                 razorpayPaymentId,
                 razorpaySignature,
-                status: 'held_in_escrow',
+                status: 'released_to_seller',
                 updatedAt: Date.now()
             },
             { new: true }
-        );
+        ).populate('itemId');
 
-        // Mark Item as 'Process' or 'Sold' (depending on logic, maybe 'pending_delivery')
         if (transaction) {
-            await MarketplaceItem.findByIdAndUpdate(transaction.itemId, { status: 'sold' });
-            // Note: For rentals, logic might differ (e.g., 'rented')
+            // Mark Item as sold
+            await MarketplaceItem.findByIdAndUpdate(transaction.itemId._id || transaction.itemId, { status: 'sold' });
+
+            // --- AUTO ASSET TRANSFER ---
+            const item = transaction.itemId;
+            if (item && item.type === 'cattle' && transaction.destinationFarmId && item.linkedAnimalId) {
+                const Animal = require('../models/Animal');
+                await Animal.findByIdAndUpdate(item.linkedAnimalId, {
+                    farmId: transaction.destinationFarmId,
+                    updatedAt: Date.now()
+                });
+                console.log(`Auto-transferred Animal ${item.linkedAnimalId} to Farm ${transaction.destinationFarmId}`);
+            }
+
+            // --- BI RECORDS ---
+            try {
+                // Seller SaleTransaction
+                const seller = await Farmer.findById(transaction.sellerId);
+                const sellerFarmId = seller?.farms?.[0];
+                if (sellerFarmId) {
+                    const isCattle = item?.type === 'cattle';
+                    await SaleTransaction.create({
+                        farmId: sellerFarmId,
+                        animalId: isCattle && item.linkedAnimalId ? item.linkedAnimalId : undefined,
+                        productType: isCattle ? 'live_animal' : 'marketplace',
+                        quantity: 1,
+                        unit: isCattle ? 'animal' : 'item',
+                        pricePerUnit: transaction.amount,
+                        totalAmount: transaction.amount,
+                        buyerName: transaction.buyerName || 'Marketplace Buyer',
+                        date: new Date(),
+                        notes: `Marketplace sale: ${item?.name || 'Item'}`
+                    });
+                }
+
+                // Credit seller's business wallet if they have one
+                const sellerBiz = await BusinessProfile.findOne({ farmerId: transaction.sellerId });
+                if (sellerBiz) {
+                    await BusinessProfile.findByIdAndUpdate(sellerBiz._id, {
+                        $inc: { walletBalance: transaction.amount, totalEarnings: transaction.amount }
+                    });
+                }
+
+                // Buyer Expense
+                let buyerFarmId = transaction.destinationFarmId || null;
+                if (!buyerFarmId && transaction.buyerName) {
+                    const buyer = await Farmer.findOne({ fullName: transaction.buyerName });
+                    buyerFarmId = buyer?.farms?.[0] || null;
+
+                    // Update buyer business profile purchases
+                    if (buyer) {
+                        const buyerBiz = await BusinessProfile.findOne({ farmerId: buyer._id });
+                        if (buyerBiz) {
+                            await BusinessProfile.findByIdAndUpdate(buyerBiz._id, {
+                                $inc: { totalPurchases: transaction.amount }
+                            });
+                        }
+                    }
+                }
+                if (buyerFarmId) {
+                    await Expense.create({
+                        farmId: buyerFarmId,
+                        animalId: item?.type === 'cattle' && item.linkedAnimalId ? item.linkedAnimalId : undefined,
+                        category: 'marketplace_purchase',
+                        amount: transaction.amount,
+                        description: `Marketplace purchase: ${item?.name || 'Item'}`,
+                        date: new Date()
+                    });
+                }
+            } catch (biErr) {
+                console.error('BI record creation error (non-fatal):', biErr.message);
+            }
         }
 
         res.json({
-            msg: "Payment success! Funds held in Escrow.",
+            msg: "Payment successful! Amount transferred directly to seller.",
             orderId: razorpayOrderId,
             paymentId: razorpayPaymentId,
-            releaseCode: transaction.releaseCode // Send code to buyer
+            status: 'completed'
         });
     } catch (error) {
         res.status(500).send(error);
@@ -214,9 +285,17 @@ exports.releaseFunds = async (req, res) => {
 // 4. Get My Orders (Buyer View)
 exports.getMyOrders = async (req, res) => {
     try {
-        const { buyerName } = req.query; // in real app, use req.user.id
-        // Simple filter by buyerName since we used that in createOrder
-        const orders = await EscrowTransaction.find({ buyerName }).populate('itemId').sort({ createdAt: -1 });
+        const { buyerId, buyerName } = req.query;
+        // Prefer buyerId for accurate matching; fall back to buyerName for legacy
+        let filter = {};
+        if (buyerId) {
+            filter.buyerId = buyerId;
+        } else if (buyerName) {
+            filter.buyerName = buyerName;
+        } else {
+            return res.json([]);
+        }
+        const orders = await EscrowTransaction.find(filter).populate('itemId').sort({ createdAt: -1 });
         res.json(orders);
     } catch (error) {
         res.status(500).json({ message: error.message });

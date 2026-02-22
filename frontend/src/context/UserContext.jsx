@@ -17,6 +17,18 @@ export const UserProvider = ({ children }) => {
     const saved = localStorage.getItem('isAdmin');
     return saved === 'true';
   });
+  const [isBusinessMode, setIsBusinessMode] = useState(() => {
+    const saved = localStorage.getItem('isBusinessMode');
+    return saved === 'true';
+  });
+  const [businessProfile, setBusinessProfile] = useState(() => {
+    const saved = localStorage.getItem('businessProfile');
+    return saved ? JSON.parse(saved) : null;
+  });
+  const [bizOwner, setBizOwner] = useState(() => {
+    const saved = localStorage.getItem('bizOwner');
+    return saved ? JSON.parse(saved) : null;
+  });
 
   // Save mongoUser to localStorage whenever it changes
   useEffect(() => {
@@ -35,6 +47,33 @@ export const UserProvider = ({ children }) => {
       localStorage.removeItem('isAdmin');
     }
   }, [isAdmin]);
+
+  // Save business mode to localStorage
+  useEffect(() => {
+    if (isBusinessMode) {
+      localStorage.setItem('isBusinessMode', 'true');
+    } else {
+      localStorage.removeItem('isBusinessMode');
+    }
+  }, [isBusinessMode]);
+
+  // Save business profile to localStorage
+  useEffect(() => {
+    if (businessProfile) {
+      localStorage.setItem('businessProfile', JSON.stringify(businessProfile));
+    } else {
+      localStorage.removeItem('businessProfile');
+    }
+  }, [businessProfile]);
+
+  // Save bizOwner to localStorage
+  useEffect(() => {
+    if (bizOwner) {
+      localStorage.setItem('bizOwner', JSON.stringify(bizOwner));
+    } else {
+      localStorage.removeItem('bizOwner');
+    }
+  }, [bizOwner]);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
@@ -102,13 +141,23 @@ export const UserProvider = ({ children }) => {
       setUser(null);
       setMongoUser(null);
       setIsAdmin(false);
+      setIsBusinessMode(false);
+      setBusinessProfile(null);
+      setBizOwner(null);
+      localStorage.removeItem('bizToken');
     } catch (error) {
       console.error("Logout Error:", error);
     }
   };
 
+  const bizLogout = () => {
+    setBizOwner(null);
+    localStorage.removeItem('bizToken');
+    localStorage.removeItem('bizOwner');
+  };
+
   return (
-    <UserContext.Provider value={{ user, mongoUser, setMongoUser, isAdmin, setIsAdmin, loading, logout }}>
+    <UserContext.Provider value={{ user, mongoUser, setMongoUser, isAdmin, setIsAdmin, isBusinessMode, setIsBusinessMode, businessProfile, setBusinessProfile, bizOwner, setBizOwner, bizLogout, loading, logout }}>
       {children}
     </UserContext.Provider>
   );

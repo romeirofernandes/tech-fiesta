@@ -43,6 +43,20 @@ import AdminProtectedRoute from './components/AdminProtectedRoute';
 import DiseaseDetector from './pages/DiseaseDetector';
 import PublicAnimalProfile from './pages/animals/PublicAnimalProfile';
 import FarmInsights from './pages/FarmInsights';
+import AadhaarVerification from './pages/AadhaarVerification';
+
+// Business pages
+import BusinessDashboard from './pages/business/BusinessDashboard';
+import GSTVerification from './pages/business/GSTVerification';
+import BusinessMarketplace from './pages/business/BusinessMarketplace';
+import BusinessOrders from './pages/business/BusinessOrders';
+import BusinessSales from './pages/business/BusinessSales';
+import BusinessReports from './pages/business/BusinessReports';
+
+// Separate Business Owner pages (independent login)
+import BizLogin from './pages/biz/BizLogin';
+import BizRegister from './pages/biz/BizRegister';
+import BizDashboard from './pages/biz/BizDashboard';
 
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useUser();
@@ -63,6 +77,28 @@ const PublicRoute = ({ children }) => {
 
   if (user) {
     return <Navigate to="/dashboard" />;
+  }
+
+  return children;
+};
+
+const BizProtectedRoute = ({ children }) => {
+  const { bizOwner } = useUser();
+  const token = localStorage.getItem('bizToken');
+
+  if (!bizOwner || !token) {
+    return <Navigate to="/biz/login" />;
+  }
+
+  return children;
+};
+
+const BizPublicRoute = ({ children }) => {
+  const { bizOwner } = useUser();
+  const token = localStorage.getItem('bizToken');
+
+  if (bizOwner && token) {
+    return <Navigate to="/biz/dashboard" />;
   }
 
   return children;
@@ -256,6 +292,86 @@ function App() {
               <MySales />
             </ProtectedRoute>
           } />
+          <Route path="/aadhaar-verify" element={
+            <ProtectedRoute>
+              <AadhaarVerification />
+            </ProtectedRoute>
+          } />
+
+          {/* Business Routes */}
+          <Route path="/business" element={
+            <ProtectedRoute>
+              <BusinessDashboard />
+            </ProtectedRoute>
+          } />
+          <Route path="/business/verify" element={
+            <ProtectedRoute>
+              <AadhaarVerification />
+            </ProtectedRoute>
+          } />
+          <Route path="/business/marketplace" element={
+            <ProtectedRoute>
+              <BusinessMarketplace />
+            </ProtectedRoute>
+          } />
+          <Route path="/business/orders" element={
+            <ProtectedRoute>
+              <BusinessOrders />
+            </ProtectedRoute>
+          } />
+          <Route path="/business/sales" element={
+            <ProtectedRoute>
+              <BusinessSales />
+            </ProtectedRoute>
+          } />
+          <Route path="/business/reports" element={
+            <ProtectedRoute>
+              <BusinessReports />
+            </ProtectedRoute>
+          } />
+          <Route path="/business/reports/finance" element={
+            <ProtectedRoute>
+              <FinanceTracking />
+            </ProtectedRoute>
+          } />
+          <Route path="/business/reports/prices" element={
+            <ProtectedRoute>
+              <MarketPrices />
+            </ProtectedRoute>
+          } />
+
+          {/* Separate Business Owner Routes (independent auth) */}
+          <Route path="/biz/login" element={
+            <BizPublicRoute>
+              <BizLogin />
+            </BizPublicRoute>
+          } />
+          <Route path="/biz/register" element={
+            <BizPublicRoute>
+              <BizRegister />
+            </BizPublicRoute>
+          } />
+          <Route path="/biz/dashboard" element={
+            <BizProtectedRoute>
+              <BizDashboard />
+            </BizProtectedRoute>
+          } />
+          <Route path="/biz/marketplace" element={
+            <BizProtectedRoute>
+              <BusinessMarketplace />
+            </BizProtectedRoute>
+          } />
+          <Route path="/biz/orders" element={
+            <BizProtectedRoute>
+              <BusinessOrders />
+            </BizProtectedRoute>
+          } />
+          <Route path="/biz/sales" element={
+            <BizProtectedRoute>
+              <BusinessSales />
+            </BizProtectedRoute>
+          } />
+
           <Route path="*" element={<NotFound />} />
 
           {/* Hidden fake heartrate console */}

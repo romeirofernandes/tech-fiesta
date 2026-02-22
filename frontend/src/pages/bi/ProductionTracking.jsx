@@ -40,7 +40,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-import { Plus, Trash2, Package } from "lucide-react";
+import { Plus, Trash2, Package, Mic } from "lucide-react";
 import { useUser } from "@/context/UserContext";
 import axios from "axios";
 import { toast } from "sonner";
@@ -51,6 +51,8 @@ import {
   SPECIES_PRODUCT_MAP,
 } from "@/utils/biHelpers";
 import { format } from "date-fns";
+import { useVoiceInput } from "@/hooks/useVoiceInput";
+import { VoiceInputButton } from "@/components/VoiceInputButton";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
@@ -74,6 +76,9 @@ export default function ProductionTracking() {
     notes: "",
   });
 
+  // Voice input for hands-free record entry
+  const voiceInput = useVoiceInput('production', { animals });
+
   useEffect(() => { fetchFarms(); }, []);
   useEffect(() => {
     if (selectedFarm) {
@@ -82,6 +87,22 @@ export default function ProductionTracking() {
       fetchTimeseries();
     }
   }, [selectedFarm, filterProduct]);
+
+  // Auto-fill form when voice input parses data
+  useEffect(() => {
+    if (voiceInput.parsedData) {
+      const d = voiceInput.parsedData;
+      setForm(prev => ({
+        animalId: d.animalId || prev.animalId,
+        productType: d.productType || prev.productType,
+        quantity: d.quantity ? String(d.quantity) : prev.quantity,
+        date: d.date || prev.date,
+        notes: d.notes || prev.notes,
+      }));
+      setDialogOpen(true);
+      toast.success('Voice input processed! Review and save.');
+    }
+  }, [voiceInput.parsedData]);
 
   const handleFilterProductChange = (value) => {
     setFilterProduct(value === "__all__" ? "" : value);
@@ -218,6 +239,16 @@ export default function ProductionTracking() {
                   <DialogTitle>New Production Record</DialogTitle>
                   <DialogDescription>Log daily production for an animal. Product options are filtered based on the selected animal's species.</DialogDescription>
                 </DialogHeader>
+                {/* Voice Input */}
+                <VoiceInputButton
+                  isListening={voiceInput.isListening}
+                  isProcessing={voiceInput.isProcessing}
+                  isSupported={voiceInput.isSupported}
+                  transcript={voiceInput.transcript}
+                  error={voiceInput.error}
+                  onStart={voiceInput.startListening}
+                  onStop={voiceInput.stopListening}
+                />
                 <div className="grid gap-4 py-4">
                   <div>
                     <label className="text-xs text-muted-foreground mb-1 block">Animal *</label>

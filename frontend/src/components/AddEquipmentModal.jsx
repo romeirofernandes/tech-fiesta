@@ -6,10 +6,15 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Loader2, Upload } from "lucide-react";
+import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 
 export default function AddEquipmentModal({ onSuccess }) {
-    const { mongoUser } = useUser();
+    const { mongoUser, businessProfile, bizOwner } = useUser();
+    const navigate = useNavigate();
+    const location = useLocation();
+    const isBizOwnerMode = location.pathname.startsWith('/biz');
+    const currentUser = isBizOwnerMode ? bizOwner : mongoUser;
     const [open, setOpen] = useState(false);
     const [loading, setLoading] = useState(false);
     const [imageUploading, setImageUploading] = useState(false);
@@ -25,16 +30,14 @@ export default function AddEquipmentModal({ onSuccess }) {
 
     // Auto-fill details when modal opens and user exists
     React.useEffect(() => {
-        if (open && mongoUser) {
-            console.log("MongoUser for Equipment:", mongoUser);
+        if (open && currentUser) {
             setFormData(prev => ({
                 ...prev,
-                contact: mongoUser.phoneNumber || '',
-                // Use first farm location if available
-                location: mongoUser.farms?.[0]?.location || ''
+                contact: currentUser.phoneNumber || '',
+                location: currentUser.farms?.[0]?.location || ''
             }));
         }
-    }, [open, mongoUser]);
+    }, [open, currentUser]);
 
     const handleImageChange = async (e) => {
         const file = e.target.files?.[0];
@@ -73,7 +76,7 @@ export default function AddEquipmentModal({ onSuccess }) {
             const base = import.meta.env.VITE_API_BASE_URL;
             await axios.post(`${base}/api/marketplace`, {
                 type: 'equipment',
-                seller: mongoUser._id, // Send ID, backend expects ObjectId
+                seller: currentUser._id,
                 ...formData
             });
             setOpen(false);
@@ -94,6 +97,7 @@ export default function AddEquipmentModal({ onSuccess }) {
                 </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px]">
+                <>
                 <DialogHeader>
                     <DialogTitle>List Equipment for Rent</DialogTitle>
                 </DialogHeader>
@@ -168,6 +172,7 @@ export default function AddEquipmentModal({ onSuccess }) {
                         List Item
                     </Button>
                 </form>
+                </>
             </DialogContent>
         </Dialog>
     );

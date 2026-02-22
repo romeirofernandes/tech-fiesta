@@ -112,9 +112,6 @@ export default function FarmInsights() {
                 {/* Header Setup */}
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <div className="flex items-center gap-3">
-                        <div className="bg-primary/20 p-2.5 rounded-xl">
-                            <span className="h-6 w-6 text-primary" />
-                        </div>
                         <div>
                             <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">AI Strategy Report</h1>
                             <p className="text-sm text-muted-foreground mt-0.5">Your personalized agricultural advisory</p>

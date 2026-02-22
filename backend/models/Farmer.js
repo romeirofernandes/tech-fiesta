@@ -37,6 +37,23 @@ const farmerSchema = new mongoose.Schema({
     type: String,
     default: 'en'
   },
+  aadhaarNumber: {
+    type: String,
+    unique: true,
+    sparse: true
+  },
+  isAadhaarVerified: {
+    type: Boolean,
+    default: false
+  },
+  aadhaarVerifiedAt: {
+    type: Date,
+    default: null
+  },
+  isBusinessVerified: {
+    type: Boolean,
+    default: false
+  },
   createdAt: {
     type: Date,
     default: Date.now

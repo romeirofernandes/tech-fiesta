@@ -59,6 +59,10 @@ app.use('/api/summary', require('./routes/summaryRoutes'));
 app.use('/api/disease-detect', require('./routes/aiDiseaseRoutes'));
 app.use('/api/insights', require('./routes/insightRoutes'));
 app.use('/api/admin', adminRoutes);
+app.use('/api/business', require('./routes/businessRoutes'));
+app.use('/api/voice', require('./routes/voiceRoutes'));
+app.use('/api/farmer-verify', require('./routes/farmerVerifyRoutes'));
+app.use('/api/biz-auth', require('./routes/bizAuthRoutes'));
 
 const port = process.env.PORT;
 
