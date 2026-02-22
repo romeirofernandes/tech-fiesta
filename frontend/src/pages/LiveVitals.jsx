@@ -331,14 +331,22 @@ export default function LiveVitals() {
       }));
   }, [pollingData, timeRange]);
 
-  // Get latest reading with normalized field names
+  // Get latest reading where none of the vitals are null
   const latestReading = useMemo(() => {
-    if (!polledLatestReading) return null;
+    if (!pollingData || pollingData.length === 0) return null;
+    // pollingData is sorted newest-first; find the first entry with all three non-null
+    const found = pollingData.find(
+      (r) =>
+        r.temperature != null &&
+        r.humidity != null &&
+        (r.heartRate != null || r.heart_rate != null)
+    );
+    if (!found) return null;
     return {
-      ...polledLatestReading,
-      heart_rate: polledLatestReading.heartRate || polledLatestReading.heart_rate,
+      ...found,
+      heart_rate: found.heartRate ?? found.heart_rate,
     };
-  }, [polledLatestReading]);
+  }, [pollingData]);
 
   // Update "time ago" display every second
   useEffect(() => {

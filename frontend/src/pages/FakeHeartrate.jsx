@@ -24,14 +24,46 @@ export default function FakeHeartrate() {
   const [lastSent, setLastSent] = useState(null);
   const [sending, setSending] = useState(false);
   const [log, setLog] = useState([]);
+  const [avgTemp, setAvgTemp] = useState(null);
+  const [avgHumidity, setAvgHumidity] = useState(null);
   const intervalRef = useRef(null);
   const spaceRef = useRef(false);
   const rangeRef = useRef(selectedRange);
+  const avgTempRef = useRef(null);
+  const avgHumidityRef = useRef(null);
 
-  // keep rangeRef in sync
+  // keep refs in sync
   useEffect(() => {
     rangeRef.current = selectedRange;
   }, [selectedRange]);
+
+  useEffect(() => {
+    avgTempRef.current = avgTemp;
+    avgHumidityRef.current = avgHumidity;
+  }, [avgTemp, avgHumidity]);
+
+  // fetch average temp & humidity from recent readings on mount
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch(
+          `${API_BASE}/api/iot/sensors/latest?rfid=${RFID_TAG}&limit=50`
+        );
+        if (!res.ok) return;
+        const readings = await res.json();
+        const temps = readings.map((r) => r.temperature).filter((v) => v != null);
+        const humids = readings.map((r) => r.humidity).filter((v) => v != null);
+        if (temps.length) {
+          const avg = +(temps.reduce((a, b) => a + b, 0) / temps.length).toFixed(1);
+          setAvgTemp(avg);
+        }
+        if (humids.length) {
+          const avg = +(humids.reduce((a, b) => a + b, 0) / humids.length).toFixed(1);
+          setAvgHumidity(avg);
+        }
+      } catch (_) {}
+    })();
+  }, []);
 
   const addLog = useCallback((msg) => {
     setLog((prev) => [{ msg, ts: new Date().toLocaleTimeString() }, ...prev].slice(0, 40));
@@ -45,8 +77,8 @@ export default function FakeHeartrate() {
         const body = {
           rfidTag: RFID_TAG,
           heartRate: bpm,
-          temperature: null,
-          humidity: null,
+          temperature: avgTempRef.current,
+          humidity: avgHumidityRef.current,
           sensorType: "HR",
           deviceId: "fake-hr-console",
         };
