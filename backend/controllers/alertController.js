@@ -317,6 +317,74 @@ exports.resolveAlert = async (req, res) => {
   }
 };
 
+/**
+ * Create an escape detection alert from the farm monitoring camera.
+ * This is called when the AI detects an animal near the farm boundary.
+ * It prevents duplicate alerts by checking for existing unresolved escape alerts
+ * for the same animal within a 5-minute cooldown window.
+ */
+exports.createEscapeAlert = async (req, res) => {
+  try {
+    const { animalId, farmId } = req.body;
+
+    if (!animalId || !farmId) {
+      return res.status(400).json({ message: 'animalId and farmId are required' });
+    }
+
+    // 1. Get the animal details
+    const animal = await Animal.findById(animalId);
+    if (!animal) {
+      return res.status(404).json({ message: 'Animal not found' });
+    }
+
+    // 2. Get the farm details
+    const farm = await Farm.findById(farmId);
+    if (!farm) {
+      return res.status(404).json({ message: 'Farm not found' });
+    }
+
+    // 3. Check for existing unresolved escape alert for this animal within 5 min cooldown
+    const COOLDOWN_MS = 5 * 60 * 1000; // 5 minutes
+    const cooldownTime = new Date(Date.now() - COOLDOWN_MS);
+
+    const existingAlert = await Alert.findOne({
+      animalId: animal._id,
+      type: 'geofence',
+      isResolved: false,
+      createdAt: { $gte: cooldownTime }
+    });
+
+    if (existingAlert) {
+      // Already alerted recently — skip to avoid spamming notifications
+      return res.status(200).json({
+        message: 'Alert already exists for this animal (cooldown active)',
+        alert: existingAlert,
+        skipped: true
+      });
+    }
+
+    // 4. Create a new escape alert — this triggers the post-save hook
+    //    which automatically sends WhatsApp, SMS, and Email notifications
+    const alert = await Alert.create({
+      animalId: animal._id,
+      type: 'geofence',
+      severity: 'high',
+      message: `🚨 ESCAPE DETECTED: ${animal.name} (RFID: ${animal.rfid}, ${animal.species}) was detected near the boundary of ${farm.name}. Immediate attention required!`
+    });
+
+    console.log(`🚨 Escape alert created for ${animal.name} at ${farm.name} — notifications will be sent automatically`);
+
+    res.status(201).json({
+      message: 'Escape alert created and notifications sent',
+      alert,
+      skipped: false
+    });
+  } catch (error) {
+    console.error('Error creating escape alert:', error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
 exports.deleteAlert = async (req, res) => {
   try {
     const alert = await Alert.findById(req.params.id);
