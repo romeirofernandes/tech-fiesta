@@ -261,10 +261,10 @@ exports.createSensorReading = async (req, res) => {
   }
 };
 
-// GET /api/iot/sensors/latest/?rfid=&limit=&since=
+// GET /api/iot/sensors/latest/?rfid=&limit=&since=&farmerId=
 exports.getLatestReadings = async (req, res) => {
   try {
-    const { rfid, limit = 10, since } = req.query;
+    const { rfid, limit = 10, since, farmerId } = req.query;
     const query = {};
     
     if (rfid) {
@@ -273,6 +273,22 @@ exports.getLatestReadings = async (req, res) => {
     
     if (since) {
       query.timestamp = { $gt: new Date(since) };
+    }
+
+    if (farmerId) {
+      const Farmer = require('../models/Farmer');
+      const farmer = await Farmer.findById(farmerId);
+      if (farmer && farmer.farms && farmer.farms.length > 0) {
+        const animals = await Animal.find({ farmId: { $in: farmer.farms } }).select('_id');
+        const animalIds = animals.map(a => a._id);
+        if (animalIds.length > 0) {
+          query.animalId = { $in: animalIds };
+        } else {
+          return res.json([]);
+        }
+      } else {
+        return res.json([]);
+      }
     }
 
     const readings = await IotSensorReading.find(query)
@@ -405,11 +421,32 @@ exports.createRfidEvent = async (req, res) => {
 // GET /api/iot/isolation-alerts - Get active isolation alerts
 exports.getIsolationAlerts = async (req, res) => {
   try {
-    const alerts = await Alert.find({
+    const { farmerId } = req.query;
+    let animalIds = [];
+
+    if (farmerId) {
+      const Farmer = require('../models/Farmer');
+      const farmer = await Farmer.findById(farmerId);
+      if (farmer && farmer.farms && farmer.farms.length > 0) {
+        const animals = await Animal.find({ farmId: { $in: farmer.farms } }).select('_id');
+        animalIds = animals.map(a => a._id);
+      }
+    }
+
+    const query = {
       type: 'health',
       isResolved: false,
       message: { $regex: /Isolation Required|Fever|Stress/i }
-    })
+    };
+
+    if (farmerId && animalIds.length > 0) {
+      query.animalId = { $in: animalIds };
+    } else if (farmerId) {
+      // If farmerId is provided but no animals found, return empty array
+      return res.json([]);
+    }
+
+    const alerts = await Alert.find(query)
     .populate('animalId', 'name rfid species breed')
     .sort({ createdAt: -1 })
     .limit(50);

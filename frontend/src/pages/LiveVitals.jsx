@@ -39,6 +39,7 @@ import {
   CircuitBoard,
 } from "lucide-react";
 import { useIotPolling } from "@/hooks/useIotPolling";
+import { useUser } from "@/context/UserContext";
 import { format } from "date-fns";
 import { toast } from "sonner";
 
@@ -274,7 +275,94 @@ const NeckbandLifespan = ({ animals }) => {
   );
 };
 
+// ─── ConnectionStatus (outside component to avoid remount on every render) ───
+const ConnectionStatus = ({ status, iotStatus, lastUpdated, timeSinceData }) => (
+  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+    {/* Polling Status */}
+    <div className="flex items-center gap-2">
+      <span className="text-xs text-muted-foreground font-medium">Server:</span>
+      {status === "connected" ? (
+        <>
+          <Wifi className="h-4 w-4 text-green-500" />
+          <Badge variant="outline" className="bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-400">
+            Online
+          </Badge>
+        </>
+      ) : status === "polling" ? (
+        <>
+          <RefreshCw className="h-4 w-4 text-blue-500 animate-spin" />
+          <Badge variant="outline" className="bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-400">
+            Getting data...
+          </Badge>
+        </>
+      ) : status === "error" ? (
+        <>
+          <WifiOff className="h-4 w-4 text-red-500" />
+          <Badge variant="outline" className="bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-400">
+            Not working
+          </Badge>
+        </>
+      ) : (
+        <>
+          <RefreshCw className="h-4 w-4 text-yellow-500" />
+          <Badge variant="outline" className="bg-yellow-50 text-yellow-700 dark:bg-yellow-950 dark:text-yellow-400">
+            Starting up...
+          </Badge>
+        </>
+      )}
+    </div>
+
+    {/* IoT Device Status */}
+    <div className="flex items-center gap-2">
+      <span className="text-xs text-muted-foreground font-medium">Sensor Device:</span>
+      {iotStatus === "connected" ? (
+        <>
+          <Radio className="h-4 w-4 text-green-500" />
+          <Badge variant="outline" className="bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-400">
+            On
+          </Badge>
+        </>
+      ) : iotStatus === "disconnected" ? (
+        <>
+          <Radio className="h-4 w-4 text-red-500" />
+          <Badge variant="outline" className="bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-400">
+            Off
+          </Badge>
+        </>
+      ) : (
+        <>
+          <Radio className="h-4 w-4 text-gray-400" />
+          <Badge variant="outline" className="bg-gray-50 text-gray-700 dark:bg-gray-950 dark:text-gray-400">
+            No signal
+          </Badge>
+        </>
+      )}
+    </div>
+
+    {/* IoT Data Status */}
+    <div className="flex items-center gap-2">
+      <span className="text-xs text-muted-foreground font-medium">Last Reading:</span>
+      {lastUpdated ? (
+        <>
+          <Activity className="h-4 w-4 text-green-500" />
+          <Badge variant="outline" className="bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-400">
+            {timeSinceData}
+          </Badge>
+        </>
+      ) : (
+        <>
+          <Activity className="h-4 w-4 text-gray-400" />
+          <Badge variant="outline" className="bg-gray-50 text-gray-700 dark:bg-gray-950 dark:text-gray-400">
+            Waiting...
+          </Badge>
+        </>
+      )}
+    </div>
+  </div>
+);
+
 export default function LiveVitals() {
+  const { mongoUser } = useUser();
   // State
   const [animals, setAnimals] = useState([]);
   const [selectedAnimal, setSelectedAnimal] = useState("all");
@@ -301,8 +389,9 @@ export default function LiveVitals() {
   } = useIotPolling(API_BASE, {
     pollInterval: 1000, // Poll every 1 second for snappier updates
     rfid: null,         // No filter — show all readings from the device
+    farmerId: mongoUser?._id,
     limit: 500,
-    enabled: true,
+    enabled: !!mongoUser,
     onNewData: (newData) => {
       if (newData.length > 0) console.log(`Received ${newData.length} new readings`);
     }
@@ -366,25 +455,27 @@ export default function LiveVitals() {
   // Fetch animals list (dropdown only — does not affect sensor data)
   useEffect(() => {
     const fetchAnimals = async () => {
+      if (!mongoUser) return;
       try {
-        const response = await fetch(`${API_BASE}/api/animals`);
+        const response = await fetch(`${API_BASE}/api/animals?farmerId=${mongoUser._id}`);
         if (response.ok) {
           const data = await response.json();
-          setAnimals(data.map(a => ({ id: a._id, name: a.name, species: a.species, rfid: a.rfid, createdAt: a.createdAt })));
+          setAnimals(data.map(a => ({ id: a._id, name: a.name, species: a.species, rfid: a.rfid, gender: a.gender, createdAt: a.createdAt, reproductiveStatus: a.reproductiveStatus || 'none' })));
         }
       } catch (error) {
         console.error("Failed to fetch animals:", error);
       }
     };
     fetchAnimals();
-  }, []);
+  }, [mongoUser]);
 
   // Fetch isolation alerts periodically
   useEffect(() => {
     const fetchIsolationAlerts = async () => {
+      if (!mongoUser) return;
       try {
         setLoadingAlerts(true);
-        const response = await fetch(`${API_BASE}/api/iot/isolation-alerts`);
+        const response = await fetch(`${API_BASE}/api/iot/isolation-alerts?farmerId=${mongoUser._id}`);
         if (response.ok) {
           const data = await response.json();
           setIsolationAlerts(data);
@@ -400,7 +491,7 @@ export default function LiveVitals() {
     // Poll every 10 seconds for new isolation alerts
     const interval = setInterval(fetchIsolationAlerts, 10000);
     return () => clearInterval(interval);
-  }, []);
+  }, [mongoUser]);
 
   // Handle isolation alert resolution
   const resolveIsolationAlert = async (alertId, animalName) => {
@@ -430,92 +521,6 @@ export default function LiveVitals() {
   // Loading state derived from polling status
   const loading = status === 'idle' || (status === 'polling' && historicalData.length === 0);
 
-  // Connection status indicator
-  const ConnectionStatus = () => (
-    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-      {/* Polling Status */}
-      <div className="flex items-center gap-2">
-        <span className="text-xs text-muted-foreground font-medium">Server:</span>
-        {status === "connected" ? (
-          <>
-            <Wifi className="h-4 w-4 text-green-500" />
-            <Badge variant="outline" className="bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-400">
-              Online
-            </Badge>
-          </>
-        ) : status === "polling" ? (
-          <>
-            <RefreshCw className="h-4 w-4 text-blue-500 animate-spin" />
-            <Badge variant="outline" className="bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-400">
-              Getting data...
-            </Badge>
-          </>
-        ) : status === "error" ? (
-          <>
-            <WifiOff className="h-4 w-4 text-red-500" />
-            <Badge variant="outline" className="bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-400">
-              Not working
-            </Badge>
-          </>
-        ) : (
-          <>
-            <RefreshCw className="h-4 w-4 text-yellow-500" />
-            <Badge variant="outline" className="bg-yellow-50 text-yellow-700 dark:bg-yellow-950 dark:text-yellow-400">
-              Starting up...
-            </Badge>
-          </>
-        )}
-      </div>
-
-      {/* IoT Device Status */}
-      <div className="flex items-center gap-2">
-        <span className="text-xs text-muted-foreground font-medium">Sensor Device:</span>
-        {iotStatus === "connected" ? (
-          <>
-            <Radio className="h-4 w-4 text-green-500" />
-            <Badge variant="outline" className="bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-400">
-              On
-            </Badge>
-          </>
-        ) : iotStatus === "disconnected" ? (
-          <>
-            <Radio className="h-4 w-4 text-red-500" />
-            <Badge variant="outline" className="bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-400">
-              Off
-            </Badge>
-          </>
-        ) : (
-          <>
-            <Radio className="h-4 w-4 text-gray-400" />
-            <Badge variant="outline" className="bg-gray-50 text-gray-700 dark:bg-gray-950 dark:text-gray-400">
-              No signal
-            </Badge>
-          </>
-        )}
-      </div>
-
-      {/* IoT Data Status */}
-      <div className="flex items-center gap-2">
-        <span className="text-xs text-muted-foreground font-medium">Last Reading:</span>
-        {lastUpdated ? (
-          <>
-            <Activity className="h-4 w-4 text-green-500" />
-            <Badge variant="outline" className="bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-400">
-              {timeSinceData}
-            </Badge>
-          </>
-        ) : (
-          <>
-            <Activity className="h-4 w-4 text-gray-400" />
-            <Badge variant="outline" className="bg-gray-50 text-gray-700 dark:bg-gray-950 dark:text-gray-400">
-              Waiting...
-            </Badge>
-          </>
-        )}
-      </div>
-    </div>
-  );
-
   // Memoized chart data
   const chartData = useMemo(() => historicalData, [historicalData]);
 
@@ -530,7 +535,12 @@ export default function LiveVitals() {
               Live Animal Health
             </h1>
           </div>
-          <ConnectionStatus />
+          <ConnectionStatus
+            status={status}
+            iotStatus={iotStatus}
+            lastUpdated={lastUpdated}
+            timeSinceData={timeSinceData}
+          />
         </div>
 
         {/* Controls */}
@@ -660,7 +670,7 @@ export default function LiveVitals() {
           </Card>
         )}
 
-        {/* Animals to be Isolated Section */}
+        {/* Animals to be Isolated Section — deduplicated per animal */}
         {!loadingAlerts && (
           <Card className={isolationAlerts.length > 0 ? "border-red-200 dark:border-red-900" : "border-green-200 dark:border-green-900"}>
             <CardHeader>
@@ -686,72 +696,81 @@ export default function LiveVitals() {
             <CardContent>
               {isolationAlerts.length > 0 ? (
                 <div className="grid gap-4 md:grid-cols-2">
-                  {isolationAlerts.map((alert) => (
+                  {/* Deduplicate: show only the latest alert per animal */}
+                  {Object.values(
+                    isolationAlerts.reduce((acc, alert) => {
+                      const key = alert.animalId?._id || alert._id;
+                      if (!acc[key] || new Date(alert.createdAt) > new Date(acc[key].createdAt)) {
+                        acc[key] = alert;
+                      }
+                      return acc;
+                    }, {})
+                  ).map((alert) => (
                     <Card key={alert._id} className="border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950/20">
-                      <CardContent className="pt-6">
-                        <div className="space-y-4">
+                      <CardContent className="pt-4 pb-3">
+                        <div className="space-y-2.5">
                           {/* Animal Info */}
-                          <div className="flex items-start justify-between">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-1">
-                                <h4 className="font-bold text-lg">{alert.animalId?.name || "Unknown Animal"}</h4>
-                                <Badge variant="outline" className="text-xs">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-1.5 mb-0.5">
+                                <h4 className="font-bold text-base truncate">{alert.animalId?.name || "Unknown Animal"}</h4>
+                                <Badge variant="outline" className="text-xs shrink-0">
                                   {alert.animalId?.species || "Unknown"}
                                 </Badge>
                               </div>
-                              <p className="text-sm text-muted-foreground font-mono">
+                              <p className="text-xs text-muted-foreground font-mono truncate">
                                 RFID: {alert.animalId?.rfid || "N/A"}
                               </p>
                             </div>
-                            <AlertTriangle className="h-8 w-8 text-red-500" />
+                            <AlertTriangle className="h-6 w-6 text-red-500 shrink-0 mt-0.5" />
                           </div>
 
                           {/* Alert Reason */}
-                          <div className="bg-background/50 rounded-lg p-3">
-                            <p className="text-sm font-medium text-red-700 dark:text-red-400">
+                          <div className="bg-background/50 rounded-lg p-2">
+                            <p className="text-xs font-medium text-red-700 dark:text-red-400 leading-tight">
                               {alert.message.replace('🚨 ', '')}
                             </p>
-                            <p className="text-xs text-muted-foreground mt-1">
-                              Alert raised on: {format(new Date(alert.createdAt), "PPp")}
+                            <p className="text-xs text-muted-foreground mt-0.5">
+                              {format(new Date(alert.createdAt), "MMM dd, yyyy p")}
                             </p>
                           </div>
 
                           {/* Current Vitals */}
                           {alert.latestVitals && (
-                            <div className="grid grid-cols-3 gap-2">
+                            <div className="grid grid-cols-3 gap-1.5">
                               {alert.latestVitals.temperature && (
-                                <div className="bg-background/50 rounded-lg p-2 text-center">
-                                  <Thermometer className={`h-4 w-4 mx-auto mb-1 ${
+                                <div className="bg-background/50 rounded-lg p-1.5 text-center">
+                                  <Thermometer className={`h-3.5 w-3.5 mx-auto mb-0.5 ${
                                     alert.latestVitals.temperature > 40 ? 'text-red-500' : 'text-orange-500'
                                   }`} />
-                                  <p className={`text-sm font-bold ${
+                                  <p className={`text-xs font-bold leading-tight ${
                                     alert.latestVitals.temperature > 40 ? 'text-red-600 dark:text-red-400' : ''
                                   }`}>
                                     {alert.latestVitals.temperature.toFixed(1)}°C
                                   </p>
-                                  <p className="text-xs text-muted-foreground">Temp (°C)</p>
+                                  <p className="text-xs text-muted-foreground">Temp</p>
                                 </div>
                               )}
                               {alert.latestVitals.heartRate && (
-                                <div className="bg-background/50 rounded-lg p-2 text-center">
-                                  <Heart className={`h-4 w-4 mx-auto mb-1 ${
+                                <div className="bg-background/50 rounded-lg p-1.5 text-center">
+                                  <Heart className={`h-3.5 w-3.5 mx-auto mb-0.5 ${
                                     alert.latestVitals.heartRate > 100 ? 'text-red-500' : 'text-pink-500'
                                   }`} />
-                                  <p className={`text-sm font-bold ${
+                                  <p className={`text-xs font-bold leading-tight ${
                                     alert.latestVitals.heartRate > 100 ? 'text-red-600 dark:text-red-400' : ''
                                   }`}>
-                                    {alert.latestVitals.heartRate} BPM
+                                    {alert.latestVitals.heartRate}BPM
                                   </p>
-                                  <p className="text-xs text-muted-foreground">Heartbeat</p>
+                                  <p className="text-xs text-muted-foreground">HR</p>
                                 </div>
                               )}
                               {alert.latestVitals.humidity && (
-                                <div className="bg-background/50 rounded-lg p-2 text-center">
-                                  <Droplets className="h-4 w-4 text-blue-500 mx-auto mb-1" />
-                                  <p className="text-sm font-bold">
+                                <div className="bg-background/50 rounded-lg p-1.5 text-center">
+                                  <Droplets className="h-3.5 w-3.5 text-blue-500 mx-auto mb-0.5" />
+                                  <p className="text-xs font-bold leading-tight">
                                     {alert.latestVitals.humidity.toFixed(1)}%
                                   </p>
-                                  <p className="text-xs text-muted-foreground">Moisture</p>
+                                  <p className="text-xs text-muted-foreground">Humid</p>
                                 </div>
                               )}
                             </div>
@@ -760,10 +779,10 @@ export default function LiveVitals() {
                           {/* Action Button */}
                           <Button 
                             onClick={() => resolveIsolationAlert(alert._id, alert.animalId?.name)}
-                            className="w-full bg-green-600 hover:bg-green-700 text-white"
+                            className="w-full bg-green-600 hover:bg-green-700 text-white text-sm h-9 py-2"
                           >
-                            <CheckCircle className="h-4 w-4 mr-2" />
-                            Done — Animal is Separated
+                            <CheckCircle className="h-3.5 w-3.5 mr-1.5" />
+                            Done — Separated
                           </Button>
                         </div>
                       </CardContent>

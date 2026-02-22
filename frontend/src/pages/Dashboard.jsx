@@ -164,6 +164,11 @@ export default function Dashboard() {
     return acc;
   }, {});
 
+  // Animal categories
+  const breedingAnimals = animals.filter(a => a.gender === 'female' && a.age >= 12); // Assuming breeding age is 12+ months
+  const lactatingAnimals = animals.filter(a => a.gender === 'female' && a.age >= 24); // Assuming lactating age is 24+ months
+  const seasonalAnimals = animals.filter(a => ['sheep', 'goat'].includes(a.species)); // Example seasonal animals
+
   // Farm markers for map
   const farmMarkers = farms
     .map((farm) => {
@@ -395,6 +400,72 @@ export default function Dashboard() {
                   No animals added yet
                 </span>
               )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Animal Categories */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <Card>
+          <CardContent className="p-4 flex items-center gap-4">
+            <div className="bg-pink-500/10 p-3 rounded-lg">
+              <Heart className="h-5 w-5 text-pink-500" />
+            </div>
+            <div>
+              <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">
+                BREEDING ANIMALS
+              </p>
+              <div className="flex items-baseline gap-2">
+                <p className="text-2xl font-semibold tracking-tight text-foreground">
+                  {breedingAnimals.length}
+                </p>
+                <p className="text-[10px] text-muted-foreground font-medium">
+                  Ready for breeding
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4 flex items-center gap-4">
+            <div className="bg-blue-500/10 p-3 rounded-lg">
+              <Activity className="h-5 w-5 text-blue-500" />
+            </div>
+            <div>
+              <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">
+                LACTATING ANIMALS
+              </p>
+              <div className="flex items-baseline gap-2">
+                <p className="text-2xl font-semibold tracking-tight text-foreground">
+                  {lactatingAnimals.length}
+                </p>
+                <p className="text-[10px] text-muted-foreground font-medium">
+                  Currently producing milk
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4 flex items-center gap-4">
+            <div className="bg-orange-500/10 p-3 rounded-lg">
+              <Sprout className="h-5 w-5 text-orange-500" />
+            </div>
+            <div>
+              <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">
+                SEASONAL ANIMALS
+              </p>
+              <div className="flex items-baseline gap-2">
+                <p className="text-2xl font-semibold tracking-tight text-foreground">
+                  {seasonalAnimals.length}
+                </p>
+                <p className="text-[10px] text-muted-foreground font-medium">
+                  Sheep & Goats
+                </p>
+              </div>
             </div>
           </CardContent>
         </Card>
