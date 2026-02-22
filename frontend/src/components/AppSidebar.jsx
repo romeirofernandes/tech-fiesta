@@ -72,6 +72,7 @@ const navGroups = [
       { title: "Disease AI", url: "/disease-detector", icon: Stethoscope },
       { title: "Alerts", url: "/alerts", icon: Bell },
       { title: "Emergency Help", url: "/emergency", icon: AlertCircle },
+      { title: "Production Tracking", url: "/bi/production", icon: Package },
     ],
   },
   {
