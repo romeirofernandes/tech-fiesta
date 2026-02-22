@@ -42,19 +42,16 @@ import { useUser } from "@/context/UserContext";
 import { format } from "date-fns";
 import { toast } from "sonner";
 
-// API Configuration - Now using Node.js backend
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000";
 
-// Time range options (in minutes)
 const TIME_RANGES = {
   "1h": { label: "Last 1 Hour", minutes: 60 },
   "6h": { label: "Last 6 Hours", minutes: 360 },
   "24h": { label: "Last 24 Hours", minutes: 1440 },
   "7d": { label: "Last 7 Days", minutes: 10080 },
-  "all": { label: "Show All", minutes: null },
+  all: { label: "Show All", minutes: null },
 };
 
-// Stat Card Component
 const StatCard = ({ title, value, unit, icon: Icon, color, trend }) => (
   <Card>
     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -66,14 +63,11 @@ const StatCard = ({ title, value, unit, icon: Icon, color, trend }) => (
         {value !== null && value !== undefined ? value : "--"}
         <span className="text-lg font-normal text-muted-foreground ml-1">{unit}</span>
       </div>
-      {trend && (
-        <p className="text-xs text-muted-foreground mt-1">{trend}</p>
-      )}
+      {trend && <p className="text-xs text-muted-foreground mt-1">{trend}</p>}
     </CardContent>
   </Card>
 );
 
-// Chart Component
 const VitalChart = ({ data, dataKey, title, color, unit, yDomain }) => (
   <Card className="col-span-1">
     <CardHeader className="pb-2">
@@ -94,7 +88,7 @@ const VitalChart = ({ data, dataKey, title, color, unit, yDomain }) => (
             <YAxis
               domain={yDomain || ["auto", "auto"]}
               tick={{ fontSize: 10 }}
-              tickFormatter={(value) => `${value}${unit}`}
+              tickFormatter={(chartValue) => `${chartValue}${unit}`}
             />
             <Tooltip />
             <Line
@@ -114,24 +108,14 @@ const VitalChart = ({ data, dataKey, title, color, unit, yDomain }) => (
   </Card>
 );
 
-// ─── Neckband Lifespan Estimator ────────────────────────────────────
-// ESP32 + DHT11 + MAX30102 wired neckband on livestock typically lasts
-// 8-14 months depending on conditions. Component-level estimates:
-//   - ESP32 board:      ~3 years (durable silicon, but humidity degrades PCB)
-//   - DHT11 sensor:     ~2 years (humidity sensor drift over time)
-//   - MAX30102 (PPG):   ~18 months (LED degradation, animal sweat corrosion)
-//   - Wiring/housing:   ~10 months (animal movement, rain, UV exposure)
-//   - Battery/power:    ~8 months (rechargeable LiPo under constant use)
-// Bottleneck is the physical housing + battery → overall ~10 months.
-
-const NECKBAND_LIFESPAN_DAYS = 300; // ~10 months
+const NECKBAND_LIFESPAN_DAYS = 300;
 
 const componentLifespans = [
-  { name: "ESP32 Board",        icon: Cpu,          totalDays: 1095, color: "text-emerald-500",  bgColor: "bg-emerald-500" },
-  { name: "DHT11 Sensor",       icon: Thermometer,  totalDays: 730,  color: "text-blue-500",    bgColor: "bg-blue-500" },
-  { name: "MAX30102 (Heart)",   icon: Heart,         totalDays: 540,  color: "text-pink-500",    bgColor: "bg-pink-500" },
-  { name: "Wiring & Housing",   icon: CircuitBoard,  totalDays: 300,  color: "text-orange-500",  bgColor: "bg-orange-500" },
-  { name: "Battery Module",     icon: Zap,           totalDays: 240,  color: "text-yellow-500",  bgColor: "bg-yellow-500" },
+  { name: "ESP32 Board", icon: Cpu, totalDays: 1095, color: "text-emerald-500", bgColor: "bg-emerald-500" },
+  { name: "DHT11 Sensor", icon: Thermometer, totalDays: 730, color: "text-blue-500", bgColor: "bg-blue-500" },
+  { name: "MAX30102 (Heart)", icon: Heart, totalDays: 540, color: "text-pink-500", bgColor: "bg-pink-500" },
+  { name: "Wiring & Housing", icon: CircuitBoard, totalDays: 300, color: "text-orange-500", bgColor: "bg-orange-500" },
+  { name: "Battery Module", icon: Zap, totalDays: 240, color: "text-yellow-500", bgColor: "bg-yellow-500" },
 ];
 
 function getLifespanStatus(daysRemaining, totalDays) {
@@ -143,17 +127,16 @@ function getLifespanStatus(daysRemaining, totalDays) {
 }
 
 const NeckbandLifespan = ({ animals }) => {
-  // Use the earliest animal createdAt as the neckband install date
   const installDate = useMemo(() => {
     if (!animals || animals.length === 0) return null;
-    // Find any animal that has a createdAt
-    const withDates = animals.filter(a => a.createdAt);
-    if (withDates.length === 0) return new Date(Date.now() - 90 * 24 * 60 * 60 * 1000); // fallback: 90 days ago
-    const earliest = withDates.reduce((min, a) => {
-      const d = new Date(a.createdAt);
-      return d < min ? d : min;
+
+    const withDates = animals.filter((animal) => animal.createdAt);
+    if (withDates.length === 0) return new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
+
+    return withDates.reduce((minDate, animal) => {
+      const currentDate = new Date(animal.createdAt);
+      return currentDate < minDate ? currentDate : minDate;
     }, new Date());
-    return earliest;
   }, [animals]);
 
   if (!installDate) return null;
@@ -182,7 +165,6 @@ const NeckbandLifespan = ({ animals }) => {
         </div>
       </CardHeader>
       <CardContent>
-        {/* Overall progress */}
         <div className="mb-6">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-medium">Overall Neckband Health</span>
@@ -193,24 +175,17 @@ const NeckbandLifespan = ({ animals }) => {
           <div className="h-3 bg-muted rounded-full overflow-hidden">
             <div
               className={`h-full rounded-full transition-all duration-500 ${
-                overallPct > 60 ? 'bg-green-500' :
-                overallPct > 30 ? 'bg-yellow-500' :
-                overallPct > 10 ? 'bg-orange-500' : 'bg-red-500'
+                overallPct > 60 ? "bg-green-500" : overallPct > 30 ? "bg-yellow-500" : overallPct > 10 ? "bg-orange-500" : "bg-red-500"
               }`}
               style={{ width: `${overallPct}%` }}
             />
           </div>
           <div className="flex justify-between mt-1">
-            <span className="text-xs text-muted-foreground">
-              Installed: {format(installDate, "dd MMM yyyy")}
-            </span>
-            <span className="text-xs text-muted-foreground">
-              {daysSinceInstall} days in use
-            </span>
+            <span className="text-xs text-muted-foreground">Installed: {format(installDate, "dd MMM yyyy")}</span>
+            <span className="text-xs text-muted-foreground">{daysSinceInstall} days in use</span>
           </div>
         </div>
 
-        {/* Component breakdown */}
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
           {componentLifespans.map((comp) => {
             const remaining = Math.max(0, comp.totalDays - daysSinceInstall);
@@ -246,208 +221,41 @@ const NeckbandLifespan = ({ animals }) => {
   );
 };
 
-export default function LiveVitals() {
-  // State
-  const [animals, setAnimals] = useState([]);
-  const [selectedAnimal, setSelectedAnimal] = useState("all");
-  const [timeRange, setTimeRange] = useState(() => {
-    return localStorage.getItem("liveVitalsTimeRange") || "1h";
-  });
-  const [timeSinceData, setTimeSinceData] = useState("");
-  const [isolationAlerts, setIsolationAlerts] = useState([]);
-  const [loadingAlerts, setLoadingAlerts] = useState(false);
+const ConnectionStatus = ({ status, iotStatus, lastUpdated, timeSinceData }) => (
+  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+    <div className="flex items-center gap-2">
+      <span className="text-xs text-muted-foreground font-medium">Server:</span>
+      {status === "connected" ? (
+        <>
+          <Wifi className="h-4 w-4 text-green-500" />
+          <Badge variant="outline" className="bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-400">
+            Online
+          </Badge>
+        </>
+      ) : status === "polling" ? (
+        <>
+          <RefreshCw className="h-4 w-4 text-blue-500 animate-spin" />
+          <Badge variant="outline" className="bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-400">
+            Getting data...
+          </Badge>
+        </>
+      ) : status === "error" ? (
+        <>
+          <WifiOff className="h-4 w-4 text-red-500" />
+          <Badge variant="outline" className="bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-400">
+            Not working
+          </Badge>
+        </>
+      ) : (
+        <>
+          <RefreshCw className="h-4 w-4 text-yellow-500" />
+          <Badge variant="outline" className="bg-yellow-50 text-yellow-700 dark:bg-yellow-950 dark:text-yellow-400">
+            Starting up...
+          </Badge>
+        </>
+      )}
+    </div>
 
-  // Save timeRange to local storage whenever it changes
-  useEffect(() => {
-    localStorage.setItem("liveVitalsTimeRange", timeRange);
-  }, [timeRange]);
-
-  // Long polling for IoT sensor data — no RFID filter, always show latest
-  const { 
-    data: pollingData, 
-    latestReading: polledLatestReading, 
-    status, 
-    iotStatus,
-    lastUpdated,
-    refetch 
-  } = useIotPolling(API_BASE, {
-    pollInterval: 1000, // Poll every 1 second for snappier updates
-    rfid: null,         // No filter — show all readings from the device
-    limit: 500,
-    enabled: true,
-    onNewData: (newData) => {
-      if (newData.length > 0) console.log(`Received ${newData.length} new readings`);
-    }
-  });
-
-  // Transform polling data for charts (filter by time range)
-  const historicalData = useMemo(() => {
-    if (!pollingData || pollingData.length === 0) return [];
-    
-    return pollingData
-      .filter((reading) => {
-        if (timeRange === "all") return true;
-        const cutoffTime = Date.now() - TIME_RANGES[timeRange].minutes * 60 * 1000;
-        return new Date(reading.timestamp).getTime() > cutoffTime;
-      })
-      .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp)) // Sort chronologically (oldest to newest)
-      .map((reading) => ({
-        time: format(
-          new Date(reading.timestamp),
-          timeRange === "7d" || timeRange === "all" ? "MM/dd HH:mm" : "HH:mm:ss"
-        ),
-        timestamp: new Date(reading.timestamp).getTime(),
-        temperature: reading.temperature != null ? parseFloat(reading.temperature) : 0,
-        humidity: reading.humidity != null ? parseFloat(reading.humidity) : 0,
-        heart_rate: reading.heartRate ?? reading.heart_rate ?? 0,
-      }));
-  }, [pollingData, timeRange]);
-
-  // Get latest reading where none of the vitals are null
-  const latestReading = useMemo(() => {
-    if (!pollingData || pollingData.length === 0) return null;
-    // pollingData is sorted newest-first; find the first entry with all three non-null
-    const found = pollingData.find(
-      (r) =>
-        r.temperature != null &&
-        r.humidity != null &&
-        (r.heartRate != null || r.heart_rate != null)
-    );
-    if (!found) return null;
-    return {
-      ...found,
-      heart_rate: found.heartRate ?? found.heart_rate,
-    };
-  }, [pollingData]);
-
-  // Update "time ago" display every second
-  useEffect(() => {
-    if (!lastUpdated) {
-      setTimeSinceData("");
-      return;
-    }
-
-    const updateTime = () => {
-      const seconds = Math.floor((Date.now() - lastUpdated) / 1000);
-      if (seconds < 60) {
-        setTimeSinceData(`${seconds}s ago`);
-      } else if (seconds < 3600) {
-        setTimeSinceData(`${Math.floor(seconds / 60)}m ago`);
-      } else {
-        setTimeSinceData(`${Math.floor(seconds / 3600)}h ago`);
-      }
-    };
-
-    updateTime();
-    const interval = setInterval(updateTime, 1000);
-    return () => clearInterval(interval);
-  }, [lastUpdated]);
-
-  // Fetch animals list (dropdown only — does not affect sensor data)
-  useEffect(() => {
-    const fetchAnimals = async () => {
-      try {
-        const response = await fetch(`${API_BASE}/api/animals`);
-        if (response.ok) {
-          const data = await response.json();
-          setAnimals(data.map(a => ({ id: a._id, name: a.name, species: a.species, rfid: a.rfid, createdAt: a.createdAt })));
-        }
-      } catch (error) {
-        console.error("Failed to fetch animals:", error);
-      }
-    };
-    fetchAnimals();
-  }, []);
-
-  // Fetch isolation alerts periodically
-  useEffect(() => {
-    const fetchIsolationAlerts = async () => {
-      try {
-        setLoadingAlerts(true);
-        const response = await fetch(`${API_BASE}/api/iot/isolation-alerts`);
-        if (response.ok) {
-          const data = await response.json();
-          setIsolationAlerts(data);
-        }
-      } catch (error) {
-        console.error("Failed to fetch isolation alerts:", error);
-      } finally {
-        setLoadingAlerts(false);
-      }
-    };
-
-    fetchIsolationAlerts();
-    // Poll every 10 seconds for new isolation alerts
-    const interval = setInterval(fetchIsolationAlerts, 10000);
-    return () => clearInterval(interval);
-  }, []);
-
-  // Handle isolation alert resolution
-  const resolveIsolationAlert = async (alertId, animalName) => {
-    try {
-      const response = await fetch(`${API_BASE}/api/iot/isolation-alerts/${alertId}/resolve`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          resolvedBy: 'farmer',
-          resolutionNotes: `${animalName} has been isolated`
-        })
-      });
-
-      if (response.ok) {
-        toast.success(`${animalName} has been separated from the herd`);
-        // Remove from local state
-        setIsolationAlerts(prev => prev.filter(alert => alert._id !== alertId));
-      } else {
-        toast.error("Something went wrong. Please try again.");
-      }
-    } catch (error) {
-      console.error("Failed to resolve isolation alert:", error);
-      toast.error("Something went wrong. Please try again.");
-    }
-  };
-
-  // Loading state derived from polling status
-  const loading = status === 'idle' || (status === 'polling' && historicalData.length === 0);
-
-  // Connection status indicator
-  const ConnectionStatus = () => (
-    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-      {/* Polling Status */}
-      <div className="flex items-center gap-2">
-        <span className="text-xs text-muted-foreground font-medium">Server:</span>
-        {status === "connected" ? (
-          <>
-            <Wifi className="h-4 w-4 text-green-500" />
-            <Badge variant="outline" className="bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-400">
-              Online
-            </Badge>
-          </>
-        ) : status === "polling" ? (
-          <>
-            <RefreshCw className="h-4 w-4 text-blue-500 animate-spin" />
-            <Badge variant="outline" className="bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-400">
-              Getting data...
-            </Badge>
-          </>
-        ) : status === "error" ? (
-          <>
-            <WifiOff className="h-4 w-4 text-red-500" />
-            <Badge variant="outline" className="bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-400">
-              Not working
-            </Badge>
-          </>
-        ) : (
-          <>
-            <RefreshCw className="h-4 w-4 text-yellow-500" />
-            <Badge variant="outline" className="bg-yellow-50 text-yellow-700 dark:bg-yellow-950 dark:text-yellow-400">
-              Starting up...
-            </Badge>
-          </>
-        )}
-      </div>
-
-    {/* IoT Device Status */}
     <div className="flex items-center gap-2">
       <span className="text-xs text-muted-foreground font-medium">Sensor Device:</span>
       {iotStatus === "connected" ? (
@@ -474,7 +282,6 @@ export default function LiveVitals() {
       )}
     </div>
 
-    {/* IoT Data Status */}
     <div className="flex items-center gap-2">
       <span className="text-xs text-muted-foreground font-medium">Last Reading:</span>
       {lastUpdated ? (
@@ -498,48 +305,40 @@ export default function LiveVitals() {
 
 export default function LiveVitals() {
   const { mongoUser } = useUser();
-  // State
   const [animals, setAnimals] = useState([]);
   const [selectedAnimal, setSelectedAnimal] = useState("all");
-  const [timeRange, setTimeRange] = useState(() => {
-    return localStorage.getItem("liveVitalsTimeRange") || "1h";
-  });
+  const [timeRange, setTimeRange] = useState(() => localStorage.getItem("liveVitalsTimeRange") || "1h");
   const [timeSinceData, setTimeSinceData] = useState("");
   const [isolationAlerts, setIsolationAlerts] = useState([]);
   const [loadingAlerts, setLoadingAlerts] = useState(false);
   const [alertsLoadedOnce, setAlertsLoadedOnce] = useState(false);
 
-  // Save timeRange to local storage whenever it changes
   useEffect(() => {
     localStorage.setItem("liveVitalsTimeRange", timeRange);
   }, [timeRange]);
 
-  // Long polling for IoT sensor data — no RFID filter, always show latest
-  const { 
-    data: pollingData, 
-    latestReading: polledLatestReading, 
-    status, 
+  const {
+    data: pollingData,
+    latestReading: polledLatestReading,
+    status,
     iotStatus,
     lastUpdated,
-    refetch 
   } = useIotPolling(API_BASE, {
-    pollInterval: 1000, // Poll every 1 second for snappier updates
-    rfid: null,         // No filter — show all readings from the device
-    // Match AnimalDetail data path exactly: no farmerId filter
+    pollInterval: 1000,
+    rfid: null,
     farmerId: null,
     limit: 60,
     enabled: true,
     onNewData: (newData) => {
       if (newData.length > 0) console.log(`Received ${newData.length} new readings`);
-    }
+    },
   });
 
-  // Normalize polling data for charts
   const normalizedData = useMemo(() => {
     if (!pollingData || pollingData.length === 0) return [];
 
     return pollingData
-      .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp)) // Sort chronologically (oldest to newest)
+      .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp))
       .map((reading) => ({
         time: format(
           new Date(reading.timestamp),
@@ -552,7 +351,6 @@ export default function LiveVitals() {
       }));
   }, [pollingData, timeRange]);
 
-  // Time-range filtered data
   const historicalData = useMemo(() => {
     if (!normalizedData || normalizedData.length === 0) return [];
 
@@ -563,7 +361,6 @@ export default function LiveVitals() {
     });
   }, [normalizedData, timeRange]);
 
-  // Get latest reading with normalized field names
   const latestReading = useMemo(() => {
     if (!polledLatestReading) return null;
     return {
@@ -572,7 +369,6 @@ export default function LiveVitals() {
     };
   }, [polledLatestReading]);
 
-  // Update "time ago" display every second
   useEffect(() => {
     if (!lastUpdated) {
       setTimeSinceData("");
@@ -595,7 +391,6 @@ export default function LiveVitals() {
     return () => clearInterval(interval);
   }, [lastUpdated]);
 
-  // Fetch animals list (dropdown only — does not affect sensor data)
   useEffect(() => {
     const fetchAnimals = async () => {
       if (!mongoUser) return;
@@ -603,16 +398,26 @@ export default function LiveVitals() {
         const response = await fetch(`${API_BASE}/api/animals?farmerId=${mongoUser._id}`);
         if (response.ok) {
           const data = await response.json();
-          setAnimals(data.map(a => ({ id: a._id, name: a.name, species: a.species, rfid: a.rfid, gender: a.gender, createdAt: a.createdAt, reproductiveStatus: a.reproductiveStatus || 'none' })));
+          setAnimals(
+            data.map((animal) => ({
+              id: animal._id,
+              name: animal.name,
+              species: animal.species,
+              rfid: animal.rfid,
+              gender: animal.gender,
+              createdAt: animal.createdAt,
+              reproductiveStatus: animal.reproductiveStatus || "none",
+            }))
+          );
         }
       } catch (error) {
         console.error("Failed to fetch animals:", error);
       }
     };
+
     fetchAnimals();
   }, [mongoUser, alertsLoadedOnce]);
 
-  // Fetch isolation alerts periodically
   useEffect(() => {
     const fetchIsolationAlerts = async () => {
       if (!mongoUser) return;
@@ -632,27 +437,24 @@ export default function LiveVitals() {
     };
 
     fetchIsolationAlerts();
-    // Poll every 10 seconds for new isolation alerts
     const interval = setInterval(fetchIsolationAlerts, 10000);
     return () => clearInterval(interval);
-  }, [mongoUser]);
+  }, [mongoUser, alertsLoadedOnce]);
 
-  // Handle isolation alert resolution
   const resolveIsolationAlert = async (alertId, animalName) => {
     try {
       const response = await fetch(`${API_BASE}/api/iot/isolation-alerts/${alertId}/resolve`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          resolvedBy: 'farmer',
-          resolutionNotes: `${animalName} has been isolated`
-        })
+          resolvedBy: "farmer",
+          resolutionNotes: `${animalName} has been isolated`,
+        }),
       });
 
       if (response.ok) {
         toast.success(`${animalName} has been separated from the herd`);
-        // Remove from local state
-        setIsolationAlerts(prev => prev.filter(alert => alert._id !== alertId));
+        setIsolationAlerts((prev) => prev.filter((alert) => alert._id !== alertId));
       } else {
         toast.error("Something went wrong. Please try again.");
       }
@@ -662,32 +464,30 @@ export default function LiveVitals() {
     }
   };
 
-  // Use selected time range, but if it has no points and we still have historical points,
-  // show all points so data remains visible.
   const chartData = useMemo(() => {
     if (historicalData.length > 0) return historicalData;
     return normalizedData;
   }, [historicalData, normalizedData]);
 
-  const uniqueIsolationAlerts = useMemo(() => {
-    return Object.values(
-      isolationAlerts.reduce((acc, alert) => {
-        const key = alert.animalId?._id || alert._id;
-        if (!acc[key] || new Date(alert.createdAt) > new Date(acc[key].createdAt)) {
-          acc[key] = alert;
-        }
-        return acc;
-      }, {})
-    );
-  }, [isolationAlerts]);
+  const uniqueIsolationAlerts = useMemo(
+    () =>
+      Object.values(
+        isolationAlerts.reduce((acc, alert) => {
+          const key = alert.animalId?._id || alert._id;
+          if (!acc[key] || new Date(alert.createdAt) > new Date(acc[key].createdAt)) {
+            acc[key] = alert;
+          }
+          return acc;
+        }, {})
+      ),
+    [isolationAlerts]
+  );
 
-  // Loading state: only show skeleton during true first load
-  const loading = !lastUpdated && status === 'polling' && chartData.length === 0;
+  const loading = !lastUpdated && status === "polling" && chartData.length === 0;
 
   return (
     <Layout>
       <div className="space-y-6 max-w-full px-6 mx-auto p-4 md:p-6 lg:p-8">
-        {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
             <h1 className="text-3xl font-bold flex items-center gap-3">
@@ -703,9 +503,7 @@ export default function LiveVitals() {
           />
         </div>
 
-        {/* Controls */}
         <div className="flex flex-col sm:flex-row gap-4">
-          {/* Animal Selector — for reference only, does not filter live data */}
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium">Animal:</span>
             <Select value={selectedAnimal} onValueChange={setSelectedAnimal}>
@@ -728,7 +526,6 @@ export default function LiveVitals() {
             </Select>
           </div>
 
-          {/* Time Range Selector */}
           <Tabs value={timeRange} onValueChange={setTimeRange}>
             <TabsList>
               {Object.entries(TIME_RANGES).map(([key, { label }]) => (
@@ -740,7 +537,6 @@ export default function LiveVitals() {
           </Tabs>
         </div>
 
-        {/* Last reading timestamp */}
         {latestReading && (
           <Card className="bg-muted/50">
             <CardContent className="pt-4">
@@ -752,7 +548,6 @@ export default function LiveVitals() {
           </Card>
         )}
 
-        {/* Stat Cards */}
         <div className="grid gap-4 md:grid-cols-3">
           <StatCard
             title="Body Temperature"
@@ -760,7 +555,7 @@ export default function LiveVitals() {
             unit="°C"
             icon={Thermometer}
             color="text-orange-500"
-            trend={latestReading ? `Updates every 1 second` : null}
+            trend={latestReading ? "Updates every 1 second" : null}
           />
           <StatCard
             title="Moisture in Air"
@@ -768,7 +563,7 @@ export default function LiveVitals() {
             unit="%"
             icon={Droplets}
             color="text-blue-500"
-            trend={latestReading ? `Updates every 1 second` : null}
+            trend={latestReading ? "Updates every 1 second" : null}
           />
           <StatCard
             title="Heartbeat"
@@ -776,14 +571,12 @@ export default function LiveVitals() {
             unit="BPM"
             icon={Heart}
             color="text-red-500"
-            trend={latestReading ? `Updates every 1 second` : null}
+            trend={latestReading ? "Updates every 1 second" : null}
           />
         </div>
 
-        {/* Neckband Lifespan Tracker */}
         {animals.length > 0 && <NeckbandLifespan animals={animals} />}
 
-        {/* Charts */}
         {loading ? (
           <div className="grid gap-4 md:grid-cols-3">
             {[1, 2, 3].map((i) => (
@@ -792,30 +585,9 @@ export default function LiveVitals() {
           </div>
         ) : chartData.length > 0 ? (
           <div className="grid gap-4 md:grid-cols-3">
-            <VitalChart
-              data={chartData}
-              dataKey="temperature"
-              title="Body Temperature"
-              color="hsl(24, 95%, 53%)"
-              unit="°C"
-              yDomain={[20, 45]}
-            />
-            <VitalChart
-              data={chartData}
-              dataKey="humidity"
-              title="Moisture in Air"
-              color="hsl(210, 100%, 50%)"
-              unit="%"
-              yDomain={[0, 100]}
-            />
-            <VitalChart
-              data={chartData}
-              dataKey="heart_rate"
-              title="Heartbeat"
-              color="hsl(0, 84%, 60%)"
-              unit=" BPM"
-              yDomain={[40, 120]}
-            />
+            <VitalChart data={chartData} dataKey="temperature" title="Body Temperature" color="hsl(24, 95%, 53%)" unit="°C" yDomain={[20, 45]} />
+            <VitalChart data={chartData} dataKey="humidity" title="Moisture in Air" color="hsl(210, 100%, 50%)" unit="%" yDomain={[0, 100]} />
+            <VitalChart data={chartData} dataKey="heart_rate" title="Heartbeat" color="hsl(0, 84%, 60%)" unit=" BPM" yDomain={[40, 120]} />
           </div>
         ) : (
           <Card className="p-12 text-center">
@@ -827,132 +599,112 @@ export default function LiveVitals() {
           </Card>
         )}
 
-        {/* Animals to be Isolated Section — deduplicated per animal */}
         <Card className={uniqueIsolationAlerts.length > 0 ? "border-red-200 dark:border-red-900" : "border-green-200 dark:border-green-900"}>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <ShieldAlert className={`h-6 w-6 ${uniqueIsolationAlerts.length > 0 ? 'text-red-500' : 'text-green-500'}`} />
-                  <div>
-                    <CardTitle className="text-xl">Sick Animals — Keep Separate</CardTitle>
-                    <CardDescription>
-                      {uniqueIsolationAlerts.length > 0 
-                        ? "These animals are not feeling well. Keep them away from the herd so others don't get sick."
-                        : "Checked sensor readings — all animals look healthy right now."}
-                    </CardDescription>
-                  </div>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <ShieldAlert className={`h-6 w-6 ${uniqueIsolationAlerts.length > 0 ? "text-red-500" : "text-green-500"}`} />
+                <div>
+                  <CardTitle className="text-xl">Sick Animals — Keep Separate</CardTitle>
+                  <CardDescription>
+                    {uniqueIsolationAlerts.length > 0
+                      ? "These animals are not feeling well. Keep them away from the herd so others don't get sick."
+                      : "Checked sensor readings — all animals look healthy right now."}
+                  </CardDescription>
                 </div>
-                {uniqueIsolationAlerts.length > 0 && (
-                  <Badge variant="destructive" className="text-lg px-4 py-2">
-                    {uniqueIsolationAlerts.length}
-                  </Badge>
-                )}
               </div>
-            </CardHeader>
-            <CardContent>
-              {loadingAlerts && !alertsLoadedOnce ? (
-                <div className="text-sm text-muted-foreground">Loading alerts...</div>
-              ) : uniqueIsolationAlerts.length > 0 ? (
-                <div className="grid gap-4 md:grid-cols-2">
-                  {uniqueIsolationAlerts.map((alert) => (
-                    <Card key={alert._id} className="border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950/20">
-                      <CardContent className="pt-4 pb-3">
-                        <div className="space-y-2.5">
-                          {/* Animal Info */}
-                          <div className="flex items-start justify-between gap-2">
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-1.5 mb-0.5">
-                                <h4 className="font-bold text-base truncate">{alert.animalId?.name || "Unknown Animal"}</h4>
-                                <Badge variant="outline" className="text-xs shrink-0">
-                                  {alert.animalId?.species || "Unknown"}
-                                </Badge>
-                              </div>
-                              <p className="text-xs text-muted-foreground font-mono truncate">
-                                RFID: {alert.animalId?.rfid || "N/A"}
-                              </p>
-                            </div>
-                            <AlertTriangle className="h-6 w-6 text-red-500 shrink-0 mt-0.5" />
-                          </div>
-
-                          {/* Alert Reason */}
-                          <div className="bg-background/50 rounded-lg p-2">
-                            <p className="text-xs font-medium text-red-700 dark:text-red-400 leading-tight">
-                              {alert.message.replace('🚨 ', '')}
-                            </p>
-                            <p className="text-xs text-muted-foreground mt-0.5">
-                              {format(new Date(alert.createdAt), "MMM dd, yyyy p")}
-                            </p>
-                          </div>
-
-                          {/* Current Vitals */}
-                          {alert.latestVitals && (
-                            <div className="grid grid-cols-3 gap-1.5">
-                              {alert.latestVitals.temperature && (
-                                <div className="bg-background/50 rounded-lg p-1.5 text-center">
-                                  <Thermometer className={`h-3.5 w-3.5 mx-auto mb-0.5 ${
-                                    alert.latestVitals.temperature > 40 ? 'text-red-500' : 'text-orange-500'
-                                  }`} />
-                                  <p className={`text-xs font-bold leading-tight ${
-                                    alert.latestVitals.temperature > 40 ? 'text-red-600 dark:text-red-400' : ''
-                                  }`}>
-                                    {alert.latestVitals.temperature.toFixed(1)}°C
-                                  </p>
-                                  <p className="text-xs text-muted-foreground">Temp</p>
-                                </div>
-                              )}
-                              {alert.latestVitals.heartRate && (
-                                <div className="bg-background/50 rounded-lg p-1.5 text-center">
-                                  <Heart className={`h-3.5 w-3.5 mx-auto mb-0.5 ${
-                                    alert.latestVitals.heartRate > 100 ? 'text-red-500' : 'text-pink-500'
-                                  }`} />
-                                  <p className={`text-xs font-bold leading-tight ${
-                                    alert.latestVitals.heartRate > 100 ? 'text-red-600 dark:text-red-400' : ''
-                                  }`}>
-                                    {alert.latestVitals.heartRate}BPM
-                                  </p>
-                                  <p className="text-xs text-muted-foreground">HR</p>
-                                </div>
-                              )}
-                              {alert.latestVitals.humidity && (
-                                <div className="bg-background/50 rounded-lg p-1.5 text-center">
-                                  <Droplets className="h-3.5 w-3.5 text-blue-500 mx-auto mb-0.5" />
-                                  <p className="text-xs font-bold leading-tight">
-                                    {alert.latestVitals.humidity.toFixed(1)}%
-                                  </p>
-                                  <p className="text-xs text-muted-foreground">Humid</p>
-                                </div>
-                              )}
-                            </div>
-                          )}
-
-                          {/* Action Button */}
-                          <Button 
-                            onClick={() => resolveIsolationAlert(alert._id, alert.animalId?.name)}
-                            className="w-full bg-green-600 hover:bg-green-700 text-white text-sm h-9 py-2"
-                          >
-                            <CheckCircle className="h-3.5 w-3.5 mr-1.5" />
-                            Done — Separated
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-12">
-                  <CheckCircle className="h-16 w-16 mx-auto text-green-500 mb-4" />
-                  <h3 className="text-lg font-semibold text-green-700 dark:text-green-400 mb-2">
-                    All Animals are Healthy!
-                  </h3>
-                  <p className="text-muted-foreground">
-                    No animal needs to be separated right now. Keep it up!
-                  </p>
-                </div>
+              {uniqueIsolationAlerts.length > 0 && (
+                <Badge variant="destructive" className="text-lg px-4 py-2">
+                  {uniqueIsolationAlerts.length}
+                </Badge>
               )}
-            </CardContent>
-          </Card>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {loadingAlerts && !alertsLoadedOnce ? (
+              <div className="text-sm text-muted-foreground">Loading alerts...</div>
+            ) : uniqueIsolationAlerts.length > 0 ? (
+              <div className="grid gap-4 md:grid-cols-2">
+                {uniqueIsolationAlerts.map((alert) => (
+                  <Card key={alert._id} className="border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950/20">
+                    <CardContent className="pt-4 pb-3">
+                      <div className="space-y-2.5">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-1.5 mb-0.5">
+                              <h4 className="font-bold text-base truncate">{alert.animalId?.name || "Unknown Animal"}</h4>
+                              <Badge variant="outline" className="text-xs shrink-0">
+                                {alert.animalId?.species || "Unknown"}
+                              </Badge>
+                            </div>
+                            <p className="text-xs text-muted-foreground font-mono truncate">RFID: {alert.animalId?.rfid || "N/A"}</p>
+                          </div>
+                          <AlertTriangle className="h-6 w-6 text-red-500 shrink-0 mt-0.5" />
+                        </div>
 
-        {/* Data Summary */}
+                        <div className="bg-background/50 rounded-lg p-2">
+                          <p className="text-xs font-medium text-red-700 dark:text-red-400 leading-tight">
+                            {alert.message.replace("🚨 ", "")}
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-0.5">{format(new Date(alert.createdAt), "MMM dd, yyyy p")}</p>
+                        </div>
+
+                        {alert.latestVitals && (
+                          <div className="grid grid-cols-3 gap-1.5">
+                            {alert.latestVitals.temperature && (
+                              <div className="bg-background/50 rounded-lg p-1.5 text-center">
+                                <Thermometer className={`h-3.5 w-3.5 mx-auto mb-0.5 ${
+                                  alert.latestVitals.temperature > 40 ? "text-red-500" : "text-orange-500"
+                                }`} />
+                                <p className={`text-xs font-bold leading-tight ${alert.latestVitals.temperature > 40 ? "text-red-600 dark:text-red-400" : ""}`}>
+                                  {alert.latestVitals.temperature.toFixed(1)}°C
+                                </p>
+                                <p className="text-xs text-muted-foreground">Temp</p>
+                              </div>
+                            )}
+                            {alert.latestVitals.heartRate && (
+                              <div className="bg-background/50 rounded-lg p-1.5 text-center">
+                                <Heart className={`h-3.5 w-3.5 mx-auto mb-0.5 ${
+                                  alert.latestVitals.heartRate > 100 ? "text-red-500" : "text-pink-500"
+                                }`} />
+                                <p className={`text-xs font-bold leading-tight ${alert.latestVitals.heartRate > 100 ? "text-red-600 dark:text-red-400" : ""}`}>
+                                  {alert.latestVitals.heartRate}BPM
+                                </p>
+                                <p className="text-xs text-muted-foreground">HR</p>
+                              </div>
+                            )}
+                            {alert.latestVitals.humidity && (
+                              <div className="bg-background/50 rounded-lg p-1.5 text-center">
+                                <Droplets className="h-3.5 w-3.5 text-blue-500 mx-auto mb-0.5" />
+                                <p className="text-xs font-bold leading-tight">{alert.latestVitals.humidity.toFixed(1)}%</p>
+                                <p className="text-xs text-muted-foreground">Humid</p>
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        <Button
+                          onClick={() => resolveIsolationAlert(alert._id, alert.animalId?.name)}
+                          className="w-full bg-green-600 hover:bg-green-700 text-white text-sm h-9 py-2"
+                        >
+                          <CheckCircle className="h-3.5 w-3.5 mr-1.5" />
+                          Done — Separated
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <CheckCircle className="h-16 w-16 mx-auto text-green-500 mb-4" />
+                <h3 className="text-lg font-semibold text-green-700 dark:text-green-400 mb-2">All Animals are Healthy!</h3>
+                <p className="text-muted-foreground">No animal needs to be separated right now. Keep it up!</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
         {chartData.length > 0 && (
           <Card>
             <CardHeader>
@@ -967,22 +719,23 @@ export default function LiveVitals() {
                 <div>
                   <span className="text-sm text-muted-foreground">Avg Body Temp</span>
                   <p className="text-2xl font-bold">
-                    {(chartData.reduce((sum, d) => sum + (d.temperature || 0), 0) / 
-                      chartData.filter(d => d.temperature).length).toFixed(1)}°C
+                    {(chartData.reduce((sum, item) => sum + (item.temperature || 0), 0) / chartData.filter((item) => item.temperature).length).toFixed(1)}°C
                   </p>
                 </div>
                 <div>
                   <span className="text-sm text-muted-foreground">Avg Moisture</span>
                   <p className="text-2xl font-bold">
-                    {(chartData.reduce((sum, d) => sum + (d.humidity || 0), 0) / 
-                      chartData.filter(d => d.humidity).length).toFixed(1)}%
+                    {(chartData.reduce((sum, item) => sum + (item.humidity || 0), 0) / chartData.filter((item) => item.humidity).length).toFixed(1)}%
                   </p>
                 </div>
                 <div>
                   <span className="text-sm text-muted-foreground">Avg Heartbeat</span>
                   <p className="text-2xl font-bold">
-                    {Math.round(chartData.reduce((sum, d) => sum + (d.heart_rate || 0), 0) / 
-                      chartData.filter(d => d.heart_rate).length)} BPM
+                    {Math.round(
+                      chartData.reduce((sum, item) => sum + (item.heart_rate || 0), 0) /
+                        chartData.filter((item) => item.heart_rate).length
+                    )}{" "}
+                    BPM
                   </p>
                 </div>
               </div>
