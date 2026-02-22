@@ -19,7 +19,6 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  Legend,
 } from "recharts";
 import {
   Activity,
@@ -55,26 +54,6 @@ const TIME_RANGES = {
   "all": { label: "Show All", minutes: null },
 };
 
-// Custom tooltip for charts
-const CustomTooltip = ({ active, payload, label, timeRange }) => {
-  if (active && payload && payload.length) {
-    const formattedLabel = typeof label === 'number' 
-      ? format(new Date(label), timeRange === '7d' || timeRange === 'all' ? 'MM/dd HH:mm:ss' : 'HH:mm:ss')
-      : label;
-    return (
-      <div className="bg-background border rounded-lg shadow-lg p-3">
-        <p className="text-sm text-muted-foreground">{formattedLabel}</p>
-        {payload.map((entry, index) => (
-          <p key={index} className="text-sm font-medium" style={{ color: entry.color }}>
-            {entry.name}: {entry.value?.toFixed(1)} {entry.unit || ""}
-          </p>
-        ))}
-      </div>
-    );
-  }
-  return null;
-};
-
 // Stat Card Component
 const StatCard = ({ title, value, unit, icon: Icon, color, trend }) => (
   <Card>
@@ -95,35 +74,29 @@ const StatCard = ({ title, value, unit, icon: Icon, color, trend }) => (
 );
 
 // Chart Component
-const VitalChart = ({ data, dataKey, title, color, unit, yDomain, timeRange }) => (
+const VitalChart = ({ data, dataKey, title, color, unit, yDomain }) => (
   <Card className="col-span-1">
     <CardHeader className="pb-2">
-      <CardTitle className="text-lg">{title}</CardTitle>
+      <CardTitle className="text-sm">{title}</CardTitle>
       <CardDescription>Live readings from the sensor</CardDescription>
     </CardHeader>
     <CardContent>
-      <div className="h-62.5">
+      <div className="h-48">
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={data} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
+          <LineChart data={data} margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
             <XAxis
               dataKey="time"
-              tick={{ fontSize: 11 }}
+              tick={{ fontSize: 10 }}
               tickLine={false}
-              axisLine={false}
-              className="text-muted-foreground"
               interval="preserveStartEnd"
             />
             <YAxis
               domain={yDomain || ["auto", "auto"]}
-              tick={{ fontSize: 11 }}
-              tickLine={false}
-              axisLine={false}
-              className="text-muted-foreground"
+              tick={{ fontSize: 10 }}
               tickFormatter={(value) => `${value}${unit}`}
             />
-            <Tooltip content={<CustomTooltip timeRange={timeRange} />} />
-            <Legend />
+            <Tooltip />
             <Line
               type="monotone"
               dataKey={dataKey}
@@ -131,8 +104,6 @@ const VitalChart = ({ data, dataKey, title, color, unit, yDomain, timeRange }) =
               stroke={color}
               strokeWidth={2}
               dot={false}
-              activeDot={{ r: 4 }}
-              unit={unit}
               isAnimationActive={true}
               animationDuration={500}
             />
@@ -372,6 +343,7 @@ export default function LiveVitals() {
   const [timeSinceData, setTimeSinceData] = useState("");
   const [isolationAlerts, setIsolationAlerts] = useState([]);
   const [loadingAlerts, setLoadingAlerts] = useState(false);
+  const [alertsLoadedOnce, setAlertsLoadedOnce] = useState(false);
 
   // Save timeRange to local storage whenever it changes
   useEffect(() => {
@@ -389,24 +361,20 @@ export default function LiveVitals() {
   } = useIotPolling(API_BASE, {
     pollInterval: 1000, // Poll every 1 second for snappier updates
     rfid: null,         // No filter — show all readings from the device
-    farmerId: mongoUser?._id,
-    limit: 500,
-    enabled: !!mongoUser,
+    // Match AnimalDetail data path exactly: no farmerId filter
+    farmerId: null,
+    limit: 60,
+    enabled: true,
     onNewData: (newData) => {
       if (newData.length > 0) console.log(`Received ${newData.length} new readings`);
     }
   });
 
-  // Transform polling data for charts (filter by time range)
-  const historicalData = useMemo(() => {
+  // Normalize polling data for charts
+  const normalizedData = useMemo(() => {
     if (!pollingData || pollingData.length === 0) return [];
-    
+
     return pollingData
-      .filter((reading) => {
-        if (timeRange === "all") return true;
-        const cutoffTime = Date.now() - TIME_RANGES[timeRange].minutes * 60 * 1000;
-        return new Date(reading.timestamp).getTime() > cutoffTime;
-      })
       .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp)) // Sort chronologically (oldest to newest)
       .map((reading) => ({
         time: format(
@@ -419,6 +387,17 @@ export default function LiveVitals() {
         heart_rate: reading.heartRate ?? reading.heart_rate ?? 0,
       }));
   }, [pollingData, timeRange]);
+
+  // Time-range filtered data
+  const historicalData = useMemo(() => {
+    if (!normalizedData || normalizedData.length === 0) return [];
+
+    return normalizedData.filter((reading) => {
+      if (timeRange === "all") return true;
+      const cutoffTime = Date.now() - TIME_RANGES[timeRange].minutes * 60 * 1000;
+      return reading.timestamp > cutoffTime;
+    });
+  }, [normalizedData, timeRange]);
 
   // Get latest reading with normalized field names
   const latestReading = useMemo(() => {
@@ -467,14 +446,14 @@ export default function LiveVitals() {
       }
     };
     fetchAnimals();
-  }, [mongoUser]);
+  }, [mongoUser, alertsLoadedOnce]);
 
   // Fetch isolation alerts periodically
   useEffect(() => {
     const fetchIsolationAlerts = async () => {
       if (!mongoUser) return;
       try {
-        setLoadingAlerts(true);
+        if (!alertsLoadedOnce) setLoadingAlerts(true);
         const response = await fetch(`${API_BASE}/api/iot/isolation-alerts?farmerId=${mongoUser._id}`);
         if (response.ok) {
           const data = await response.json();
@@ -484,6 +463,7 @@ export default function LiveVitals() {
         console.error("Failed to fetch isolation alerts:", error);
       } finally {
         setLoadingAlerts(false);
+        setAlertsLoadedOnce(true);
       }
     };
 
@@ -518,11 +498,27 @@ export default function LiveVitals() {
     }
   };
 
-  // Loading state derived from polling status
-  const loading = status === 'idle' || (status === 'polling' && historicalData.length === 0);
+  // Use selected time range, but if it has no points and we still have historical points,
+  // show all points so data remains visible.
+  const chartData = useMemo(() => {
+    if (historicalData.length > 0) return historicalData;
+    return normalizedData;
+  }, [historicalData, normalizedData]);
 
-  // Memoized chart data
-  const chartData = useMemo(() => historicalData, [historicalData]);
+  const uniqueIsolationAlerts = useMemo(() => {
+    return Object.values(
+      isolationAlerts.reduce((acc, alert) => {
+        const key = alert.animalId?._id || alert._id;
+        if (!acc[key] || new Date(alert.createdAt) > new Date(acc[key].createdAt)) {
+          acc[key] = alert;
+        }
+        return acc;
+      }, {})
+    );
+  }, [isolationAlerts]);
+
+  // Loading state: only show skeleton during true first load
+  const loading = !lastUpdated && status === 'polling' && chartData.length === 0;
 
   return (
     <Layout>
@@ -639,7 +635,6 @@ export default function LiveVitals() {
               color="hsl(24, 95%, 53%)"
               unit="°C"
               yDomain={[20, 45]}
-              timeRange={timeRange}
             />
             <VitalChart
               data={chartData}
@@ -648,7 +643,6 @@ export default function LiveVitals() {
               color="hsl(210, 100%, 50%)"
               unit="%"
               yDomain={[0, 100]}
-              timeRange={timeRange}
             />
             <VitalChart
               data={chartData}
@@ -657,7 +651,6 @@ export default function LiveVitals() {
               color="hsl(0, 84%, 60%)"
               unit=" BPM"
               yDomain={[40, 120]}
-              timeRange={timeRange}
             />
           </div>
         ) : (
@@ -671,41 +664,33 @@ export default function LiveVitals() {
         )}
 
         {/* Animals to be Isolated Section — deduplicated per animal */}
-        {!loadingAlerts && (
-          <Card className={isolationAlerts.length > 0 ? "border-red-200 dark:border-red-900" : "border-green-200 dark:border-green-900"}>
+        <Card className={uniqueIsolationAlerts.length > 0 ? "border-red-200 dark:border-red-900" : "border-green-200 dark:border-green-900"}>
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <ShieldAlert className={`h-6 w-6 ${isolationAlerts.length > 0 ? 'text-red-500' : 'text-green-500'}`} />
+                  <ShieldAlert className={`h-6 w-6 ${uniqueIsolationAlerts.length > 0 ? 'text-red-500' : 'text-green-500'}`} />
                   <div>
                     <CardTitle className="text-xl">Sick Animals — Keep Separate</CardTitle>
                     <CardDescription>
-                      {isolationAlerts.length > 0 
+                      {uniqueIsolationAlerts.length > 0 
                         ? "These animals are not feeling well. Keep them away from the herd so others don't get sick."
                         : "Checked sensor readings — all animals look healthy right now."}
                     </CardDescription>
                   </div>
                 </div>
-                {isolationAlerts.length > 0 && (
+                {uniqueIsolationAlerts.length > 0 && (
                   <Badge variant="destructive" className="text-lg px-4 py-2">
-                    {isolationAlerts.length}
+                    {uniqueIsolationAlerts.length}
                   </Badge>
                 )}
               </div>
             </CardHeader>
             <CardContent>
-              {isolationAlerts.length > 0 ? (
+              {loadingAlerts && !alertsLoadedOnce ? (
+                <div className="text-sm text-muted-foreground">Loading alerts...</div>
+              ) : uniqueIsolationAlerts.length > 0 ? (
                 <div className="grid gap-4 md:grid-cols-2">
-                  {/* Deduplicate: show only the latest alert per animal */}
-                  {Object.values(
-                    isolationAlerts.reduce((acc, alert) => {
-                      const key = alert.animalId?._id || alert._id;
-                      if (!acc[key] || new Date(alert.createdAt) > new Date(acc[key].createdAt)) {
-                        acc[key] = alert;
-                      }
-                      return acc;
-                    }, {})
-                  ).map((alert) => (
+                  {uniqueIsolationAlerts.map((alert) => (
                     <Card key={alert._id} className="border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950/20">
                       <CardContent className="pt-4 pb-3">
                         <div className="space-y-2.5">
@@ -802,7 +787,6 @@ export default function LiveVitals() {
               )}
             </CardContent>
           </Card>
-        )}
 
         {/* Data Summary */}
         {chartData.length > 0 && (
