@@ -70,8 +70,9 @@ const navGroups = [
       { title: "Shot Schedule", url: "/calendar", icon: Calendar },
       { title: "Animal Health", url: "/live-vitals", icon: Activity },
       { title: "Disease AI", url: "/disease-detector", icon: Stethoscope },
-      { title: "Warnings", url: "/alerts", icon: Bell },
+      { title: "Alerts", url: "/alerts", icon: Bell },
       { title: "Emergency Help", url: "/emergency", icon: AlertCircle },
+      { title: "Production Tracking", url: "/bi/production", icon: Package },
     ],
   },
   {
@@ -79,7 +80,7 @@ const navGroups = [
     items: [
       // { title: "Aadhaar Verify", url: "/aadhaar-verify", icon: Fingerprint },
       { title: "Govt. Help", url: "/schemes", icon: Sprout },
-      { title: "AI Insights", url: "/insights", icon: LineChart },
+      { title: "Insights", url: "/insights", icon: LineChart },
       { title: "Video Report", url: "/video-summary", icon: Video },
     ],
   },

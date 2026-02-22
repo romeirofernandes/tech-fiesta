@@ -113,7 +113,7 @@ export default function FarmInsights() {
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <div className="flex items-center gap-3">
                         <div>
-                            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">AI Strategy Report</h1>
+                            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">Strategy Report</h1>
                             <p className="text-sm text-muted-foreground mt-0.5">Your personalized agricultural advisory</p>
                         </div>
                     </div>
@@ -153,9 +153,7 @@ export default function FarmInsights() {
                             {/* Executive Summary Panel */}
                             <div className="bg-card border border-border/80 rounded-3xl p-6 sm:p-8 shadow-sm">
                                 <div className="flex items-center gap-3 mb-4">
-                                    <div className="bg-primary/10 p-2.5 rounded-xl shrink-0">
-                                        <Sparkles className="h-5 w-5 text-primary" />
-                                    </div>
+                                   
                                     <h2 className="text-xl sm:text-2xl font-bold text-foreground">
                                         {data.greeting || "Hello, here is your farm report!"}
                                     </h2>

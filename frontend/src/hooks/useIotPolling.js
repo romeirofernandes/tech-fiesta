@@ -12,6 +12,7 @@ export function useIotPolling(apiBase, options = {}) {
   const {
     pollInterval = 5000,      // Poll every 5 seconds
     rfid = null,              // Filter by RFID (optional)
+    farmerId = null,          // Filter by Farmer ID (optional)
     limit = 50,               // Number of readings to fetch
     enabled = true,           // Enable/disable polling
     onNewData,                // Callback when new data arrives
@@ -82,6 +83,9 @@ export function useIotPolling(apiBase, options = {}) {
       if (rfid) {
         url += `&rfid=${encodeURIComponent(rfid)}`;
       }
+      if (farmerId) {
+        url += `&farmerId=${encodeURIComponent(farmerId)}`;
+      }
       
       // Only use 'since' parameter after first fetch to get incremental updates
       if (useSince && lastTimestamp.current && !isFirstFetch.current) {
@@ -100,9 +104,9 @@ export function useIotPolling(apiBase, options = {}) {
 
       setStatus('connected');
       setError(null);
-      setLastUpdated(Date.now());
 
       if (newData && newData.length > 0) {
+        setLastUpdated(Date.now());
         // Update last timestamp for next poll
         lastTimestamp.current = newData[0].timestamp;
         
@@ -133,7 +137,7 @@ export function useIotPolling(apiBase, options = {}) {
         setError(err.message);
       }
     }
-  }, [apiBase, rfid, limit, enabled, checkIotStatus]);
+  }, [apiBase, rfid, farmerId, limit, enabled, checkIotStatus]);
 
   // Manual refetch (resets and fetches all data)
   const refetch = useCallback(() => {

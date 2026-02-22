@@ -44,6 +44,11 @@ const animalSchema = new mongoose.Schema({
     type: String,
     default: null
   },
+  reproductiveStatus: {
+    type: String,
+    enum: ['none', 'breeding', 'lactating', 'pregnant'],
+    default: 'none'
+  },
   createdAt: {
     type: Date,
     default: Date.now

@@ -38,6 +38,7 @@ export default function EditAnimal() {
     ageUnit: "months",
     farmId: "",
     imageUrl: "",
+    reproductiveStatus: "none",
   });
 
   useEffect(() => {
@@ -69,6 +70,7 @@ export default function EditAnimal() {
         ageUnit: animal.ageUnit,
         farmId: animal.farmId? animal.farmId._id: "",
         imageUrl: animal.imageUrl,
+        reproductiveStatus: animal.reproductiveStatus || "none",
       });
       setImagePreview(animal.imageUrl);
       setFetching(false);
@@ -288,6 +290,24 @@ export default function EditAnimal() {
                       </SelectContent>
                     </Select>
                   </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="reproductiveStatus">Reproductive Status</Label>
+                  <Select
+                    value={formData.reproductiveStatus}
+                    onValueChange={(value) => handleInputChange("reproductiveStatus", value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">None / Not Applicable</SelectItem>
+                      <SelectItem value="breeding">Breeding</SelectItem>
+                      <SelectItem value="pregnant">Pregnant</SelectItem>
+                      <SelectItem value="lactating">Lactating</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div className="space-y-2 md:col-span-2">

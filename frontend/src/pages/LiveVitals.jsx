@@ -19,7 +19,6 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  Legend,
 } from "recharts";
 import {
   Activity,
@@ -39,6 +38,7 @@ import {
   CircuitBoard,
 } from "lucide-react";
 import { useIotPolling } from "@/hooks/useIotPolling";
+import { useUser } from "@/context/UserContext";
 import { format } from "date-fns";
 import { toast } from "sonner";
 
@@ -52,26 +52,6 @@ const TIME_RANGES = {
   "24h": { label: "Last 24 Hours", minutes: 1440 },
   "7d": { label: "Last 7 Days", minutes: 10080 },
   "all": { label: "Show All", minutes: null },
-};
-
-// Custom tooltip for charts
-const CustomTooltip = ({ active, payload, label, timeRange }) => {
-  if (active && payload && payload.length) {
-    const formattedLabel = typeof label === 'number' 
-      ? format(new Date(label), timeRange === '7d' || timeRange === 'all' ? 'MM/dd HH:mm:ss' : 'HH:mm:ss')
-      : label;
-    return (
-      <div className="bg-background border rounded-lg shadow-lg p-3">
-        <p className="text-sm text-muted-foreground">{formattedLabel}</p>
-        {payload.map((entry, index) => (
-          <p key={index} className="text-sm font-medium" style={{ color: entry.color }}>
-            {entry.name}: {entry.value?.toFixed(1)} {entry.unit || ""}
-          </p>
-        ))}
-      </div>
-    );
-  }
-  return null;
 };
 
 // Stat Card Component
@@ -94,35 +74,29 @@ const StatCard = ({ title, value, unit, icon: Icon, color, trend }) => (
 );
 
 // Chart Component
-const VitalChart = ({ data, dataKey, title, color, unit, yDomain, timeRange }) => (
+const VitalChart = ({ data, dataKey, title, color, unit, yDomain }) => (
   <Card className="col-span-1">
     <CardHeader className="pb-2">
-      <CardTitle className="text-lg">{title}</CardTitle>
+      <CardTitle className="text-sm">{title}</CardTitle>
       <CardDescription>Live readings from the sensor</CardDescription>
     </CardHeader>
     <CardContent>
-      <div className="h-62.5">
+      <div className="h-48">
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={data} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
+          <LineChart data={data} margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
             <XAxis
               dataKey="time"
-              tick={{ fontSize: 11 }}
+              tick={{ fontSize: 10 }}
               tickLine={false}
-              axisLine={false}
-              className="text-muted-foreground"
               interval="preserveStartEnd"
             />
             <YAxis
               domain={yDomain || ["auto", "auto"]}
-              tick={{ fontSize: 11 }}
-              tickLine={false}
-              axisLine={false}
-              className="text-muted-foreground"
+              tick={{ fontSize: 10 }}
               tickFormatter={(value) => `${value}${unit}`}
             />
-            <Tooltip content={<CustomTooltip timeRange={timeRange} />} />
-            <Legend />
+            <Tooltip />
             <Line
               type="monotone"
               dataKey={dataKey}
@@ -130,8 +104,6 @@ const VitalChart = ({ data, dataKey, title, color, unit, yDomain, timeRange }) =
               stroke={color}
               strokeWidth={2}
               dot={false}
-              activeDot={{ r: 4 }}
-              unit={unit}
               isAnimationActive={true}
               animationDuration={500}
             />
@@ -475,57 +447,242 @@ export default function LiveVitals() {
         )}
       </div>
 
-      {/* IoT Device Status */}
-      <div className="flex items-center gap-2">
-        <span className="text-xs text-muted-foreground font-medium">Sensor Device:</span>
-        {iotStatus === "connected" ? (
-          <>
-            <Radio className="h-4 w-4 text-green-500" />
-            <Badge variant="outline" className="bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-400">
-              On
-            </Badge>
-          </>
-        ) : iotStatus === "disconnected" ? (
-          <>
-            <Radio className="h-4 w-4 text-red-500" />
-            <Badge variant="outline" className="bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-400">
-              Off
-            </Badge>
-          </>
-        ) : (
-          <>
-            <Radio className="h-4 w-4 text-gray-400" />
-            <Badge variant="outline" className="bg-gray-50 text-gray-700 dark:bg-gray-950 dark:text-gray-400">
-              No signal
-            </Badge>
-          </>
-        )}
-      </div>
-
-      {/* IoT Data Status */}
-      <div className="flex items-center gap-2">
-        <span className="text-xs text-muted-foreground font-medium">Last Reading:</span>
-        {lastUpdated ? (
-          <>
-            <Activity className="h-4 w-4 text-green-500" />
-            <Badge variant="outline" className="bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-400">
-              {timeSinceData}
-            </Badge>
-          </>
-        ) : (
-          <>
-            <Activity className="h-4 w-4 text-gray-400" />
-            <Badge variant="outline" className="bg-gray-50 text-gray-700 dark:bg-gray-950 dark:text-gray-400">
-              Waiting...
-            </Badge>
-          </>
-        )}
-      </div>
+    {/* IoT Device Status */}
+    <div className="flex items-center gap-2">
+      <span className="text-xs text-muted-foreground font-medium">Sensor Device:</span>
+      {iotStatus === "connected" ? (
+        <>
+          <Radio className="h-4 w-4 text-green-500" />
+          <Badge variant="outline" className="bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-400">
+            On
+          </Badge>
+        </>
+      ) : iotStatus === "disconnected" ? (
+        <>
+          <Radio className="h-4 w-4 text-red-500" />
+          <Badge variant="outline" className="bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-400">
+            Off
+          </Badge>
+        </>
+      ) : (
+        <>
+          <Radio className="h-4 w-4 text-gray-400" />
+          <Badge variant="outline" className="bg-gray-50 text-gray-700 dark:bg-gray-950 dark:text-gray-400">
+            No signal
+          </Badge>
+        </>
+      )}
     </div>
-  );
 
-  // Memoized chart data
-  const chartData = useMemo(() => historicalData, [historicalData]);
+    {/* IoT Data Status */}
+    <div className="flex items-center gap-2">
+      <span className="text-xs text-muted-foreground font-medium">Last Reading:</span>
+      {lastUpdated ? (
+        <>
+          <Activity className="h-4 w-4 text-green-500" />
+          <Badge variant="outline" className="bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-400">
+            {timeSinceData}
+          </Badge>
+        </>
+      ) : (
+        <>
+          <Activity className="h-4 w-4 text-gray-400" />
+          <Badge variant="outline" className="bg-gray-50 text-gray-700 dark:bg-gray-950 dark:text-gray-400">
+            Waiting...
+          </Badge>
+        </>
+      )}
+    </div>
+  </div>
+);
+
+export default function LiveVitals() {
+  const { mongoUser } = useUser();
+  // State
+  const [animals, setAnimals] = useState([]);
+  const [selectedAnimal, setSelectedAnimal] = useState("all");
+  const [timeRange, setTimeRange] = useState(() => {
+    return localStorage.getItem("liveVitalsTimeRange") || "1h";
+  });
+  const [timeSinceData, setTimeSinceData] = useState("");
+  const [isolationAlerts, setIsolationAlerts] = useState([]);
+  const [loadingAlerts, setLoadingAlerts] = useState(false);
+  const [alertsLoadedOnce, setAlertsLoadedOnce] = useState(false);
+
+  // Save timeRange to local storage whenever it changes
+  useEffect(() => {
+    localStorage.setItem("liveVitalsTimeRange", timeRange);
+  }, [timeRange]);
+
+  // Long polling for IoT sensor data — no RFID filter, always show latest
+  const { 
+    data: pollingData, 
+    latestReading: polledLatestReading, 
+    status, 
+    iotStatus,
+    lastUpdated,
+    refetch 
+  } = useIotPolling(API_BASE, {
+    pollInterval: 1000, // Poll every 1 second for snappier updates
+    rfid: null,         // No filter — show all readings from the device
+    // Match AnimalDetail data path exactly: no farmerId filter
+    farmerId: null,
+    limit: 60,
+    enabled: true,
+    onNewData: (newData) => {
+      if (newData.length > 0) console.log(`Received ${newData.length} new readings`);
+    }
+  });
+
+  // Normalize polling data for charts
+  const normalizedData = useMemo(() => {
+    if (!pollingData || pollingData.length === 0) return [];
+
+    return pollingData
+      .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp)) // Sort chronologically (oldest to newest)
+      .map((reading) => ({
+        time: format(
+          new Date(reading.timestamp),
+          timeRange === "7d" || timeRange === "all" ? "MM/dd HH:mm" : "HH:mm:ss"
+        ),
+        timestamp: new Date(reading.timestamp).getTime(),
+        temperature: reading.temperature != null ? parseFloat(reading.temperature) : 0,
+        humidity: reading.humidity != null ? parseFloat(reading.humidity) : 0,
+        heart_rate: reading.heartRate ?? reading.heart_rate ?? 0,
+      }));
+  }, [pollingData, timeRange]);
+
+  // Time-range filtered data
+  const historicalData = useMemo(() => {
+    if (!normalizedData || normalizedData.length === 0) return [];
+
+    return normalizedData.filter((reading) => {
+      if (timeRange === "all") return true;
+      const cutoffTime = Date.now() - TIME_RANGES[timeRange].minutes * 60 * 1000;
+      return reading.timestamp > cutoffTime;
+    });
+  }, [normalizedData, timeRange]);
+
+  // Get latest reading with normalized field names
+  const latestReading = useMemo(() => {
+    if (!polledLatestReading) return null;
+    return {
+      ...polledLatestReading,
+      heart_rate: polledLatestReading.heartRate || polledLatestReading.heart_rate,
+    };
+  }, [polledLatestReading]);
+
+  // Update "time ago" display every second
+  useEffect(() => {
+    if (!lastUpdated) {
+      setTimeSinceData("");
+      return;
+    }
+
+    const updateTime = () => {
+      const seconds = Math.floor((Date.now() - lastUpdated) / 1000);
+      if (seconds < 60) {
+        setTimeSinceData(`${seconds}s ago`);
+      } else if (seconds < 3600) {
+        setTimeSinceData(`${Math.floor(seconds / 60)}m ago`);
+      } else {
+        setTimeSinceData(`${Math.floor(seconds / 3600)}h ago`);
+      }
+    };
+
+    updateTime();
+    const interval = setInterval(updateTime, 1000);
+    return () => clearInterval(interval);
+  }, [lastUpdated]);
+
+  // Fetch animals list (dropdown only — does not affect sensor data)
+  useEffect(() => {
+    const fetchAnimals = async () => {
+      if (!mongoUser) return;
+      try {
+        const response = await fetch(`${API_BASE}/api/animals?farmerId=${mongoUser._id}`);
+        if (response.ok) {
+          const data = await response.json();
+          setAnimals(data.map(a => ({ id: a._id, name: a.name, species: a.species, rfid: a.rfid, gender: a.gender, createdAt: a.createdAt, reproductiveStatus: a.reproductiveStatus || 'none' })));
+        }
+      } catch (error) {
+        console.error("Failed to fetch animals:", error);
+      }
+    };
+    fetchAnimals();
+  }, [mongoUser, alertsLoadedOnce]);
+
+  // Fetch isolation alerts periodically
+  useEffect(() => {
+    const fetchIsolationAlerts = async () => {
+      if (!mongoUser) return;
+      try {
+        if (!alertsLoadedOnce) setLoadingAlerts(true);
+        const response = await fetch(`${API_BASE}/api/iot/isolation-alerts?farmerId=${mongoUser._id}`);
+        if (response.ok) {
+          const data = await response.json();
+          setIsolationAlerts(data);
+        }
+      } catch (error) {
+        console.error("Failed to fetch isolation alerts:", error);
+      } finally {
+        setLoadingAlerts(false);
+        setAlertsLoadedOnce(true);
+      }
+    };
+
+    fetchIsolationAlerts();
+    // Poll every 10 seconds for new isolation alerts
+    const interval = setInterval(fetchIsolationAlerts, 10000);
+    return () => clearInterval(interval);
+  }, [mongoUser]);
+
+  // Handle isolation alert resolution
+  const resolveIsolationAlert = async (alertId, animalName) => {
+    try {
+      const response = await fetch(`${API_BASE}/api/iot/isolation-alerts/${alertId}/resolve`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          resolvedBy: 'farmer',
+          resolutionNotes: `${animalName} has been isolated`
+        })
+      });
+
+      if (response.ok) {
+        toast.success(`${animalName} has been separated from the herd`);
+        // Remove from local state
+        setIsolationAlerts(prev => prev.filter(alert => alert._id !== alertId));
+      } else {
+        toast.error("Something went wrong. Please try again.");
+      }
+    } catch (error) {
+      console.error("Failed to resolve isolation alert:", error);
+      toast.error("Something went wrong. Please try again.");
+    }
+  };
+
+  // Use selected time range, but if it has no points and we still have historical points,
+  // show all points so data remains visible.
+  const chartData = useMemo(() => {
+    if (historicalData.length > 0) return historicalData;
+    return normalizedData;
+  }, [historicalData, normalizedData]);
+
+  const uniqueIsolationAlerts = useMemo(() => {
+    return Object.values(
+      isolationAlerts.reduce((acc, alert) => {
+        const key = alert.animalId?._id || alert._id;
+        if (!acc[key] || new Date(alert.createdAt) > new Date(acc[key].createdAt)) {
+          acc[key] = alert;
+        }
+        return acc;
+      }, {})
+    );
+  }, [isolationAlerts]);
+
+  // Loading state: only show skeleton during true first load
+  const loading = !lastUpdated && status === 'polling' && chartData.length === 0;
 
   return (
     <Layout>
@@ -538,7 +695,12 @@ export default function LiveVitals() {
               Live Animal Health
             </h1>
           </div>
-          <ConnectionStatus />
+          <ConnectionStatus
+            status={status}
+            iotStatus={iotStatus}
+            lastUpdated={lastUpdated}
+            timeSinceData={timeSinceData}
+          />
         </div>
 
         {/* Controls */}
@@ -637,7 +799,6 @@ export default function LiveVitals() {
               color="hsl(24, 95%, 53%)"
               unit="°C"
               yDomain={[20, 45]}
-              timeRange={timeRange}
             />
             <VitalChart
               data={chartData}
@@ -646,7 +807,6 @@ export default function LiveVitals() {
               color="hsl(210, 100%, 50%)"
               unit="%"
               yDomain={[0, 100]}
-              timeRange={timeRange}
             />
             <VitalChart
               data={chartData}
@@ -655,7 +815,6 @@ export default function LiveVitals() {
               color="hsl(0, 84%, 60%)"
               unit=" BPM"
               yDomain={[40, 120]}
-              timeRange={timeRange}
             />
           </div>
         ) : (
@@ -668,98 +827,99 @@ export default function LiveVitals() {
           </Card>
         )}
 
-        {/* Animals to be Isolated Section */}
-        {!loadingAlerts && (
-          <Card className={isolationAlerts.length > 0 ? "border-red-200 dark:border-red-900" : "border-green-200 dark:border-green-900"}>
+        {/* Animals to be Isolated Section — deduplicated per animal */}
+        <Card className={uniqueIsolationAlerts.length > 0 ? "border-red-200 dark:border-red-900" : "border-green-200 dark:border-green-900"}>
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <ShieldAlert className={`h-6 w-6 ${isolationAlerts.length > 0 ? 'text-red-500' : 'text-green-500'}`} />
+                  <ShieldAlert className={`h-6 w-6 ${uniqueIsolationAlerts.length > 0 ? 'text-red-500' : 'text-green-500'}`} />
                   <div>
                     <CardTitle className="text-xl">Sick Animals — Keep Separate</CardTitle>
                     <CardDescription>
-                      {isolationAlerts.length > 0 
+                      {uniqueIsolationAlerts.length > 0 
                         ? "These animals are not feeling well. Keep them away from the herd so others don't get sick."
                         : "Checked sensor readings — all animals look healthy right now."}
                     </CardDescription>
                   </div>
                 </div>
-                {isolationAlerts.length > 0 && (
+                {uniqueIsolationAlerts.length > 0 && (
                   <Badge variant="destructive" className="text-lg px-4 py-2">
-                    {isolationAlerts.length}
+                    {uniqueIsolationAlerts.length}
                   </Badge>
                 )}
               </div>
             </CardHeader>
             <CardContent>
-              {isolationAlerts.length > 0 ? (
+              {loadingAlerts && !alertsLoadedOnce ? (
+                <div className="text-sm text-muted-foreground">Loading alerts...</div>
+              ) : uniqueIsolationAlerts.length > 0 ? (
                 <div className="grid gap-4 md:grid-cols-2">
-                  {isolationAlerts.map((alert) => (
+                  {uniqueIsolationAlerts.map((alert) => (
                     <Card key={alert._id} className="border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950/20">
-                      <CardContent className="pt-6">
-                        <div className="space-y-4">
+                      <CardContent className="pt-4 pb-3">
+                        <div className="space-y-2.5">
                           {/* Animal Info */}
-                          <div className="flex items-start justify-between">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-1">
-                                <h4 className="font-bold text-lg">{alert.animalId?.name || "Unknown Animal"}</h4>
-                                <Badge variant="outline" className="text-xs">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-1.5 mb-0.5">
+                                <h4 className="font-bold text-base truncate">{alert.animalId?.name || "Unknown Animal"}</h4>
+                                <Badge variant="outline" className="text-xs shrink-0">
                                   {alert.animalId?.species || "Unknown"}
                                 </Badge>
                               </div>
-                              <p className="text-sm text-muted-foreground font-mono">
+                              <p className="text-xs text-muted-foreground font-mono truncate">
                                 RFID: {alert.animalId?.rfid || "N/A"}
                               </p>
                             </div>
-                            <AlertTriangle className="h-8 w-8 text-red-500" />
+                            <AlertTriangle className="h-6 w-6 text-red-500 shrink-0 mt-0.5" />
                           </div>
 
                           {/* Alert Reason */}
-                          <div className="bg-background/50 rounded-lg p-3">
-                            <p className="text-sm font-medium text-red-700 dark:text-red-400">
+                          <div className="bg-background/50 rounded-lg p-2">
+                            <p className="text-xs font-medium text-red-700 dark:text-red-400 leading-tight">
                               {alert.message.replace('🚨 ', '')}
                             </p>
-                            <p className="text-xs text-muted-foreground mt-1">
-                              Alert raised on: {format(new Date(alert.createdAt), "PPp")}
+                            <p className="text-xs text-muted-foreground mt-0.5">
+                              {format(new Date(alert.createdAt), "MMM dd, yyyy p")}
                             </p>
                           </div>
 
                           {/* Current Vitals */}
                           {alert.latestVitals && (
-                            <div className="grid grid-cols-3 gap-2">
+                            <div className="grid grid-cols-3 gap-1.5">
                               {alert.latestVitals.temperature && (
-                                <div className="bg-background/50 rounded-lg p-2 text-center">
-                                  <Thermometer className={`h-4 w-4 mx-auto mb-1 ${
+                                <div className="bg-background/50 rounded-lg p-1.5 text-center">
+                                  <Thermometer className={`h-3.5 w-3.5 mx-auto mb-0.5 ${
                                     alert.latestVitals.temperature > 40 ? 'text-red-500' : 'text-orange-500'
                                   }`} />
-                                  <p className={`text-sm font-bold ${
+                                  <p className={`text-xs font-bold leading-tight ${
                                     alert.latestVitals.temperature > 40 ? 'text-red-600 dark:text-red-400' : ''
                                   }`}>
                                     {alert.latestVitals.temperature.toFixed(1)}°C
                                   </p>
-                                  <p className="text-xs text-muted-foreground">Temp (°C)</p>
+                                  <p className="text-xs text-muted-foreground">Temp</p>
                                 </div>
                               )}
                               {alert.latestVitals.heartRate && (
-                                <div className="bg-background/50 rounded-lg p-2 text-center">
-                                  <Heart className={`h-4 w-4 mx-auto mb-1 ${
+                                <div className="bg-background/50 rounded-lg p-1.5 text-center">
+                                  <Heart className={`h-3.5 w-3.5 mx-auto mb-0.5 ${
                                     alert.latestVitals.heartRate > 100 ? 'text-red-500' : 'text-pink-500'
                                   }`} />
-                                  <p className={`text-sm font-bold ${
+                                  <p className={`text-xs font-bold leading-tight ${
                                     alert.latestVitals.heartRate > 100 ? 'text-red-600 dark:text-red-400' : ''
                                   }`}>
-                                    {alert.latestVitals.heartRate} BPM
+                                    {alert.latestVitals.heartRate}BPM
                                   </p>
-                                  <p className="text-xs text-muted-foreground">Heartbeat</p>
+                                  <p className="text-xs text-muted-foreground">HR</p>
                                 </div>
                               )}
                               {alert.latestVitals.humidity && (
-                                <div className="bg-background/50 rounded-lg p-2 text-center">
-                                  <Droplets className="h-4 w-4 text-blue-500 mx-auto mb-1" />
-                                  <p className="text-sm font-bold">
+                                <div className="bg-background/50 rounded-lg p-1.5 text-center">
+                                  <Droplets className="h-3.5 w-3.5 text-blue-500 mx-auto mb-0.5" />
+                                  <p className="text-xs font-bold leading-tight">
                                     {alert.latestVitals.humidity.toFixed(1)}%
                                   </p>
-                                  <p className="text-xs text-muted-foreground">Moisture</p>
+                                  <p className="text-xs text-muted-foreground">Humid</p>
                                 </div>
                               )}
                             </div>
@@ -768,10 +928,10 @@ export default function LiveVitals() {
                           {/* Action Button */}
                           <Button 
                             onClick={() => resolveIsolationAlert(alert._id, alert.animalId?.name)}
-                            className="w-full bg-green-600 hover:bg-green-700 text-white"
+                            className="w-full bg-green-600 hover:bg-green-700 text-white text-sm h-9 py-2"
                           >
-                            <CheckCircle className="h-4 w-4 mr-2" />
-                            Done — Animal is Separated
+                            <CheckCircle className="h-3.5 w-3.5 mr-1.5" />
+                            Done — Separated
                           </Button>
                         </div>
                       </CardContent>
@@ -791,7 +951,6 @@ export default function LiveVitals() {
               )}
             </CardContent>
           </Card>
-        )}
 
         {/* Data Summary */}
         {chartData.length > 0 && (
