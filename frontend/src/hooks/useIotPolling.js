@@ -104,9 +104,9 @@ export function useIotPolling(apiBase, options = {}) {
 
       setStatus('connected');
       setError(null);
-      setLastUpdated(Date.now());
 
       if (newData && newData.length > 0) {
+        setLastUpdated(Date.now());
         // Update last timestamp for next poll
         lastTimestamp.current = newData[0].timestamp;
         
