@@ -57,6 +57,8 @@ import BusinessReports from './pages/business/BusinessReports';
 import BizLogin from './pages/biz/BizLogin';
 import BizRegister from './pages/biz/BizRegister';
 import BizDashboard from './pages/biz/BizDashboard';
+import WhatsAppPage from './pages/WhatsApp';
+import Reports from './pages/Reports';
 
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useUser();
@@ -145,6 +147,11 @@ function App() {
           <Route path="/profile" element={
             <ProtectedRoute>
               <Profile />
+            </ProtectedRoute>
+          } />
+          <Route path="/whatsapp" element={
+            <ProtectedRoute>
+              <WhatsAppPage />
             </ProtectedRoute>
           } />
           <Route path="/animals" element={
@@ -245,6 +252,11 @@ function App() {
           <Route path="/disease-detector" element={
             <ProtectedRoute>
               <DiseaseDetector />
+            </ProtectedRoute>
+          } />
+          <Route path="/reports" element={
+            <ProtectedRoute>
+              <Reports />
             </ProtectedRoute>
           } />
           <Route path="/insights" element={

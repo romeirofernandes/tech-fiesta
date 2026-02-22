@@ -45,6 +45,10 @@ import {
   X,
   RefreshCw,
   Settings2,
+  Mail,
+  MessageSquare,
+  Phone,
+  Save,
 } from "lucide-react";
 import axios from "axios";
 import { toast } from "sonner";
@@ -90,6 +94,44 @@ export default function Alerts() {
     avgResponseHours: 0,
     todayCount: 0,
   });
+
+  // Alert notification preferences
+  const [alertPrefs, setAlertPrefs] = useState({ whatsapp: true, sms: true, email: true });
+  const [prefsSaving, setPrefsSaving] = useState(false);
+  const [prefsLoaded, setPrefsLoaded] = useState(false);
+
+  const fetchAlertPrefs = useCallback(async () => {
+    if (!mongoUser?._id) return;
+    try {
+      const res = await axios.get(
+        `${import.meta.env.VITE_API_BASE_URL}/api/alert-preferences/${mongoUser._id}`
+      );
+      setAlertPrefs({
+        whatsapp: res.data.whatsapp ?? true,
+        sms: res.data.sms ?? true,
+        email: res.data.email ?? true,
+      });
+      setPrefsLoaded(true);
+    } catch {
+      setPrefsLoaded(true);
+    }
+  }, [mongoUser]);
+
+  const saveAlertPrefs = async () => {
+    if (!mongoUser?._id) return;
+    setPrefsSaving(true);
+    try {
+      await axios.put(
+        `${import.meta.env.VITE_API_BASE_URL}/api/alert-preferences/${mongoUser._id}`,
+        alertPrefs
+      );
+      toast.success("Alert preferences saved");
+    } catch {
+      toast.error("Failed to save preferences");
+    } finally {
+      setPrefsSaving(false);
+    }
+  };
 
   const fetchStats = useCallback(async () => {
     try {
@@ -171,8 +213,9 @@ export default function Alerts() {
   useEffect(() => {
     if (mongoUser) {
       fetchStats();
+      fetchAlertPrefs();
     }
-  }, [fetchStats, mongoUser]);
+  }, [fetchStats, fetchAlertPrefs, mongoUser]);
 
   useEffect(() => {
     if (mongoUser) {
@@ -374,6 +417,10 @@ export default function Alerts() {
             <TabsTrigger value="geofence-thresholds" className="gap-2">
               <Settings2 className="h-4 w-4" />
               Radius Thresholds
+            </TabsTrigger>
+            <TabsTrigger value="configure" className="gap-2">
+              <Settings2 className="h-4 w-4" />
+              Configure Alerts
             </TabsTrigger>
           </TabsList>
 
@@ -696,6 +743,77 @@ export default function Alerts() {
 
           <TabsContent value="geofence-thresholds">
             <GeofenceThresholds />
+          </TabsContent>
+
+          <TabsContent value="configure">
+            <Card>
+              <CardContent className="pt-6">
+                <div className="space-y-6">
+                  <div>
+                    <h3 className="text-lg font-semibold">Notification Channels</h3>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Choose how you want to receive alert notifications
+                    </p>
+                  </div>
+                  <div className="space-y-4">
+                    {[
+                      {
+                        key: "whatsapp",
+                        label: "WhatsApp",
+                        desc: "Receive alerts via WhatsApp messages",
+                        icon: MessageSquare,
+                      },
+                      {
+                        key: "sms",
+                        label: "SMS",
+                        desc: "Receive alerts via text messages",
+                        icon: Phone,
+                      },
+                      {
+                        key: "email",
+                        label: "Email",
+                        desc: "Receive alerts via email notifications",
+                        icon: Mail,
+                      },
+                    ].map((channel) => (
+                      <label
+                        key={channel.key}
+                        className="flex items-center gap-4 p-4 border border-border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={alertPrefs[channel.key]}
+                          onChange={(e) =>
+                            setAlertPrefs((prev) => ({
+                              ...prev,
+                              [channel.key]: e.target.checked,
+                            }))
+                          }
+                          className="h-4 w-4 rounded border-border accent-primary"
+                        />
+                        <div className="bg-muted p-2 rounded-lg">
+                          <channel.icon className="h-5 w-5 text-muted-foreground" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="font-medium text-sm">{channel.label}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {channel.desc}
+                          </p>
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+                  <Button
+                    onClick={saveAlertPrefs}
+                    disabled={prefsSaving}
+                    className="gap-2"
+                  >
+                    <Save className="h-4 w-4" />
+                    {prefsSaving ? "Saving..." : "Save Preferences"}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
       </div>

@@ -4,7 +4,7 @@ const Animal = require('../models/Animal');
 const Farmer = require('../models/Farmer');
 const AnimalGpsPath = require('../models/AnimalGpsPath');
 const Farm = require('../models/Farm');
-const { sendWhatsAppAlert } = require('../utils/whatsappSender');
+// Notifications are sent via the Alert post-save hook — no direct imports needed here
 
 /**
  * Haversine distance in meters between two lat/lng points
@@ -63,18 +63,21 @@ async function checkAnimalStraying(farmerFarmIds) {
           });
 
           if (existingAlert) {
-            // Update existing alert's timestamp and message instead of creating a new one
-            existingAlert.message = `${animalName} has strayed ${Math.round(dist)}m from ${farm.name} (boundary: ${radius}m)`;
-            existingAlert.createdAt = new Date();
-            await existingAlert.save();
+            // Use findByIdAndUpdate to bypass the post-save hook (no re-notification)
+            await Alert.findByIdAndUpdate(existingAlert._id, {
+              $set: {
+                message: `${animalName} has strayed ${Math.round(dist)}m from ${farm.name} (boundary: ${radius}m)`,
+                createdAt: new Date()
+              }
+            });
           } else {
-            const newAlert = await Alert.create({
+            // Alert.create triggers post-save hook which sends all notifications
+            await Alert.create({
               animalId: animalIdVal,
               type: 'geofence',
               severity: 'high',
               message: `${animalName} has strayed ${Math.round(dist)}m from ${farm.name} (boundary: ${radius}m)`
             });
-            sendWhatsAppAlert(newAlert).catch(console.error);
           }
         } else {
           // Animal is INSIDE the boundary — auto-resolve any open geofence alerts
@@ -138,13 +141,13 @@ async function checkMissedVaccinations() {
 
         if (!existingAlert) {
             const daysPastDue = Math.floor((now - event.date) / (1000 * 60 * 60 * 24));
-            const newAlert = await Alert.create({
+            // Alert.create triggers post-save hook which sends all notifications
+            await Alert.create({
                 animalId: animalIdVal,
                 type: 'vaccination',
                 severity: daysPastDue > 30 ? 'high' : 'medium',
                 message
             });
-            sendWhatsAppAlert(newAlert).catch(console.error);
         }
     }
 }
@@ -160,7 +163,7 @@ exports.createAlert = async (req, res) => {
       message
     });
 
-    sendWhatsAppAlert(alert).catch(console.error);
+    // Alert.create triggers post-save hook which sends all notifications once
     res.status(201).json(alert);
   } catch (error) {
     res.status(400).json({ message: error.message });
@@ -169,13 +172,6 @@ exports.createAlert = async (req, res) => {
 
 exports.getAlerts = async (req, res) => {
   try {
-    // Auto-detect missed vaccinations and create alerts before fetching
-    try {
-      await checkMissedVaccinations();
-    } catch (err) {
-      console.error('Missed vaccination check failed:', err);
-    }
-
     const { animalId, type, severity, isResolved, search, startDate, endDate, page, limit, farmerId } = req.query;
     
     const filter = {};
@@ -188,19 +184,12 @@ exports.getAlerts = async (req, res) => {
         farmerFarmIds = farmer.farms.map(id => id.toString());
         const animals = await Animal.find({ farmId: { $in: farmer.farms } }).select('_id');
         const animalIds = animals.map(a => a._id);
-        filter.animalId = { $in: animalIds };
-      } else {
-        filter.animalId = { $in: [] };
+        if (animalIds.length > 0) {
+          filter.animalId = { $in: animalIds };
+        }
+        // If farmer has farms but no animals yet, show all alerts (don't restrict to empty set)
       }
-    }
-
-    // Auto-detect straying animals and create geofence alerts
-    try {
-      if (farmerFarmIds.length > 0) {
-        await checkAnimalStraying(farmerFarmIds);
-      }
-    } catch (err) {
-      console.error('Straying check failed:', err);
+      // If farmer has no farms, show all alerts
     }
     if (animalId) filter.animalId = animalId;
     if (type) filter.type = type;
@@ -255,6 +244,44 @@ exports.getAlerts = async (req, res) => {
   }
 };
 
+exports.checkNewAlerts = async (req, res) => {
+  try {
+    // Explicitly trigger checks for missed vaccinations and straying animals
+    // Only call this endpoint intentionally, not on every page load
+    const results = {};
+    
+    try {
+      await checkMissedVaccinations();
+      results.vaccinations = 'checked';
+    } catch (err) {
+      console.error('Missed vaccination check failed:', err);
+      results.vaccinations = `error: ${err.message}`;
+    }
+
+    try {
+      const { farmerId } = req.query;
+      if (farmerId) {
+        const farmer = await Farmer.findById(farmerId);
+        if (farmer && farmer.farms && farmer.farms.length > 0) {
+          await checkAnimalStraying(farmer.farms.map(id => id.toString()));
+          results.straying = 'checked';
+        } else {
+          results.straying = 'no farms for farmer';
+        }
+      } else {
+        results.straying = 'farmerId required';
+      }
+    } catch (err) {
+      console.error('Straying check failed:', err);
+      results.straying = `error: ${err.message}`;
+    }
+
+    res.status(200).json({ message: 'Alert checks completed', results });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 exports.resolveAlert = async (req, res) => {
   try {
     const alert = await Alert.findById(req.params.id);
@@ -287,6 +314,74 @@ exports.resolveAlert = async (req, res) => {
     res.status(200).json(alert);
   } catch (error) {
     res.status(400).json({ message: error.message });
+  }
+};
+
+/**
+ * Create an escape detection alert from the farm monitoring camera.
+ * This is called when the AI detects an animal near the farm boundary.
+ * It prevents duplicate alerts by checking for existing unresolved escape alerts
+ * for the same animal within a 5-minute cooldown window.
+ */
+exports.createEscapeAlert = async (req, res) => {
+  try {
+    const { animalId, farmId } = req.body;
+
+    if (!animalId || !farmId) {
+      return res.status(400).json({ message: 'animalId and farmId are required' });
+    }
+
+    // 1. Get the animal details
+    const animal = await Animal.findById(animalId);
+    if (!animal) {
+      return res.status(404).json({ message: 'Animal not found' });
+    }
+
+    // 2. Get the farm details
+    const farm = await Farm.findById(farmId);
+    if (!farm) {
+      return res.status(404).json({ message: 'Farm not found' });
+    }
+
+    // 3. Check for existing unresolved escape alert for this animal within 5 min cooldown
+    const COOLDOWN_MS = 5 * 60 * 1000; // 5 minutes
+    const cooldownTime = new Date(Date.now() - COOLDOWN_MS);
+
+    const existingAlert = await Alert.findOne({
+      animalId: animal._id,
+      type: 'geofence',
+      isResolved: false,
+      createdAt: { $gte: cooldownTime }
+    });
+
+    if (existingAlert) {
+      // Already alerted recently — skip to avoid spamming notifications
+      return res.status(200).json({
+        message: 'Alert already exists for this animal (cooldown active)',
+        alert: existingAlert,
+        skipped: true
+      });
+    }
+
+    // 4. Create a new escape alert — this triggers the post-save hook
+    //    which automatically sends WhatsApp, SMS, and Email notifications
+    const alert = await Alert.create({
+      animalId: animal._id,
+      type: 'geofence',
+      severity: 'high',
+      message: `🚨 ESCAPE DETECTED: ${animal.name} (RFID: ${animal.rfid}, ${animal.species}) was detected near the boundary of ${farm.name}. Immediate attention required!`
+    });
+
+    console.log(`🚨 Escape alert created for ${animal.name} at ${farm.name} — notifications will be sent automatically`);
+
+    res.status(201).json({
+      message: 'Escape alert created and notifications sent',
+      alert,
+      skipped: false
+    });
+  } catch (error) {
+    console.error('Error creating escape alert:', error);
+    res.status(500).json({ message: error.message });
   }
 };
 

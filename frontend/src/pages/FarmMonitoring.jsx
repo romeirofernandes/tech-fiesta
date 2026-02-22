@@ -20,7 +20,7 @@ export default function FarmMonitoring() {
     const [presentAnimals, setPresentAnimals] = useState([]);
     const [missingAnimals, setMissingAnimals] = useState([]);
     const [error, setError] = useState(null);
-    const [nextScanIn, setNextScanIn] = useState(30);
+    const [nextScanIn, setNextScanIn] = useState(15);
     const videoRef = useRef(null);
     const canvasRef = useRef(null);
     const intervalRef = useRef(null);
@@ -38,11 +38,11 @@ export default function FarmMonitoring() {
     useEffect(() => {
         if (isMonitoring) {
             countdownRef.current = setInterval(() => {
-                setNextScanIn((prev) => (prev > 0 ? prev - 1 : 30));
+                setNextScanIn((prev) => (prev > 0 ? prev - 1 : 15));
             }, 1000);
         } else {
             clearInterval(countdownRef.current);
-            setNextScanIn(30);
+            setNextScanIn(15);
         }
         return () => clearInterval(countdownRef.current);
     }, [isMonitoring]);
@@ -82,8 +82,10 @@ export default function FarmMonitoring() {
         }
     };
 
+    const alertedAnimalsRef = useRef(new Set()); // Track animals we've already sent alerts for this session
+
     const captureAndCheck = async () => {
-        setNextScanIn(30); // Reset countdown on scan
+        setNextScanIn(15); // Reset countdown on scan
         if (!selectedFarm || !videoRef.current || !canvasRef.current) return;
 
         const video = videoRef.current;
@@ -111,14 +113,50 @@ export default function FarmMonitoring() {
                     headers: { "Content-Type": "multipart/form-data" },
                 });
 
-                setPresentAnimals(res.data.present || []);
-                setMissingAnimals(res.data.missing || []);
+                const detected = res.data.present || [];
+                const safe = res.data.missing || [];
+
+                setPresentAnimals(detected);
+                setMissingAnimals(safe);
                 setLastChecked(new Date());
                 setError(null);
+
+                // Fire escape alerts in background — do NOT await, so UI updates instantly
+                if (detected.length > 0) {
+                    fireEscapeAlerts(detected, base);
+                }
             } catch (err) {
                 console.error("Monitoring check failed", err);
             }
         }, 'image/jpeg');
+    };
+
+    // Non-blocking function to fire escape alerts for detected animals
+    const fireEscapeAlerts = (detected, base) => {
+        for (const animal of detected) {
+            if (!alertedAnimalsRef.current.has(animal._id)) {
+                alertedAnimalsRef.current.add(animal._id);
+
+                // Fire-and-forget — no await so it doesn't block the UI
+                axios.post(`${base}/api/alerts/escape`, {
+                    animalId: animal._id,
+                    farmId: selectedFarm
+                }).then((alertRes) => {
+                    if (alertRes.data.skipped) {
+                        console.log(`Alert cooldown active for ${animal.name}`);
+                    } else {
+                        console.log(`🚨 Escape alert created for ${animal.name} — WhatsApp & SMS sent!`);
+                    }
+                }).catch((alertErr) => {
+                    console.error(`Failed to create escape alert for ${animal.name}:`, alertErr);
+                });
+
+                // Remove from tracked set after 5 min so it can re-alert if still detected
+                setTimeout(() => {
+                    alertedAnimalsRef.current.delete(animal._id);
+                }, 5 * 60 * 1000);
+            }
+        }
     };
 
     const toggleMonitoring = () => {
@@ -141,8 +179,8 @@ export default function FarmMonitoring() {
         // Initial check after camera warms up (2s)
         setTimeout(captureAndCheck, 2000);
 
-        // Set interval for every 30 seconds
-        intervalRef.current = setInterval(captureAndCheck, 30000);
+        // Set interval for every 15 seconds (AI needs time to process each frame)
+        intervalRef.current = setInterval(captureAndCheck, 15000);
     };
 
     const stopMonitoring = () => {

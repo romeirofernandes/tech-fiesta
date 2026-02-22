@@ -7,12 +7,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Plus, Edit2, Trash2, Save, X, UploadCloud, Image as ImageIcon } from "lucide-react";
+import { Plus, Edit2, Trash2, Save, X, UploadCloud, Image as ImageIcon, MessageCircle } from "lucide-react";
 import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
+import { useNavigate } from 'react-router-dom';
 
 export default function Profile() {
   const { mongoUser, user, setMongoUser } = useUser();
+  const navigate = useNavigate();
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [profileForm, setProfileForm] = useState({
     fullName: "",
@@ -231,7 +233,11 @@ export default function Profile() {
               <CardTitle className="text-3xl">{profileForm.fullName || "Farmer"}</CardTitle>
               <p className="text-muted-foreground">Farmer</p>
             </div>
-            <div className="ml-auto">
+            <div className="ml-auto flex gap-2">
+              <Button onClick={() => navigate('/whatsapp')} variant="outline" className="bg-green-500/10 border-green-500/30 text-green-600 hover:bg-green-500/20">
+                <MessageCircle className="h-4 w-4 mr-2" />
+                WhatsApp
+              </Button>
               {!isEditingProfile ? (
                 <Button onClick={() => setIsEditingProfile(true)} variant="outline">
                   <Edit2 className="h-4 w-4 mr-2" />
